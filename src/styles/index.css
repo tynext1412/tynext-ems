@@ -1,0 +1,175 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/*
+ * Tema "grafit + tembaga".
+ * Grafit = enclosure peralatan listrik; tembaga = konduktor/kabel panel.
+ * Palet inti: grafit (netral) + 1 aksen tembaga. Hijau/kuning/merah hanya
+ * untuk status plant (semantik), bukan dekorasi.
+ */
+@theme {
+  --color-bg: #141516;
+  --color-surface: #1b1d1f;
+  --color-surface-2: #25282b;
+  --color-border: #35393d;
+  --color-text: #ebe7e1;
+  --color-muted: #a19c95;
+
+  --color-copper: #d48a4e;
+  --color-copper-light: #eaa86b;
+  --color-copper-deep: #a85f2b;
+
+  --color-ok: #79c36b;
+  --color-warn: #e0b240;
+  --color-danger: #e4573f;
+
+  /* IBM Plex: huruf teknis; Plex Mono punya angka tabular untuk readout meter. */
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* halaman tidak scroll; daftar plant ada di bottom sheet */
+}
+
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fokus keyboard: cincin tembaga, bukan outline default browser. */
+:focus-visible {
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+}
+
+/* ── Motif identitas: panel grafit "brushed" + garis tembaga ─────────────── */
+/* Di @layer components supaya utility Tailwind (fixed, rounded-*, dll.) tetap menang. */
+@layer components {
+  /* Panel: gradien vertikal tipis memberi kesan pelat logam, bukan kartu datar. */
+  .panel-metal {
+    background: linear-gradient(180deg, var(--color-surface-2) 0%, var(--color-surface) 100%);
+    border: 1px solid var(--color-border);
+  }
+
+  /* Garis tembaga di tepi atas sheet (affordance tarik). Elemen pemakainya harus positioned. */
+  .copper-edge::before {
+    content: "";
+    position: absolute;
+    inset: 0 12% auto 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-copper) 35%, var(--color-copper) 65%, transparent);
+    pointer-events: none;
+  }
+
+  /* Aksen tembaga untuk SATU angka fokus per layar dan tombol utama. */
+  .copper-text {
+    background: linear-gradient(90deg, var(--color-copper-light), var(--color-copper));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .copper-fill {
+    background: linear-gradient(135deg, #e8a266 0%, #c7773d 100%);
+    color: var(--color-bg);
+  }
+  .copper-fill:hover {
+    background: linear-gradient(135deg, #f0ac70 0%, #d28347 100%);
+  }
+
+  /* Diagram aliran energi: garis putus-putus bergerak searah aliran daya,
+     hanya pada konektor yang aktif. Dimatikan bila pengguna meminta reduced motion. */
+  .flow-line {
+    stroke-dasharray: 4 10;
+    animation: flow 0.9s linear infinite;
+  }
+  .flow-line.is-reverse {
+    animation-direction: reverse;
+  }
+  @keyframes flow {
+    to {
+      stroke-dashoffset: -14;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .flow-line {
+      animation: none;
+    }
+  }
+
+  /* Vignette di atas peta: gelap di atas (header) dan bawah (peek bar) agar
+     teks overlay tetap terbaca di atas citra satelit. */
+  .map-vignette {
+    background: linear-gradient(
+      180deg,
+      rgba(20, 21, 22, 0.88) 0%,
+      rgba(20, 21, 22, 0.35) 22%,
+      rgba(20, 21, 22, 0) 45%,
+      rgba(20, 21, 22, 0) 70%,
+      rgba(20, 21, 22, 0.85) 100%
+    );
+  }
+}
+
+/* ── Leaflet ─────────────────────────────────────────────────────────────── */
+
+.leaflet-container {
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+}
+
+/* Citra satelit dibuat ke arah grafit supaya satu palet dengan UI;
+   marker status jadi satu-satunya warna jenuh di peta. */
+.leaflet-tile-pane {
+  filter: grayscale(0.6) brightness(0.72) contrast(1.08) sepia(0.12);
+}
+
+/* Kontrol zoom turun di bawah header overlay (desktop: 1 baris; ponsel: 2 baris). */
+.leaflet-top.leaflet-right .leaflet-control-zoom {
+  margin-top: 104px;
+  margin-right: 16px;
+}
+@media (max-width: 767px) {
+  .leaflet-top.leaflet-right .leaflet-control-zoom {
+    margin-top: 172px;
+  }
+}
+
+.leaflet-control-zoom a {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--color-surface-2) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(20, 21, 22, 0.75) !important;
+  color: var(--color-muted) !important;
+  font-size: 10px;
+}
+.leaflet-control-attribution a {
+  color: var(--color-copper) !important;
+}
+
+.leaflet-tooltip.plant-tooltip {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+.leaflet-tooltip.plant-tooltip::before {
+  border-top-color: var(--color-border);
+}
