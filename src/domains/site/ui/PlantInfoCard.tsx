@@ -18,16 +18,16 @@ export function PlantInfoCard({ plant }: { plant: Plant }) {
         </Link>
       }
     >
-      {/* Foto plant belum ada; tidak diisi gambar stok. */}
-      <div className="mb-4 grid h-28 place-items-center rounded-md border border-dashed border-border text-xs text-muted">
+      {/* Foto plant belum ada; tidak diisi gambar stok. Koordinat GPS menumpang di pojok foto. */}
+      <div className="relative mb-3 grid h-36 place-items-center rounded-md border border-dashed border-border bg-bg text-xs text-muted">
         Foto plant belum tersedia
+        <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 font-mono text-[11px] text-text">
+          <MapPin className="size-3.5 text-accent" aria-hidden />
+          {coords}
+        </span>
       </div>
-      <p className="mb-3 flex items-center gap-1.5 font-mono text-xs text-muted">
-        <MapPin className="size-3.5" aria-hidden />
-        {coords}
-      </p>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-border bg-bg p-3 text-sm">
         <Item label="Plant Name" value={plant.name} />
         <Item label="Owner" value={plant.owner.name} />
         <Item label="Status" value={PLANT_STATUS_LABEL[plant.status]} />

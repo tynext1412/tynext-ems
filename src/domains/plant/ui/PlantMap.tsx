@@ -2,17 +2,13 @@ import type { LatLngBoundsExpression } from "leaflet";
 import { CircleMarker, MapContainer, TileLayer, Tooltip, ZoomControl } from "react-leaflet";
 import { cn } from "@/shared/lib/cn";
 import { PLANT_STATUS_LABEL, type Plant, type PlantId } from "../domain/plant";
+import { IMAGERY_ATTRIBUTION, IMAGERY_URL, REFERENCE_URL } from "./map-tiles";
 import { STATUS_COLOR } from "./status-color";
 
 const INDONESIA_BOUNDS: LatLngBoundsExpression = [
   [-11, 94],
   [6.5, 141.5],
 ];
-
-// Esri World Imagery (citra satelit) + label referensi; keduanya gratis tanpa API key.
-const IMAGERY_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-const REFERENCE_URL =
-  "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
 
 interface PlantMapProps {
   plants: Plant[];
@@ -25,13 +21,13 @@ export function PlantMap({ plants, onSelect, className }: PlantMapProps) {
     <MapContainer
       bounds={INDONESIA_BOUNDS}
       zoomControl={false}
-      scrollWheelZoom={false}
+      scrollWheelZoom
       minZoom={3}
       maxZoom={12}
       zoomSnap={0.5}
       className={cn("h-full w-full", className)}
     >
-      <TileLayer url={IMAGERY_URL} attribution="Tiles &copy; Esri" />
+      <TileLayer url={IMAGERY_URL} attribution={IMAGERY_ATTRIBUTION} />
       <TileLayer url={REFERENCE_URL} />
       <ZoomControl position="topright" />
 
@@ -40,7 +36,7 @@ export function PlantMap({ plants, onSelect, className }: PlantMapProps) {
           key={plant.id}
           center={[plant.location.point.lat, plant.location.point.lng]}
           radius={7}
-          pathOptions={{ color: "#141516", weight: 2, fillColor: STATUS_COLOR[plant.status], fillOpacity: 1 }}
+          pathOptions={{ color: "#ffffff", weight: 2, fillColor: STATUS_COLOR[plant.status], fillOpacity: 1 }}
           eventHandlers={onSelect ? { click: () => onSelect(plant.id) } : undefined}
         >
           <Tooltip className="plant-tooltip" direction="top" offset={[0, -8]}>

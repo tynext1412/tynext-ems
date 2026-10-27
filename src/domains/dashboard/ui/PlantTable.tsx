@@ -28,7 +28,7 @@ export function PlantTable({ rows, expanded, loading, sortBy, order, onSort, onO
 
   return (
     <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full min-w-[960px] text-left text-sm">
+      <table className="w-full min-w-240 text-left text-sm">
         <thead className="bg-bg text-xs text-muted">
           <tr>
             <Th sortKey="status" {...sortProps}>Plant Status</Th>
@@ -57,7 +57,7 @@ export function PlantTable({ rows, expanded, loading, sortBy, order, onSort, onO
           {loading && (
             <>
               <tr className="sr-only">
-                <td colSpan={columnCount}>Memuat daftar plant…</td>
+                <td colSpan={columnCount}>Memuat daftar site…</td>
               </tr>
               {Array.from({ length: SKELETON_ROWS }, (_, i) => (
                 <tr key={i} aria-hidden>
@@ -73,7 +73,7 @@ export function PlantTable({ rows, expanded, loading, sortBy, order, onSort, onO
             <tr>
               <td colSpan={columnCount} className="px-3 py-10 text-center text-muted">
                 Tidak ada plant yang cocok dengan pencarian atau tab status ini.{" "}
-                <button type="button" onClick={onClearFilters} className="text-copper underline-offset-2 hover:underline">
+                <button type="button" onClick={onClearFilters} className="text-accent underline-offset-2 hover:underline">
                   Tampilkan semua plant
                 </button>
               </td>
@@ -95,7 +95,7 @@ export function PlantTable({ rows, expanded, loading, sortBy, order, onSort, onO
                   <Td><WeatherIcon weather={plant.weather} /></Td>
                   <Td>{plant.owner.name}</Td>
                   <Td>
-                    <a href={`mailto:${plant.owner.contactEmail}`} className="text-copper underline-offset-2 hover:underline">
+                    <a href={`mailto:${plant.owner.contactEmail}`} className="text-accent underline-offset-2 hover:underline">
                       {plant.owner.contactEmail}
                     </a>
                   </Td>
@@ -153,7 +153,7 @@ function Th({
 
   return (
     <th className={cn("whitespace-nowrap px-3 py-2.5 font-medium", className)} aria-sort={active ? (order === "asc" ? "ascending" : "descending") : "none"}>
-      <button type="button" onClick={() => onSort(sortKey)} className={cn("inline-flex h-8 items-center gap-1 hover:text-text", active && "text-copper")}>
+      <button type="button" onClick={() => onSort(sortKey)} className={cn("inline-flex h-8 items-center gap-1 hover:text-text", active && "text-accent")}>
         {children}
         <Icon className="size-3.5" aria-hidden />
       </button>

@@ -1,4 +1,5 @@
-import { deriveEnergyFlow, type FlowNode } from "@/domains/telemetry/domain/energy-flow";
+import { connectorFor, describeFlow } from "@/domains/site/domain/flow-connectors";
+import type { FlowNode } from "@/domains/telemetry/domain/energy-flow";
 import type { PowerSnapshot } from "@/domains/telemetry/domain/power-snapshot";
 import { formatNumber } from "@/shared/domain/units";
 import { cn } from "@/shared/lib/cn";
@@ -35,44 +36,13 @@ const NODES: NodeSpec[] = [
   { id: "battery", label: "Battery", x: 375, y: 270, side: "bottom" },
 ];
 
-interface Connector {
-  kw: number;
-  direction: "to-bus" | "from-bus" | "none";
-  caption?: string;
-}
-
-function connectorFor(node: FlowNode, s: PowerSnapshot, hasBattery: boolean): Connector {
-  const flow = deriveEnergyFlow(s);
-  switch (node) {
-    case "pv":
-      return { kw: s.pvKW, direction: s.pvKW > EPSILON ? "to-bus" : "none" };
-    case "genset":
-      return { kw: s.gensetKW, direction: s.gensetKW > EPSILON ? "to-bus" : "none" };
-    case "grid":
-      return {
-        kw: Math.abs(s.gridKW),
-        direction: flow.gridState === "import" ? "to-bus" : flow.gridState === "export" ? "from-bus" : "none",
-        caption: flow.gridState === "import" ? "impor" : flow.gridState === "export" ? "ekspor" : undefined,
-      };
-    case "load":
-      return { kw: s.loadKW, direction: s.loadKW > EPSILON ? "from-bus" : "none" };
-    case "battery":
-      if (!hasBattery) return { kw: 0, direction: "none", caption: "tidak terpasang" };
-      return {
-        kw: Math.abs(s.batteryKW),
-        direction: flow.batteryState === "discharging" ? "to-bus" : flow.batteryState === "charging" ? "from-bus" : "none",
-        caption: flow.batteryState === "discharging" ? "discharge" : flow.batteryState === "charging" ? "charge" : `SoC ${s.socPercent}%`,
-      };
-  }
-}
-
 export function EnergyFlowDiagram({ snapshot, hasBattery, className }: Props) {
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
       className={cn("h-auto w-full", className)}
       role="img"
-      aria-label={snapshot ? describe(snapshot, hasBattery) : "Menunggu data daya"}
+      aria-label={snapshot ? describeFlow(snapshot, hasBattery) : "Menunggu data daya"}
     >
       {/* Bus AC */}
       <line x1={60} y1={BUS_Y} x2={W - 60} y2={BUS_Y} stroke="var(--color-border)" strokeWidth={4} strokeLinecap="round" />
@@ -92,7 +62,7 @@ export function EnergyFlowDiagram({ snapshot, hasBattery, className }: Props) {
         return (
           <g key={node.id}>
             <path d={path} stroke="var(--color-border)" strokeWidth={2} fill="none" />
-            {active && <path d={path} className={cn("flow-line", reverse && "is-reverse")} stroke="var(--color-copper)" strokeWidth={3} fill="none" />}
+            {active && <path d={path} className={cn("flow-line", reverse && "is-reverse")} stroke="var(--color-accent)" strokeWidth={3} fill="none" />}
 
             {conn && conn.kw > EPSILON && (
               <text x={node.x + 8} y={labelY + 4} fontSize="11" className="fill-text font-mono">
@@ -107,7 +77,7 @@ export function EnergyFlowDiagram({ snapshot, hasBattery, className }: Props) {
               height={NODE_H}
               rx={6}
               fill="var(--color-surface-2)"
-              stroke={active ? "var(--color-copper)" : "var(--color-border)"}
+              stroke={active ? "var(--color-accent)" : "var(--color-border)"}
               strokeWidth={1.5}
             />
             <text x={node.x} y={node.y - 10} textAnchor="middle" fontSize="11" className="fill-muted">
@@ -126,11 +96,4 @@ export function EnergyFlowDiagram({ snapshot, hasBattery, className }: Props) {
       })}
     </svg>
   );
-}
-
-function describe(s: PowerSnapshot, hasBattery: boolean): string {
-  const parts = [`PV ${formatNumber(s.pvKW, 1)} kW`, `beban ${formatNumber(s.loadKW, 1)} kW`, `genset ${formatNumber(s.gensetKW, 1)} kW`];
-  if (hasBattery) parts.push(`baterai ${formatNumber(Math.abs(s.batteryKW), 1)} kW, SoC ${s.socPercent}%`);
-  parts.push(`grid ${formatNumber(Math.abs(s.gridKW), 1)} kW ${s.gridKW >= 0 ? "impor" : "ekspor"}`);
-  return parts.join(", ");
 }

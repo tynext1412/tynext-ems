@@ -73,6 +73,14 @@ export function zoomOut(w: TimeWindow): TimeWindow {
   return isFullDay(next) ? FULL_DAY : next;
 }
 
+// Zoom di sekitar satu titik waktu (posisi kursor): jarak kiri/kanan ke anchor dikali factor
+// (< 1 memperbesar, > 1 memperkecil). Kembali ke hari penuh bila sudah mencakup 00:00–24:00.
+export function zoomAround(w: TimeWindow, anchor: number, factor: number): TimeWindow {
+  const a = Math.max(w[0], Math.min(w[1], anchor));
+  const next = clampWindow(a - (a - w[0]) * factor, a + (w[1] - a) * factor);
+  return isFullDay(next) ? FULL_DAY : next;
+}
+
 // Tick yang rapi untuk rentang yang terlihat: 3 jam penuh → 1 jam → 30 → 15 → 5 menit.
 export function zoomTicks([from, to]: TimeWindow): number[] {
   const span = to - from;

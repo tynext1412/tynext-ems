@@ -78,6 +78,7 @@ export function energyBarPoints(buckets: readonly EnergyBucket[]): EnergyBarPoin
 }
 
 export function formatMinutes(t: number): string {
+  if (t >= 1440) return "24:00"; // batas akhir hari pada sumbu/rentang zoom
   const h = Math.floor(t / 60) % 24;
   const m = t % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;

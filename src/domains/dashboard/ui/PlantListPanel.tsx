@@ -46,7 +46,7 @@ export function PlantListPanel({ statusCount }: Props) {
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
             <Input
               className="w-72 max-w-full pl-8"
-              placeholder="Nama plant, alamat, atau ID"
+              placeholder="Nama site, alamat, atau ID"
               value={searchDraft}
               onChange={(e) => setSearchDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applySearch()}
@@ -65,7 +65,7 @@ export function PlantListPanel({ statusCount }: Props) {
 
       {error && (
         <div role="alert" className="flex flex-wrap items-center gap-3 rounded-md border border-danger/50 bg-surface-2 px-4 py-3 text-sm">
-          <span>Daftar plant tidak bisa dimuat: {error.message}.</span>
+          <span>Daftar site tidak bisa dimuat: {error.message}.</span>
           <Button onClick={retry} className="h-9">
             Coba muat ulang
           </Button>

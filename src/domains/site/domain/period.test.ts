@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canStepBack, canStepForward, clampWindow, FULL_DAY, isFullDay, periodLabel, stepPeriod, zoomIn, zoomOut, zoomTicks } from "./period";
+import { zoomAround } from "./period";
 
 describe("period navigation", () => {
   it("steps by day, month, and year", () => {
@@ -45,5 +46,15 @@ describe("time window zoom", () => {
     expect(zoomTicks(FULL_DAY)).toEqual([0, 180, 360, 540, 720, 900, 1080, 1260, 1440]);
     expect(zoomTicks([540, 720])).toEqual([540, 570, 600, 630, 660, 690, 720]);
     expect(zoomTicks([600, 640])).toEqual([600, 605, 610, 615, 620, 625, 630, 635, 640]);
+  });
+});
+
+describe("zoomAround", () => {
+  it("shrinks the window around the anchor and grows it back to the full day", () => {
+    expect(zoomAround([0, 1440], 720, 0.5)).toEqual([360, 1080]);
+    expect(zoomAround([0, 1440], 0, 0.5)).toEqual([0, 720]);
+    expect(zoomAround([360, 1080], 720, 2)).toEqual([0, 1440]);
+    expect(zoomAround([600, 660], 630, 0.1)).toEqual([615, 645]); // dijepit ke rentang minimum 30 menit
+    expect(zoomAround([360, 1080], 9999, 0.5)).toEqual([720, 1080]); // anchor di luar rentang dijepit ke tepi
   });
 });

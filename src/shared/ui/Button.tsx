@@ -3,9 +3,9 @@ import { cn } from "@/shared/lib/cn";
 
 type Variant = "primary" | "secondary" | "ghost";
 
-// Hanya tombol utama yang memakai aksen tembaga; sisanya grafit.
+// Hanya tombol utama yang memakai gradien merek (biru → teal); sisanya grafit.
 const VARIANT_CLASS: Record<Variant, string> = {
-  primary: "copper-fill font-semibold",
+  primary: "brand-fill font-semibold",
   secondary: "border border-border bg-surface-2 text-text hover:border-muted",
   ghost: "text-muted hover:bg-surface-2 hover:text-text",
 };

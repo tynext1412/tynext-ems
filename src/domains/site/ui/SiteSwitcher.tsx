@@ -101,7 +101,7 @@ export function SiteSwitcher({ current }: Props) {
             exit={reducedMotion ? undefined : { opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
             onKeyDown={onKeyDown}
-            className="absolute inset-x-4 top-full z-20 mt-1 rounded-md border border-border bg-surface p-2 shadow-[0_16px_40px_rgba(0,0,0,0.5)] md:inset-x-auto md:left-0 md:mt-2 md:w-[380px]"
+            className="absolute inset-x-4 top-full z-20 mt-1 rounded-md border border-border bg-surface p-2 shadow-[0_16px_40px_rgba(27,29,31,0.18)] md:inset-x-auto md:left-0 md:mt-2 md:w-[380px]"
           >
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
@@ -161,7 +161,7 @@ export function SiteSwitcher({ current }: Props) {
                         {plant.location.address} · {PLANT_STATUS_LABEL[plant.status]}
                       </span>
                     </span>
-                    {active && <Check className="size-4 shrink-0 text-copper" aria-label="site saat ini" />}
+                    {active && <Check className="size-4 shrink-0 text-accent" aria-label="site saat ini" />}
                   </li>
                 );
               })}

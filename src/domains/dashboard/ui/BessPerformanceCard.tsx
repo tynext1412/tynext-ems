@@ -34,7 +34,7 @@ export function BessPerformanceCard({ bess, loading, className }: Props) {
               cy={RING_SIZE / 2}
               r={RING_RADIUS}
               fill="none"
-              stroke="var(--color-copper)"
+              stroke="var(--color-secondary)"
               strokeWidth={RING_STROKE}
               strokeLinecap="round"
               strokeDasharray={RING_LENGTH}
@@ -68,7 +68,7 @@ function Readout({ label, value, loading, accent }: { label: string; value?: { v
           <Skeleton className="h-5 w-20" />
         ) : (
           <>
-            <span className={accent ? "text-copper" : undefined}>{value.value}</span>
+            <span className={accent ? "text-secondary" : undefined}>{value.value}</span>
             <span className="ml-1 text-xs font-medium text-muted">{value.unit}</span>
           </>
         )}

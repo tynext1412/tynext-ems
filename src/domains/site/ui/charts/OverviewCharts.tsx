@@ -1,4 +1,3 @@
-import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useEnergySeries, useTariffSeries } from "@/domains/performance/application/use-performances";
 import type { EnergySeriesGranularity, Granularity, Period } from "@/domains/performance/domain/performance";
@@ -8,7 +7,7 @@ import { timezoneAbbrev, toDateKey } from "@/shared/domain/time";
 import { Button } from "@/shared/ui/Button";
 import { Panel } from "@/shared/ui/Panel";
 import { dailyPowerPoints, energyBarPoints, formatMinutes, minutesOfDay, tariffPoints } from "../../domain/chart-data";
-import { clampWindow, FULL_DAY, isFullDay, zoomIn, zoomOut, type TimeWindow } from "../../domain/period";
+import { clampWindow, FULL_DAY, isFullDay, type TimeWindow } from "../../domain/period";
 import { PeriodControl } from "../PeriodControl";
 import { DailyPowerChart } from "./DailyPowerChart";
 import { EnergyChart } from "./EnergyChart";
@@ -32,6 +31,7 @@ export default function OverviewCharts({ plant }: { plant: Plant }) {
     setWindow(FULL_DAY); // rentang zoom tidak dibawa ke tanggal lain
   }, []);
   const onZoom = useCallback((from: number, to: number) => setWindow(clampWindow(from, to)), []);
+  const onReset = useCallback(() => setWindow(FULL_DAY), []);
 
   const isDay = period.granularity === "day";
   const isToday = isDay && period.date === today;
@@ -72,27 +72,26 @@ export default function OverviewCharts({ plant }: { plant: Plant }) {
 
       {isDay ? (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted" role="group" aria-label="Zoom sumbu waktu">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
             <span>
               Rentang <span className="font-mono text-text">{formatMinutes(window[0])}–{formatMinutes(window[1])}</span>
-              {isFullDay(window) && " · seret di grafik untuk memperbesar"}
             </span>
-            <span className="ml-auto flex items-center gap-1">
-              <Button variant="ghost" className="size-9 px-0" onClick={() => setWindow((w) => zoomIn(w))} aria-label="Perbesar rentang waktu">
-                <ZoomIn className="size-4" aria-hidden />
-              </Button>
-              <Button variant="ghost" className="size-9 px-0" disabled={isFullDay(window)} onClick={() => setWindow((w) => zoomOut(w))} aria-label="Perkecil rentang waktu">
-                <ZoomOut className="size-4" aria-hidden />
-              </Button>
-              <Button variant="ghost" className="h-9" disabled={isFullDay(window)} onClick={() => setWindow(FULL_DAY)}>
-                <RotateCcw className="size-4" aria-hidden />
-                Reset zoom
-              </Button>
+            <span className="ml-auto">
+              {isFullDay(window) ? (
+                "Scroll di grafik untuk zoom · seret untuk memilih rentang"
+              ) : (
+                <>
+                  Scroll untuk zoom · klik dua kali atau{" "}
+                  <button type="button" onClick={onReset} className="text-accent underline-offset-2 hover:underline">
+                    reset
+                  </button>
+                </>
+              )}
             </span>
           </div>
-          <DailyPowerChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} />
-          <SocChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} hasBattery={hasBattery} window={window} onZoom={onZoom} />
-          <TariffChart points={tariffData} loading={tariff.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} />
+          <DailyPowerChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} />
+          <SocChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} hasBattery={hasBattery} window={window} onZoom={onZoom} onReset={onReset} />
+          <TariffChart points={tariffData} loading={tariff.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} />
         </div>
       ) : (
         <EnergyChart points={energyPoints} loading={energy.isPending} granularity={energyGranularity} />

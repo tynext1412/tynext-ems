@@ -5,7 +5,7 @@ import { formatMinutes, type DailyPowerPoint } from "../../domain/chart-data";
 import { zoomTicks, type TimeWindow } from "../../domain/period";
 import { ChartFrame, ChartLegend, ChartTable, ChartTooltipBox } from "./ChartChrome";
 import { AXIS_TICK, CHART_CHROME, SERIES_COLOR, SERIES_LABEL } from "./chart-theme";
-import { useDragZoom } from "./useDragZoom";
+import { useChartZoom } from "./useChartZoom";
 import { useSeriesToggle } from "./useSeriesToggle";
 
 type PowerSeriesKey = "grid" | "pv" | "battery" | "genset" | "load";
@@ -18,13 +18,14 @@ interface Props {
   timezoneAbbrev: string;
   window: TimeWindow;
   onZoom: (from: number, to: number) => void;
+  onReset: () => void;
 }
 
 // Daya per 5 menit sepanjang hari. Satu sumbu (kW); baterai + = charge, − = discharge.
 // Seret untuk memperbesar rentang waktu; rentang dibagi dengan grafik SOC dan tarif.
-export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, window, onZoom }: Props) {
+export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, window, onZoom, onReset }: Props) {
   const { hidden, toggle } = useSeriesToggle();
-  const { selection, handlers } = useDragZoom(onZoom);
+  const { selection, handlers, frameProps } = useChartZoom(window, onZoom, onReset);
   const visible = points?.filter((p) => p.t >= window[0] && p.t <= window[1]);
 
   return (
@@ -46,7 +47,8 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
       ) : points.length === 0 ? (
         <p className="grid h-70 place-items-center text-sm text-muted">Belum ada sampel daya untuk tanggal ini.</p>
       ) : (
-        <ResponsiveContainer width="100%" height={280}>
+        <div {...frameProps}>
+          <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={points} margin={{ top: 20, right: 12, left: 0, bottom: 0 }} syncId="daily" accessibilityLayer {...handlers} className="select-none">
             <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
             <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
@@ -83,9 +85,10 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
             {nowMinutes !== undefined && (
               <ReferenceLine x={nowMinutes} stroke={CHART_CHROME.marker} strokeDasharray="4 4" label={{ value: "Now", position: "top", fill: CHART_CHROME.ink, fontSize: 11 }} />
             )}
-            {selection && <ReferenceArea x1={selection[0]} x2={selection[1]} fill="var(--color-copper)" fillOpacity={0.12} stroke="var(--color-copper)" strokeOpacity={0.6} />}
+            {selection && <ReferenceArea x1={selection[0]} x2={selection[1]} fill="var(--color-accent)" fillOpacity={0.12} stroke="var(--color-accent)" strokeOpacity={0.6} />}
           </AreaChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       )}
     </ChartFrame>
   );

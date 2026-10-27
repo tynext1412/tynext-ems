@@ -8,7 +8,8 @@ import { BottomSheet } from "@/shared/ui/BottomSheet";
 import { Brand } from "@/shared/ui/Brand";
 import { Button } from "@/shared/ui/Button";
 import { Skeleton } from "@/shared/ui/Skeleton";
-import { UserMenu } from "@/shared/ui/UserMenu";
+import { UserMenu } from "@/domains/auth/ui/UserMenu";
+import { ThemeToggle } from "@/shared/ui/ThemeToggle";
 import { useDashboardOverview } from "../application/use-dashboard-overview";
 import type { DashboardOverview } from "../domain/overview";
 import { BessPerformanceCard } from "./BessPerformanceCard";
@@ -16,7 +17,7 @@ import { PlantListPanel } from "./PlantListPanel";
 import { SummaryStrip } from "./SummaryStrip";
 
 // Sheet terbuka disimpan di hash URL supaya bisa dibagikan dan tombol Back menutupnya.
-const SHEET_HASH = "#plant-list";
+const SHEET_HASH = "#site-list";
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ export function DashboardPage() {
 
         <div className="pointer-events-auto hidden items-center gap-2 md:flex">
           {dataSourceBadge()}
+          <ThemeToggle />
           <UserMenu />
         </div>
       </header>
@@ -70,7 +72,7 @@ export function DashboardPage() {
       <BottomSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        title="Plant List"
+        title="Site list"
         peek={<PeekBar overview={overview} loading={isPending} />}
       >
         <div className="mb-5 grid gap-3 md:hidden">
@@ -98,7 +100,7 @@ function PeekBar({ overview, loading }: { overview?: DashboardOverview; loading:
   return (
     <span className="flex w-full items-center gap-4">
       <span className="flex flex-col">
-        <span className="text-base font-semibold">Plant List</span>
+        <span className="text-base font-semibold">Site list</span>
         <span className="text-xs text-muted">Geser atau klik untuk membuka</span>
       </span>
 
@@ -112,7 +114,7 @@ function PeekBar({ overview, loading }: { overview?: DashboardOverview; loading:
         </span>
       )}
 
-      <ChevronUp className="ml-auto size-5 text-copper" aria-hidden />
+      <ChevronUp className="ml-auto size-5 text-accent" aria-hidden />
     </span>
   );
 }

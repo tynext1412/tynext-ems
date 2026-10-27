@@ -1,11 +1,26 @@
+import mark from "@/assets/tynext-mark.png";
+import wordmarkNavy from "@/assets/tynext-wordmark-navy.png";
+import wordmarkWhite from "@/assets/tynext-wordmark-white.png";
 import { cn } from "@/shared/lib/cn";
+import { useTheme } from "@/shared/lib/theme";
 
-// Wordmark teks: logo resmi Tynext belum diberikan, jadi tidak dibuat-buat.
-export function Brand({ className }: { className?: string }) {
+interface Props {
+  className?: string;
+  size?: "sm" | "md";
+  tone?: "navy" | "white"; // wordmark navy untuk latar terang, putih untuk gelap; default mengikuti tema
+}
+
+// Logo resmi Tynext: mark bergradien + wordmark (navy di latar terang, putih di latar gelap).
+export function Brand({ className, size = "sm", tone }: Props) {
+  const theme = useTheme();
+  const wordmark = (tone ?? (theme === "dark" ? "white" : "navy")) === "navy" ? wordmarkNavy : wordmarkWhite;
+  const markClass = size === "md" ? "h-9" : "h-7";
+  const wordClass = size === "md" ? "h-5" : "h-4";
+
   return (
-    <div className={cn("flex items-baseline gap-2 leading-none", className)}>
-      <span className="text-lg font-semibold tracking-[0.08em]">TYNEXT</span>
-      <span className="text-xs text-copper">EMS</span>
-    </div>
+    <span className={cn("flex items-center gap-2", className)}>
+      <img src={mark} alt="" className={cn("w-auto", markClass)} />
+      <img src={wordmark} alt="Tynext, Energy and Control" className={cn("w-auto", wordClass)} />
+    </span>
   );
 }

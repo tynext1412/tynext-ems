@@ -13,6 +13,11 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    // three.js hanya dimuat oleh adegan aliran energi (lazy); dipisah agar cache-nya awet.
+    chunkSizeWarningLimit: 1300,
+    rollupOptions: { output: { manualChunks: { three: ["three", "@react-three/fiber", "@react-three/drei"] } } },
+  },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],

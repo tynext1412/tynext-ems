@@ -71,17 +71,35 @@ export interface WeatherReport {
   forecast: WeatherForecastDay[]; // termasuk hari ini di indeks 0
 }
 
+// Jenis site menentukan adegan 3D di diagram aliran energi.
+export type PlantType = "RESORT_HOTEL" | "MINING" | "PLANTATION";
+
+export const PLANT_TYPES: readonly PlantType[] = ["RESORT_HOTEL", "MINING", "PLANTATION"];
+
+export const PLANT_TYPE_LABEL: Record<PlantType, string> = {
+  RESORT_HOTEL: "Resort / Hotel",
+  MINING: "Mining",
+  PLANTATION: "Plantation",
+};
+
 // Plant adalah aggregate root context Plant. `status` diturunkan dari devices
 // lewat status-policy di boundary (repository), bukan diisi bebas oleh UI.
 export interface Plant {
   id: PlantId;
   name: string;
+  plantType: PlantType;
   location: Location;
   owner: Owner;
   installer: string;
+  organization?: string; // organisasi yang ditugaskan mengelola (Assigned Organization)
   capacity: Capacity;
+  moduleCount: number;
+  modulePowerW: number; // kapasitas per modul (Wp)
   devices: Device[];
   status: PlantStatus;
   weather?: WeatherSnapshot;
-  commissionedAt: string; // YYYY-MM-DD
+  commissionedAt: string; // YYYY-MM-DD, tanggal lokal plant
+  gridConnectedAt: string; // YYYY-MM-DD
+  platformConnectedAt: string; // YYYY-MM-DD, mulai mengirim data ke platform
+  createdAt: string; // ISO 8601, waktu plant dibuat di platform
 }

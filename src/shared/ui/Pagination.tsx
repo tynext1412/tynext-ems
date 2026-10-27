@@ -91,7 +91,7 @@ function PageButton({
       type="button"
       className={cn(
         "grid h-10 min-w-10 place-items-center rounded-md border border-border px-2 font-mono text-xs transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40",
-        active && "border-copper text-copper",
+        active && "border-accent text-accent",
         className,
       )}
       {...props}

@@ -8,7 +8,8 @@ import { formatDateTime, formatRelative, timezoneAbbrev } from "@/shared/domain/
 import { useNow } from "@/shared/lib/useNow";
 import { Brand } from "@/shared/ui/Brand";
 import { Skeleton } from "@/shared/ui/Skeleton";
-import { UserMenu } from "@/shared/ui/UserMenu";
+import { UserMenu } from "@/domains/auth/ui/UserMenu";
+import { ThemeToggle } from "@/shared/ui/ThemeToggle";
 import { SiteSwitcher } from "./SiteSwitcher";
 
 const STALE_AFTER_MS = 2 * 60_000;
@@ -70,6 +71,7 @@ export function SiteHeader({ plant, snapshot }: Props) {
             Data dummy
           </span>
         )}
+        <ThemeToggle />
         <UserMenu className="hidden md:flex" />
       </div>
     </header>

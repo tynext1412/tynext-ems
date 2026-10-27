@@ -8,7 +8,8 @@ export interface PlantPerformance {
   generationKWh: KWh;
   chargeKWh: KWh;
   dischargeKWh: KWh;
-  tariffIDRPerKWh: IDR;
+  tariffIDRPerKWh: IDR; // tarif jual (feed-in / PPA), dasar revenue
+  purchaseTariffIDRPerKWh: IDR; // tarif beli dari grid (LWBP)
   revenueIDR: IDR;
 }
 
@@ -24,6 +25,7 @@ export const EMPTY_PERFORMANCE: Omit<PlantPerformance, "plantId"> = {
   chargeKWh: 0,
   dischargeKWh: 0,
   tariffIDRPerKWh: 0,
+  purchaseTariffIDRPerKWh: 0,
   revenueIDR: 0,
 };
 

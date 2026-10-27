@@ -53,7 +53,7 @@ function Segment({
         <Skeleton className="mt-1 h-6 w-20" />
       ) : (
         <div className={cn("mt-0.5 font-mono font-semibold leading-tight", focal ? "text-2xl" : "text-lg")}>
-          <span className={focal ? "copper-text" : undefined}>{value}</span>
+          <span className={focal ? "brand-text" : undefined}>{value}</span>
           {unit && <span className="ml-1 text-xs font-medium text-muted">{unit}</span>}
         </div>
       )}

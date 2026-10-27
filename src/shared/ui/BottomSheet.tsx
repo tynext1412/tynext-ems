@@ -110,7 +110,7 @@ export function BottomSheet({ open, onOpenChange, title, peek, peekHeight = 76, 
     <>
       <motion.div
         aria-hidden
-        className="fixed inset-0 z-20 bg-bg/70"
+        className="fixed inset-0 z-20 bg-ink/40"
         style={{ opacity: backdropOpacity, pointerEvents: open ? "auto" : "none" }}
         onClick={() => onOpenChange(false)}
       />
@@ -121,7 +121,7 @@ export function BottomSheet({ open, onOpenChange, title, peek, peekHeight = 76, 
         aria-modal={open || undefined}
         aria-labelledby={open ? titleId : undefined}
         className={cn(
-          "copper-edge fixed inset-x-0 bottom-0 z-30 flex h-[88dvh] flex-col rounded-t-2xl border border-b-0 border-border bg-surface shadow-[0_-24px_60px_rgba(0,0,0,0.55)]",
+          "brand-edge fixed inset-x-0 bottom-0 z-30 flex h-[88dvh] flex-col rounded-t-2xl border border-b-0 border-border bg-surface shadow-[0_-24px_60px_rgba(27,29,31,0.18)]",
           className,
         )}
         style={{ y }}
@@ -150,7 +150,7 @@ export function BottomSheet({ open, onOpenChange, title, peek, peekHeight = 76, 
                 ref={closeButtonRef}
                 type="button"
                 onClick={() => onOpenChange(false)}
-                aria-label="Tutup daftar plant"
+                aria-label="Tutup daftar site"
                 className="grid size-11 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-text"
               >
                 <X className="size-5" aria-hidden />

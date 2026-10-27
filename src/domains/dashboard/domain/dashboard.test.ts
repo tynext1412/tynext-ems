@@ -6,18 +6,24 @@ import { applyPlantListQuery, buildPlantRows, DEFAULT_PLANT_LIST_QUERY } from ".
 
 function plant(partial: Partial<Plant> & Pick<Plant, "id" | "name" | "status">): Plant {
   return {
+    plantType: "RESORT_HOTEL",
     location: { point: { lat: 0, lng: 0 }, address: "Jakarta", timezone: "Asia/Jakarta" },
     owner: { id: "OWN", name: "Owner", contactEmail: "owner@example.com" },
     installer: "Tynext",
     capacity: { pvKWp: 100, inverterKW: 80, batteryKWh: 50 },
+    moduleCount: 182,
+    modulePowerW: 550,
     devices: [],
     commissionedAt: "2024-01-01",
+    gridConnectedAt: "2024-01-01",
+    platformConnectedAt: "2024-01-04",
+    createdAt: "2023-12-11T00:42:13.000Z",
     ...partial,
   };
 }
 
 function performance(plantId: string, generationKWh: number, revenueIDR = generationKWh * 1000): PlantPerformance {
-  return { plantId, generationKWh, chargeKWh: generationKWh / 4, dischargeKWh: generationKWh / 5, tariffIDRPerKWh: 1000, revenueIDR };
+  return { plantId, generationKWh, chargeKWh: generationKWh / 4, dischargeKWh: generationKWh / 5, tariffIDRPerKWh: 1000, purchaseTariffIDRPerKWh: 1444.7, revenueIDR };
 }
 
 const plants = [

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Placeholder embed SCADA</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid; place-items: center; padding: 24px; box-sizing: border-box;
+        background: #141516; color: #ebe7e1; font: 14px/1.5 "IBM Plex Sans", system-ui, sans-serif;
+      }
+      .box { max-width: 520px; border: 1px dashed #35393d; border-radius: 8px; padding: 24px; }
+      h1 { font-size: 16px; margin: 0 0 8px; }
+      p { margin: 0 0 8px; color: #a19c95; }
+      code { font-family: "IBM Plex Mono", ui-monospace, monospace; color: #ebe7e1; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>Placeholder embed SCADA (bukan SCADA sungguhan)</h1>
+      <p>Halaman ini hanya membuktikan bahwa viewer pihak ketiga bisa disematkan di menu SCADA. Diagram SCADA tidak dibuat di aplikasi ini.</p>
+      <p>Plant: <code id="plant">(tidak ada)</code></p>
+      <p>Ganti URL di konfigurasi dengan viewer SCADA Anda, misalnya Ignition Perspective, FUXA, atau WebAccess, yang mengizinkan embed (X-Frame-Options / CSP frame-ancestors).</p>
+    </div>
+    <script>
+      var plant = new URLSearchParams(location.search).get("plant");
+      if (plant) document.getElementById("plant").textContent = plant;
+    </script>
+  </body>
+</html>

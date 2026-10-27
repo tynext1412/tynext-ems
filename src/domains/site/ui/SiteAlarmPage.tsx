@@ -40,7 +40,7 @@ export function SiteAlarmPage() {
         </p>
       ) : (
         <div className="overflow-x-auto rounded-md border border-border">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-190 text-left text-sm">
             <thead className="bg-bg text-xs text-muted">
               <tr>
                 <th className="px-3 py-2.5 font-medium">Severity</th>

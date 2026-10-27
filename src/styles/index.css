@@ -2,30 +2,64 @@
 @import "leaflet/dist/leaflet.css";
 
 /*
- * Tema "grafit + tembaga".
- * Grafit = enclosure peralatan listrik; tembaga = konduktor/kabel panel.
- * Palet inti: grafit (netral) + 1 aksen tembaga. Hijau/kuning/merah hanya
- * untuk status plant (semantik), bukan dekorasi.
+ * Tema terang + warna merek Tynext.
+ * Dasar abu-abu terang netral; warna merek diambil dari gradien logo Tynext
+ * (src/assets/tynext-mark.png): navy #184c7f → biru #1788a6 → teal #3fb995, goresan lime #8ec747.
+ *   accent        = biru merek yang digelapkan: teks/link/fokus/state aktif (5,7:1 di putih, 4,8:1 di surface-2)
+ *   accent-soft   = biru terang logo: isian blok (hover menu, sakelar, gradien tombol) dengan tinta gelap (7,6:1)
+ *   secondary     = teal yang digelapkan untuk teks penekanan (5,3:1); secondary-soft = teal logo untuk isian
+ *   tertiary      = lime: hanya di gradien merek, tidak untuk teks/titik agar tidak tertukar dengan status Online
+ * Hijau/kuning/merah tetap khusus status (semantik), dipilih ≥ 4,5:1 sebagai teks di putih dan surface-2.
  */
 @theme {
+  --color-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-surface-2: #e9ecef;
+  --color-border: #d5d9de;
+  --color-text: #1b1d1f;
+  --color-muted: #5b6168;
+  --color-ink: #141516; /* tinta di atas isian merek/aksen */
+
+  --color-navy: #184c7f;
+  --color-primary: #1788a6;
+  --color-accent: #0d6f8b;
+  --color-accent-soft: #4cb3d4;
+  --color-secondary: #157a5e;
+  --color-secondary-soft: #3fb995;
+  --color-tertiary: #8ec747;
+
+  --color-ok: #2b7a30;
+  --color-warn: #8f5b00;
+  --color-danger: #c62828;
+
+  /* IBM Plex: huruf teknis; Plex Mono punya angka tabular untuk readout meter. */
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+/* Tema gelap (grafit): dipilih lewat tombol, disimpan di localStorage, diterapkan sebelum render. */
+:root[data-theme="dark"] {
   --color-bg: #141516;
   --color-surface: #1b1d1f;
   --color-surface-2: #25282b;
   --color-border: #35393d;
   --color-text: #ebe7e1;
   --color-muted: #a19c95;
+  --color-ink: #141516;
 
-  --color-copper: #d48a4e;
-  --color-copper-light: #eaa86b;
-  --color-copper-deep: #a85f2b;
+  --color-accent: #4cb3d4; /* 7,0:1 di grafit */
+  --color-accent-soft: #4cb3d4;
+  --color-secondary: #3fb995;
+  --color-secondary-soft: #3fb995;
 
   --color-ok: #79c36b;
   --color-warn: #e0b240;
   --color-danger: #e4573f;
-
-  /* IBM Plex: huruf teknis; Plex Mono punya angka tabular untuk readout meter. */
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  color-scheme: dark;
 }
 
 html,
@@ -46,13 +80,13 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Fokus keyboard: cincin tembaga, bukan outline default browser. */
+/* Fokus keyboard: cincin biru merek, bukan outline default browser. */
 :focus-visible {
-  outline: 2px solid var(--color-copper);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-/* ── Motif identitas: panel grafit "brushed" + garis tembaga ─────────────── */
+/* ── Motif identitas: panel grafit "brushed" + gradien logo Tynext ─────────── */
 /* Di @layer components supaya utility Tailwind (fixed, rounded-*, dll.) tetap menang. */
 @layer components {
   /* Panel: gradien vertikal tipis memberi kesan pelat logam, bukan kartu datar. */
@@ -61,29 +95,31 @@ body {
     border: 1px solid var(--color-border);
   }
 
-  /* Garis tembaga di tepi atas sheet (affordance tarik). Elemen pemakainya harus positioned. */
-  .copper-edge::before {
+  /* Garis tepi atas sheet (affordance tarik) memakai gradien batang logo:
+     navy → biru → teal → lime. Elemen pemakainya harus positioned. */
+  .brand-edge::before {
     content: "";
     position: absolute;
-    inset: 0 12% auto 12%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-copper) 35%, var(--color-copper) 65%, transparent);
+    inset: 0 8% auto 8%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-navy) 15%, var(--color-primary) 45%, var(--color-secondary) 75%, var(--color-tertiary) 92%, transparent);
     pointer-events: none;
   }
 
-  /* Aksen tembaga untuk SATU angka fokus per layar dan tombol utama. */
-  .copper-text {
-    background: linear-gradient(90deg, var(--color-copper-light), var(--color-copper));
+  /* SATU angka fokus per layar: gradien biru → teal (varian gelap, ≥ 5:1 di putih). */
+  .brand-text {
+    background: linear-gradient(90deg, var(--color-accent), var(--color-secondary));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  .copper-fill {
-    background: linear-gradient(135deg, #e8a266 0%, #c7773d 100%);
-    color: var(--color-bg);
+  /* Tombol utama: biru terang → teal logo dengan tinta gelap (kontras 7,6:1 / 7,5:1). */
+  .brand-fill {
+    background: linear-gradient(135deg, var(--color-accent-soft) 0%, var(--color-secondary-soft) 100%);
+    color: var(--color-ink);
   }
-  .copper-fill:hover {
-    background: linear-gradient(135deg, #f0ac70 0%, #d28347 100%);
+  .brand-fill:hover {
+    background: linear-gradient(135deg, #3ea6c8 0%, #35ab88 100%);
   }
 
   /* Diagram aliran energi: garis putus-putus bergerak searah aliran daya,
@@ -106,9 +142,162 @@ body {
     }
   }
 
-  /* Vignette di atas peta: gelap di atas (header) dan bawah (peek bar) agar
-     teks overlay tetap terbaca di atas citra satelit. */
+  /* Ilustrasi login (SVG): gerak kecil yang berulang; semuanya mati saat reduced motion.
+     Elemen yang dianimasikan dibungkus <g> tersendiri agar transform CSS tidak menimpa
+     atribut transform pemosisian. */
+  .login-art .sun-rays {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: login-spin 80s linear infinite;
+  }
+  .login-art .cloud {
+    animation: login-drift 36s ease-in-out infinite alternate;
+  }
+  .login-art .cloud.slow {
+    animation-duration: 52s;
+    animation-direction: alternate-reverse;
+  }
+  .login-art .arm-sweep {
+    animation: login-sweep 1.3s ease-in-out infinite alternate;
+  }
+  .login-art .bob {
+    animation: login-bob 2.6s ease-in-out infinite;
+  }
+  .login-art .led {
+    animation: login-blink 1.4s steps(1, end) infinite;
+  }
+  .login-art .needle {
+    animation: login-needle 3.2s ease-in-out infinite alternate;
+  }
+  .login-art .charge {
+    transform-box: fill-box;
+    transform-origin: 0 50%;
+    animation: login-charge 5s ease-in-out infinite alternate;
+  }
+  .login-art .spark {
+    animation: login-spark 2.4s ease-out infinite;
+  }
+  .login-art .walk {
+    animation: login-walk 16s linear infinite;
+  }
+  .login-art .bolt {
+    animation: login-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes login-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes login-drift {
+    from {
+      transform: translateX(-40px);
+    }
+    to {
+      transform: translateX(40px);
+    }
+  }
+  @keyframes login-sweep {
+    from {
+      transform: rotate(-38deg);
+    }
+    to {
+      transform: rotate(22deg);
+    }
+  }
+  @keyframes login-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+  @keyframes login-blink {
+    0%,
+    60% {
+      opacity: 1;
+    }
+    61%,
+    100% {
+      opacity: 0.25;
+    }
+  }
+  @keyframes login-needle {
+    from {
+      transform: rotate(-40deg);
+    }
+    to {
+      transform: rotate(35deg);
+    }
+  }
+  @keyframes login-charge {
+    from {
+      transform: scaleX(0.35);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes login-spark {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-70px);
+      opacity: 0;
+    }
+  }
+  @keyframes login-walk {
+    0% {
+      transform: translateX(-140px);
+      opacity: 0;
+    }
+    6% {
+      opacity: 1;
+    }
+    94% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(360px);
+      opacity: 0;
+    }
+  }
+  @keyframes login-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.25);
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .login-art * {
+      animation: none !important;
+    }
+  }
+
+  /* Vignette di atas peta: terang di atas (header) dan bawah (peek bar) agar
+     teks overlay gelap tetap terbaca di atas citra satelit. */
   .map-vignette {
+    background: linear-gradient(
+      180deg,
+      rgba(243, 244, 246, 0.92) 0%,
+      rgba(243, 244, 246, 0.45) 22%,
+      rgba(243, 244, 246, 0) 45%,
+      rgba(243, 244, 246, 0) 70%,
+      rgba(243, 244, 246, 0.9) 100%
+    );
+  }
+  :root[data-theme="dark"] .map-vignette {
     background: linear-gradient(
       180deg,
       rgba(20, 21, 22, 0.88) 0%,
@@ -117,6 +306,32 @@ body {
       rgba(20, 21, 22, 0) 70%,
       rgba(20, 21, 22, 0.85) 100%
     );
+  }
+
+  /* Langit halaman login dan warna lanskap ilustrasi per tema. */
+  .login-sky {
+    background: linear-gradient(180deg, #e9f1f7 0%, var(--color-bg) 55%);
+  }
+  :root[data-theme="dark"] .login-sky {
+    background: linear-gradient(180deg, #10202c 0%, var(--color-bg) 55%);
+  }
+  .login-art .cloud-fill {
+    fill: #ffffff;
+  }
+  .login-art .hill-far {
+    fill: #dfe6df;
+  }
+  .login-art .hill-near {
+    fill: #e6eaee;
+  }
+  :root[data-theme="dark"] .login-art .cloud-fill {
+    fill: #2a3138;
+  }
+  :root[data-theme="dark"] .login-art .hill-far {
+    fill: #22302a;
+  }
+  :root[data-theme="dark"] .login-art .hill-near {
+    fill: #25282b;
   }
 }
 
@@ -127,10 +342,17 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Citra satelit dibuat ke arah grafit supaya satu palet dengan UI;
-   marker status jadi satu-satunya warna jenuh di peta. */
+/* Citra satelit sedikit diredam supaya marker status jadi warna paling jenuh di peta;
+   di tema gelap dibawa ke arah grafit supaya satu palet dengan UI. */
 .leaflet-tile-pane {
+  filter: grayscale(0.3) saturate(0.85) brightness(1.04);
+}
+:root[data-theme="dark"] .leaflet-tile-pane {
   filter: grayscale(0.6) brightness(0.72) contrast(1.08) sepia(0.12);
+}
+/* Peta lokasi plant: citra adalah informasinya, jadi warna asli. */
+.map-natural .leaflet-tile-pane {
+  filter: none;
 }
 
 /* Kontrol zoom turun di bawah header overlay (desktop: 1 baris; ponsel: 2 baris). */
@@ -154,12 +376,12 @@ body {
 }
 
 .leaflet-control-attribution {
-  background: rgba(20, 21, 22, 0.75) !important;
+  background: color-mix(in oklab, var(--color-surface) 80%, transparent) !important;
   color: var(--color-muted) !important;
   font-size: 10px;
 }
 .leaflet-control-attribution a {
-  color: var(--color-copper) !important;
+  color: var(--color-accent) !important;
 }
 
 .leaflet-tooltip.plant-tooltip {
@@ -168,7 +390,7 @@ body {
   color: var(--color-text);
   border-radius: 6px;
   padding: 8px 10px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 .leaflet-tooltip.plant-tooltip::before {
   border-top-color: var(--color-border);

@@ -39,13 +39,17 @@ diisolasi di layer `domain/` dan diuji tanpa React.
 
 | Context (`src/domains/…`) | Jenis | Tanggung jawab | Widget |
 |---|---|---|---|
-| **plant** | Core | `Plant` (identitas, lokasi, owner, kapasitas, device, cuaca), **StatusPolicy**, ketersediaan inverter | Peta, kolom identitas di tabel, status badge |
+| **plant** | Core | `Plant` (identitas, lokasi, owner, kapasitas, device, cuaca, `plantType` Resort / Hotel · Mining · Plantation), **StatusPolicy**, ketersediaan inverter | Peta, kolom identitas di tabel, status badge |
 | **performance** | Core | Read model energi & revenue per plant (`PlantPerformance`), penjumlahan | Energy Generation, Revenue, Charge/Discharge, kolom energi di tabel |
 | **impact** | Supporting | `EmissionFactors` + rumus pohon / CO₂ / batubara | Environmental Benefits |
 | **telemetry** | Core | `PowerSample`/`PowerSnapshot` (PV, load, genset, baterai, grid, SoC; baterai charge +, discharge − sesuai spesifikasi), `batteryStatus`, `deriveEnergyFlow` (arah aliran ke/dari bus AC), deret 5 menit per hari | Diagram aliran energi, kartu SoC, grafik daya & SOC harian |
 | **alarm** | Supporting | `Alarm` aktif/riwayat per plant, pengurutan (aktif → severity → terbaru) | Halaman Alarm, badge jumlah alarm di sidebar |
+| **device** | Core | `DeviceRecord` (union Inverter/Battery/PCS/Meter; perangkat berdiri sendiri, tanpa hierarki), `deviceStatus`, katalog parameter per tipe (`instant` vs `energy`), `groupByUnit` (satu chart per satuan), query daftar, `sameKindDevices` (daftar sejenis di samping detail); port `DeviceRepository` + `DeviceTelemetryRepository` (pembacaan terbaru, deret 5 menit, batang energi). Mock-nya menurunkan angka dari telemetri & performa plant dan membagi energi baterai per unit | Halaman Device (daftar per tipe), detail perangkat + daftar sejenis, chart parameter |
+| **maintenance** | Supporting | `MaintenanceActivity` (tanggal, tipe Regular/Corrective, aktivitas, foto, catatan, `completedAt`), **`maintenanceStatus`** (Done/Upcoming/Pending diturunkan, tidak disimpan), `validateDraft`, `applyPatch`, `applyMaintenanceQuery`; port `MaintenanceRepository` (`findByPlant`, `create`, `update`). Mock: seed relatif hari ini + lapisan perubahan di localStorage | Halaman O&M schedule (tabel, form tambah, panel detail) |
+| **auth** | Generic (Identity & Access) | `Session`/`User`/`Credentials`, `validateCredentials`, `displayNameFromEmail`; port `AuthRepository` (`current`, `signIn`, `signInWithProvider`, `signOut`). Mock: email valid apa pun + kata sandi ≥ 6 karakter, sesi di localStorage | Halaman login (form + ilustrasi SVG beranimasi), `RequireAuth`, menu pengguna |
+| **scada** | Generic (integrasi) | `ScadaEmbed` (URL viewer pihak ketiga per plant, template `{plantId}`), validasi URL yang boleh disematkan; tidak ada diagram buatan sendiri | Halaman SCADA (iframe ber-sandbox + kontrol) |
 | **dashboard** | Komposisi (read side) | Menggabungkan context lain menjadi `DashboardOverview` dan `PlantListPage`; **tidak punya aturan bisnis sendiri** | Halaman dashboard, summary strip, Plant List |
-| **site** | Komposisi (read side) | Layout sidebar + header plant; menggabungkan plant, telemetry, performance (operating data per periode, seri energi, tarif), alarm, impact; `site/domain/chart-data.ts` memetakan read model → titik chart (murni, diuji) | Halaman Overview (tile, grafik), Info, Device, Alarm; SCADA & O&M schedule masih stub berlabel |
+| **site** | Komposisi (read side) | Layout sidebar + header plant; menggabungkan plant, telemetry, performance (operating data per periode, seri energi, tarif), alarm, impact, scada; `site/domain/chart-data.ts` memetakan read model → titik chart (murni, diuji) | Halaman Overview (tile, grafik), SCADA (embed), Info, Device, Alarm; O&M schedule masih stub berlabel |
 
 Cuaca masuk ke context `plant` sebagai value object `WeatherSnapshot` karena di dashboard
 ia hanya atribut tampilan per plant. Identity & Access belum ada (user menu masih dummy).
@@ -143,8 +147,9 @@ src/
 │       ├── application/   # use-dashboard-overview.ts, use-plant-list.ts
 │       └── ui/            # DashboardPage, SummaryStrip, BessPerformanceCard,
 │                          # PlantListPanel, PlantTable
-└── styles/index.css       # token tema grafit+tembaga (Tailwind v4 @theme), motif
-                           # panel-metal/copper-edge (@layer components), override Leaflet
+└── styles/index.css       # token tema grafit + warna merek Tynext (Tailwind v4 @theme):
+                           # primary/accent biru, secondary teal, tertiary lime, navy;
+                           # motif panel-metal/brand-edge (@layer components), override Leaflet
 ```
 
 ---

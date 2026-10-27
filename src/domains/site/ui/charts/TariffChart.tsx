@@ -5,7 +5,7 @@ import { formatMinutes, type TariffChartPoint } from "../../domain/chart-data";
 import { zoomTicks, type TimeWindow } from "../../domain/period";
 import { ChartFrame, ChartLegend, ChartTable, ChartTooltipBox } from "./ChartChrome";
 import { AXIS_TICK, CHART_CHROME, compactNumber, SERIES_COLOR, SERIES_LABEL } from "./chart-theme";
-import { useDragZoom } from "./useDragZoom";
+import { useChartZoom } from "./useChartZoom";
 import { useSeriesToggle } from "./useSeriesToggle";
 
 type TariffSeriesKey = "purchase" | "feedIn";
@@ -18,12 +18,13 @@ interface Props {
   timezoneAbbrev: string;
   window: TimeWindow;
   onZoom: (from: number, to: number) => void;
+  onReset: () => void;
 }
 
 // Tarif beli (grid) dan jual (feed-in) per jam, Rp/kWh. Dipisah dari SOC agar tidak ada sumbu ganda.
-export function TariffChart({ points, loading, nowMinutes, timezoneAbbrev, window, onZoom }: Props) {
+export function TariffChart({ points, loading, nowMinutes, timezoneAbbrev, window, onZoom, onReset }: Props) {
   const { hidden, toggle } = useSeriesToggle();
-  const { selection, handlers } = useDragZoom(onZoom);
+  const { selection, handlers, frameProps } = useChartZoom(window, onZoom, onReset);
 
   return (
     <ChartFrame
@@ -34,7 +35,8 @@ export function TariffChart({ points, loading, nowMinutes, timezoneAbbrev, windo
       {loading || !points ? (
         <Skeleton className="h-50 w-full" />
       ) : (
-        <ResponsiveContainer width="100%" height={200}>
+        <div {...frameProps}>
+          <ResponsiveContainer width="100%" height={200}>
           <LineChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} syncId="daily" accessibilityLayer {...handlers} className="select-none">
             <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
             <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
@@ -56,9 +58,10 @@ export function TariffChart({ points, loading, nowMinutes, timezoneAbbrev, windo
               <Line key={k} type="stepAfter" dataKey={k} name={SERIES_LABEL[k]} hide={hidden.has(k)} stroke={SERIES_COLOR[k]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: CHART_CHROME.surface }} isAnimationActive={false} />
             ))}
             {nowMinutes !== undefined && <ReferenceLine x={nowMinutes} stroke={CHART_CHROME.marker} strokeDasharray="4 4" />}
-            {selection && <ReferenceArea x1={selection[0]} x2={selection[1]} fill="var(--color-copper)" fillOpacity={0.12} stroke="var(--color-copper)" strokeOpacity={0.6} />}
+            {selection && <ReferenceArea x1={selection[0]} x2={selection[1]} fill="var(--color-accent)" fillOpacity={0.12} stroke="var(--color-accent)" strokeOpacity={0.6} />}
           </LineChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       )}
     </ChartFrame>
   );

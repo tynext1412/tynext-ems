@@ -5,7 +5,7 @@ describe("chart-data", () => {
   it("converts sample timestamps to minutes of the plant's local day", () => {
     expect(minutesOfDay("2026-10-26T01:05:00Z", "Asia/Makassar")).toBe(545); // 09:05 WITA
     expect(formatMinutes(545)).toBe("09:05");
-    expect(formatMinutes(1440)).toBe("00:00");
+    expect(formatMinutes(1440)).toBe("24:00"); // batas akhir hari pada sumbu
   });
 
   it("maps power samples keeping the spec sign convention", () => {

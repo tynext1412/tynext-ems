@@ -28,19 +28,22 @@ export function ChartLegend({ series, hidden, onToggle }: { series: readonly Ser
 export interface TooltipRow {
   key: SeriesKey;
   value: string;
+  // Opsional: label & warna khusus (chart parameter perangkat) menggantikan yang dari katalog seri.
+  label?: string;
+  color?: string;
 }
 
 // Tooltip gelap: judul (waktu/periode) + baris per seri dengan swatch; teks memakai token teks, bukan warna seri.
 export function ChartTooltipBox({ title, rows }: { title: string; rows: TooltipRow[] }) {
   return (
-    <div className="rounded-md border border-border bg-surface px-3 py-2 text-xs shadow-[0_10px_24px_rgba(0,0,0,0.5)]">
+    <div className="rounded-md border border-border bg-surface px-3 py-2 text-xs shadow-[0_10px_24px_rgba(27,29,31,0.18)]">
       <div className="mb-1 font-mono text-muted">{title}</div>
       <dl className="space-y-0.5">
-        {rows.map((r) => (
-          <div key={r.key} className="flex items-center justify-between gap-4">
+        {rows.map((r, i) => (
+          <div key={`${r.key}-${r.label ?? i}`} className="flex items-center justify-between gap-4">
             <dt className="flex items-center gap-2">
-              <span className="size-2 rounded-full" style={{ background: SERIES_COLOR[r.key] }} aria-hidden />
-              {SERIES_LABEL[r.key]}
+              <span className="size-2 rounded-full" style={{ background: r.color ?? SERIES_COLOR[r.key] }} aria-hidden />
+              {r.label ?? SERIES_LABEL[r.key]}
             </dt>
             <dd className="font-mono">{r.value}</dd>
           </div>

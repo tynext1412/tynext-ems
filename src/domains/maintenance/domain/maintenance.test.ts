@@ -1,0 +1,77 @@
+import { describe, expect, it } from "vitest";
+import { applyMaintenanceQuery, applyPatch, maintenanceStatus, validateDraft, type MaintenanceActivity } from "./maintenance";
+
+const item = (id: string, date: string, extra: Partial<MaintenanceActivity> = {}): MaintenanceActivity => ({
+  id,
+  plantId: "PLT-1",
+  date,
+  type: "REGULAR",
+  activity: `Aktivitas ${id}`,
+  notes: "",
+  photos: [],
+  completedAt: null,
+  createdAt: "2026-10-01T00:00:00.000Z",
+  updatedAt: "2026-10-01T00:00:00.000Z",
+  ...extra,
+});
+
+describe("maintenanceStatus", () => {
+  it("is Done when completed, Upcoming when the date is ahead, otherwise Pending", () => {
+    expect(maintenanceStatus({ date: "2026-11-01", completedAt: "2026-10-27T01:00:00Z" }, "2026-10-27")).toBe("DONE");
+    expect(maintenanceStatus({ date: "2026-10-28", completedAt: null }, "2026-10-27")).toBe("UPCOMING");
+    expect(maintenanceStatus({ date: "2026-10-27", completedAt: null }, "2026-10-27")).toBe("PENDING");
+    expect(maintenanceStatus({ date: "2026-10-01", completedAt: null }, "2026-10-27")).toBe("PENDING");
+  });
+});
+
+describe("validateDraft", () => {
+  it("requires a valid date and a non-empty activity", () => {
+    expect(validateDraft({ date: "", type: "REGULAR", activity: "x", notes: "" })).toHaveProperty("date");
+    expect(validateDraft({ date: "2026-13-40", type: "REGULAR", activity: "x", notes: "" })).toHaveProperty("date");
+    expect(validateDraft({ date: "2026-10-27", type: "REGULAR", activity: "   ", notes: "" })).toHaveProperty("activity");
+    expect(validateDraft({ date: "2026-10-27", type: "REGULAR", activity: "a".repeat(201), notes: "" })).toHaveProperty("activity");
+    expect(validateDraft({ date: "2026-10-27", type: "CORRECTIVE", activity: "Ganti kipas", notes: "ok" })).toEqual({});
+  });
+});
+
+describe("applyPatch", () => {
+  it("marks done, edits notes, and adds/removes photos without touching other fields", () => {
+    const base = item("A", "2026-10-20", { photos: [{ id: "p1", name: "a.jpg", dataUrl: "data:,a", uploadedAt: "x" }] });
+    const next = applyPatch(
+      base,
+      { completedAt: "2026-10-27T02:00:00Z", notes: "selesai", removePhotoIds: ["p1"], addPhotos: [{ id: "p2", name: "b.jpg", dataUrl: "data:,b", uploadedAt: "y" }] },
+      "2026-10-27T02:00:00Z",
+    );
+    expect(next.completedAt).toBe("2026-10-27T02:00:00Z");
+    expect(next.notes).toBe("selesai");
+    expect(next.photos.map((p) => p.id)).toEqual(["p2"]);
+    expect(next.updatedAt).toBe("2026-10-27T02:00:00Z");
+    expect(next.activity).toBe(base.activity);
+    expect(applyPatch(next, { completedAt: null }, "z").completedAt).toBeNull();
+  });
+});
+
+describe("applyMaintenanceQuery", () => {
+  const items = [
+    item("done", "2026-10-01", { completedAt: "2026-10-01T05:00:00Z" }),
+    item("pending", "2026-10-20"),
+    item("upcoming", "2026-11-05", { type: "CORRECTIVE" }),
+    item("upcoming2", "2026-11-20"),
+  ];
+  const today = "2026-10-27";
+
+  it("counts per status after the type filter and sorts newest date first", () => {
+    const all = applyMaintenanceQuery(items, { type: "ALL", status: "ALL", page: 1, pageSize: 10 }, today);
+    expect(all.counts).toEqual({ DONE: 1, PENDING: 1, UPCOMING: 2 });
+    expect(all.rows.map((r) => r.id)).toEqual(["upcoming2", "upcoming", "pending", "done"]);
+    const corrective = applyMaintenanceQuery(items, { type: "CORRECTIVE", status: "ALL", page: 1, pageSize: 10 }, today);
+    expect(corrective.counts).toEqual({ DONE: 0, PENDING: 0, UPCOMING: 1 });
+  });
+
+  it("filters by status and clamps the page", () => {
+    const r = applyMaintenanceQuery(items, { type: "ALL", status: "UPCOMING", page: 9, pageSize: 1 }, today);
+    expect(r.total).toBe(2);
+    expect(r.page).toBe(2);
+    expect(r.rows.map((x) => x.id)).toEqual(["upcoming"]);
+  });
+});

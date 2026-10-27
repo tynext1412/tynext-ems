@@ -4,7 +4,7 @@ import { formatMinutes, type DailyPowerPoint } from "../../domain/chart-data";
 import { zoomTicks, type TimeWindow } from "../../domain/period";
 import { ChartFrame, ChartTable, ChartTooltipBox } from "./ChartChrome";
 import { AXIS_TICK, CHART_CHROME, SERIES_COLOR } from "./chart-theme";
-import { useDragZoom } from "./useDragZoom";
+import { useChartZoom } from "./useChartZoom";
 
 interface Props {
   points: DailyPowerPoint[] | undefined;
@@ -14,11 +14,12 @@ interface Props {
   hasBattery: boolean;
   window: TimeWindow;
   onZoom: (from: number, to: number) => void;
+  onReset: () => void;
 }
 
 // SOC 0–100 % sepanjang hari; satu seri, jadi tanpa kotak legenda (judul sudah menyebutnya).
-export function SocChart({ points, loading, nowMinutes, timezoneAbbrev, hasBattery, window, onZoom }: Props) {
-  const { selection, handlers } = useDragZoom(onZoom);
+export function SocChart({ points, loading, nowMinutes, timezoneAbbrev, hasBattery, window, onZoom, onReset }: Props) {
+  const { selection, handlers, frameProps } = useChartZoom(window, onZoom, onReset);
   const visible = points?.filter((p) => p.t >= window[0] && p.t <= window[1]);
 
   return (
@@ -33,7 +34,8 @@ export function SocChart({ points, loading, nowMinutes, timezoneAbbrev, hasBatte
       ) : points.length === 0 ? (
         <p className="grid h-50 place-items-center text-sm text-muted">Belum ada sampel SOC untuk tanggal ini.</p>
       ) : (
-        <ResponsiveContainer width="100%" height={200}>
+        <div {...frameProps}>
+          <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} syncId="daily" accessibilityLayer {...handlers} className="select-none">
             <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
             <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
@@ -46,9 +48,10 @@ export function SocChart({ points, loading, nowMinutes, timezoneAbbrev, hasBatte
             />
             <Area type="monotone" dataKey="soc" name="SOC" stroke={SERIES_COLOR.battery} strokeWidth={2} fill={SERIES_COLOR.battery} fillOpacity={0.1} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: CHART_CHROME.surface }} isAnimationActive={false} />
             {nowMinutes !== undefined && <ReferenceLine x={nowMinutes} stroke={CHART_CHROME.marker} strokeDasharray="4 4" />}
-            {selection && <ReferenceArea x1={selection[0]} x2={selection[1]} fill="var(--color-copper)" fillOpacity={0.12} stroke="var(--color-copper)" strokeOpacity={0.6} />}
+            {selection && <ReferenceArea x1={selection[0]} x2={selection[1]} fill="var(--color-accent)" fillOpacity={0.12} stroke="var(--color-accent)" strokeOpacity={0.6} />}
           </AreaChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       )}
     </ChartFrame>
   );

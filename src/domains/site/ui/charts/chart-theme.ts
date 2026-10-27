@@ -1,5 +1,5 @@
-// Warna seri chart: slot palet kategorikal (mode gelap) dalam URUTAN TETAP yang
-// lolos validator dataviz di surface #1b1d1f (adjacent CVD ΔE ≥ 8).
+// Warna seri chart: slot palet kategorikal dalam URUTAN TETAP yang lolos validator
+// dataviz di surface putih #ffffff (adjacent CVD ΔE ≥ 8,4; kontras ≥ 3:1).
 // Warna mengikuti entitas, bukan urutan tampil: Grid selalu biru, PV selalu oranye, dst.
 export const SERIES_COLOR = {
   grid: "#3987e5",
@@ -23,13 +23,14 @@ export const SERIES_LABEL: Record<SeriesKey, string> = {
   feedIn: "Feed-in tariff",
 };
 
-// Chrome chart: grid hairline satu langkah di atas surface, tinta sumbu muted.
+// Chrome chart memakai token tema (var CSS diterima atribut presentasi SVG) supaya ikut
+// berubah saat tema diganti: grid hairline = surface-2, sumbu = border, tinta = muted.
 export const CHART_CHROME = {
-  surface: "#1b1d1f",
-  grid: "#262a2e",
-  axis: "#35393d",
-  ink: "#a19c95",
-  marker: "#a19c95",
+  surface: "var(--color-surface)",
+  grid: "var(--color-surface-2)",
+  axis: "var(--color-border)",
+  ink: "var(--color-muted)",
+  marker: "var(--color-muted)",
 } as const;
 
 export const AXIS_TICK = { fill: CHART_CHROME.ink, fontSize: 11 } as const;

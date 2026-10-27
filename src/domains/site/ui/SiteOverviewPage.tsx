@@ -10,7 +10,7 @@ import { Panel } from "@/shared/ui/Panel";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { useSiteContext } from "../application/use-site";
 import { BatterySocCard } from "./BatterySocCard";
-import { EnergyFlowDiagram } from "./EnergyFlowDiagram";
+import { EnergyFlowView } from "./EnergyFlowView";
 import { OperatingDataPanel } from "./OperatingDataPanel";
 import { PlantInfoCard } from "./PlantInfoCard";
 import { WeatherCard } from "./WeatherCard";
@@ -50,14 +50,17 @@ export function SiteOverviewPage() {
             )
           }
         >
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px]">
-            <EnergyFlowDiagram snapshot={snapshot} hasBattery={hasBattery} />
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              <MainTile label="Daily Energy Generation" value={dailyGen?.value} unit={dailyGen?.unit} loading={daily.isPending} />
-              <MainTile label="Lifetime Energy Production" value={lifetimeGen?.value} unit={lifetimeGen?.unit} loading={performances.isPending} />
-              <MainTile label="Total Revenue" value={revenue && `Rp ${revenue.value}`} unit={revenue?.unit} loading={performances.isPending} />
-            </div>
-          </div>
+          <EnergyFlowView
+            plant={plant}
+            snapshot={snapshot}
+            stats={
+              <>
+                <MainTile label="Daily Energy Generation" value={dailyGen?.value} unit={dailyGen?.unit} loading={daily.isPending} />
+                <MainTile label="Lifetime Energy Production" value={lifetimeGen?.value} unit={lifetimeGen?.unit} loading={performances.isPending} />
+                <MainTile label="Total Revenue" value={revenue && `Rp ${revenue.value}`} unit={revenue?.unit} loading={performances.isPending} />
+              </>
+            }
+          />
         </Panel>
 
         <OperatingDataPanel plant={plant} period={period} onPeriodChange={setPeriod} />
@@ -83,9 +86,10 @@ export function SiteOverviewPage() {
   );
 }
 
+// Kotak angka harian: menumpang di sisi kanan adegan 3D (ditumpuk) atau tiga kolom di bawah diagram.
 function MainTile({ label, value, unit, loading }: { label: string; value?: string; unit?: string; loading?: boolean }) {
   return (
-    <div className="rounded-md border border-border bg-bg px-4 py-3">
+    <div className="rounded-md border border-border bg-surface/95 px-4 py-3">
       {loading || value === undefined ? (
         <Skeleton className="h-7 w-24" />
       ) : (

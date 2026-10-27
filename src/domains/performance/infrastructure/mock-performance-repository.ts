@@ -56,6 +56,7 @@ function buildPerformance(fixture: PlantFixture, index: number, now: Date): Plan
     chargeKWh: round2(chargeKWh),
     dischargeKWh: round2(dischargeKWh),
     tariffIDRPerKWh,
+    purchaseTariffIDRPerKWh: PURCHASE_LWBP,
     revenueIDR: round2(generationKWh * tariffIDRPerKWh),
   };
 }
@@ -168,7 +169,7 @@ export class MockPerformanceRepository implements PerformanceRepository {
     const start = localMidnightUtc(date, ctx.fixture.location.timezone);
     return Array.from({ length: 25 }, (_, hour) => ({
       at: new Date(start.getTime() + hour * 3_600_000).toISOString(),
-      purchaseIDRPerKWh: hour >= 17 && hour < 22 ? round2(PURCHASE_LWBP * PURCHASE_WBP_FACTOR) : PURCHASE_LWBP,
+      purchaseIDRPerKWh: hour >= 17 && hour < 22 ? round2(ctx.lifetime.purchaseTariffIDRPerKWh * PURCHASE_WBP_FACTOR) : ctx.lifetime.purchaseTariffIDRPerKWh,
       feedInIDRPerKWh: ctx.lifetime.tariffIDRPerKWh,
     }));
   }
