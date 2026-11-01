@@ -114,7 +114,7 @@ export function SkeletonRows({ rows, cols }: { rows: number; cols: number }) {
   return (
     <>
       <tr className="sr-only">
-        <td colSpan={cols}>Memuat data…</td>
+        <td colSpan={cols}>Loading data…</td>
       </tr>
       {Array.from({ length: rows }, (_, i) => (
         <Tr key={i} aria-hidden>

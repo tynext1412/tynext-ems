@@ -1,6 +1,7 @@
 import { addDays, hashSeed, toDateKey } from "@/shared/domain/time";
 import type { PlantRepository } from "../application/plant-repository";
 import type { Plant, PlantId, WeatherCondition, WeatherForecastDay, WeatherReport } from "../domain/plant";
+import { applyInfo, validateInfo, type PlantInfoUpdate } from "../domain/plant-info";
 import { derivePlantStatus } from "../domain/status-policy";
 import { plantFixtures, type PlantFixture } from "./fixtures";
 
@@ -41,6 +42,15 @@ export class MockPlantRepository implements PlantRepository {
     await delay(SIMULATED_LATENCY_MS);
     const found = this.plants.find((p) => p.id === id);
     return found ? clone(found) : null;
+  }
+
+  async updateInfo(id: PlantId, info: PlantInfoUpdate): Promise<Plant> {
+    await delay(SIMULATED_LATENCY_MS);
+    const index = this.plants.findIndex((p) => p.id === id);
+    if (index < 0) throw new Error(`Plant ${id} not found`);
+    if (Object.keys(validateInfo(info)).length > 0) throw new Error("Invalid plant data");
+    this.plants[index] = applyInfo(this.plants[index], info);
+    return clone(this.plants[index]);
   }
 
   // Cuaca dummy: hari ini dari snapshot fixture, prakiraan bergeser deterministik per tanggal.

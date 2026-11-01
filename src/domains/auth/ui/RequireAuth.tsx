@@ -20,7 +20,7 @@ export function RequireAuth() {
     return (
       <div className="grid h-dvh place-items-center" aria-busy>
         <Skeleton className="h-6 w-40" />
-        <span className="sr-only">Memeriksa sesi…</span>
+        <span className="sr-only">Checking session…</span>
       </div>
     );
   }
@@ -32,8 +32,8 @@ export function RequireAuth() {
       return (
         <Dialog
           open
-          title="Sesi Anda telah berakhir"
-          description="Masuk kembali untuk melanjutkan. Anda akan dikembalikan ke halaman yang sama."
+          title="Your session has ended"
+          description="Sign in again to continue. You'll return to the same page."
           actions={
             <Button variant="primary" onClick={() => navigate("/login", { replace: true, state: { from } })}>
               Sign in again

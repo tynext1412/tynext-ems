@@ -20,11 +20,11 @@ describe("time", () => {
     expect(formatDateKey("2026-10-26")).toBe("26/10/2026");
   });
 
-  it("formats relative time in Indonesian", () => {
+  it("formats relative time in English", () => {
     const now = new Date("2026-10-26T08:00:00Z").getTime();
-    expect(formatRelative("2026-10-26T07:58:00Z", now)).toBe("2 menit lalu");
-    expect(formatRelative("2026-10-26T07:59:50Z", now)).toBe("baru saja");
-    expect(formatRelative("2026-10-26T05:00:00Z", now)).toBe("3 jam lalu");
+    expect(formatRelative("2026-10-26T07:58:00Z", now)).toBe("2 min ago");
+    expect(formatRelative("2026-10-26T07:59:50Z", now)).toBe("just now");
+    expect(formatRelative("2026-10-26T05:00:00Z", now)).toBe("3 h ago");
   });
 
   it("resolves zone offsets and local midnight", () => {

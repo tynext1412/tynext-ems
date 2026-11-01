@@ -16,6 +16,6 @@ export function DeviceRepositoryProvider({ repositories, children }: { repositor
 // eslint-disable-next-line react-refresh/only-export-components
 export function useDeviceRepositories(): DeviceRepositories {
   const repos = useContext(DeviceRepositoryContext);
-  if (!repos) throw new Error("DeviceRepositoryProvider belum dipasang di composition root");
+  if (!repos) throw new Error("DeviceRepositoryProvider is not mounted in the composition root");
   return repos;
 }

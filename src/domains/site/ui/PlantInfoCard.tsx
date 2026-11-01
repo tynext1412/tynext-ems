@@ -37,10 +37,10 @@ export function PlantInfoCard({ plant }: { plant: Plant }) {
           <Row label="Address">{plant.location.address}</Row>
           <Row label="Coordinates">
             <span className="flex items-center gap-1">
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-brand hover:underline" title="Buka di Google Maps">
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-brand hover:underline" title="Open in Google Maps">
                 {coords}
               </a>
-              <CopyButton value={coords} label="koordinat" className="size-5" />
+              <CopyButton value={coords} label="coordinates" className="size-5" />
             </span>
           </Row>
         </dl>

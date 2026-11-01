@@ -27,7 +27,7 @@ describe("mock auth repository", () => {
   it("rejects invalid credentials and grants admin to admin@ addresses", async () => {
     const repo = new MockAuthRepository(null);
     await expect(repo.signIn({ email: "x", password: "rahasia" })).rejects.toThrow(/email/i);
-    await expect(repo.signIn({ email: "a@b.co", password: "123" })).rejects.toThrow(/Kata sandi/);
+    await expect(repo.signIn({ email: "a@b.co", password: "123" })).rejects.toThrow(/Password/);
     expect((await repo.signIn({ email: "admin@tynext.id", password: "rahasia" })).user.role).toBe("ADMIN");
     expect((await repo.signInWithProvider("google")).user.role).toBe("VIEWER");
   });

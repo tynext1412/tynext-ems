@@ -19,14 +19,14 @@ export function SiteScadaPage() {
       {isPending && (
         <div className="flex-1" aria-busy>
           <Skeleton className="h-full min-h-80 w-full" />
-          <span className="sr-only">Memuat konfigurasi SCADA…</span>
+          <span className="sr-only">Loading SCADA configuration…</span>
         </div>
       )}
 
       {error && (
         <Alert
           tone="danger"
-          title="Konfigurasi SCADA tidak bisa dimuat"
+          title="SCADA configuration couldn't load"
           action={
             <Button size="sm" variant="tertiary" onClick={() => void refetch()}>
               Try again

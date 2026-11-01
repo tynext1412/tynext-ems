@@ -91,7 +91,7 @@ export function SiteSwitcher({ current, trailing }: Props) {
           <span className="truncate">{current.name}</span>
           {trailing}
           <ChevronDown className={cn("size-5 shrink-0 text-muted transition-transform", open && "rotate-180")} aria-hidden />
-          <span className="sr-only">, pilih site lain</span>
+          <span className="sr-only">, choose another site</span>
         </button>
       </h1>
 
@@ -114,8 +114,8 @@ export function SiteSwitcher({ current, trailing }: Props) {
                 aria-controls={listId}
                 aria-activedescendant={items[highlight] ? `${listId}-${items[highlight].id}` : undefined}
                 aria-autocomplete="list"
-                aria-label="Cari site"
-                placeholder="Cari nama site"
+                aria-label="Search sites"
+                placeholder="Search site name"
                 className="w-full pl-8"
                 value={query}
                 onChange={(e) => {
@@ -125,20 +125,20 @@ export function SiteSwitcher({ current, trailing }: Props) {
               />
             </div>
 
-            <ul id={listId} role="listbox" aria-label="Daftar site" className="mt-2 max-h-72 overflow-y-auto overscroll-contain">
+            <ul id={listId} role="listbox" aria-label="Site list" className="mt-2 max-h-72 overflow-y-auto overscroll-contain">
               {isPending && (
                 <li className="px-2 py-2" aria-busy>
                   <Skeleton className="h-5 w-48" />
-                  <span className="sr-only">Memuat daftar site…</span>
+                  <span className="sr-only">Loading site list…</span>
                 </li>
               )}
               {error && (
                 <li role="alert" className="px-2 py-2 text-sm text-danger">
-                  Daftar site tidak bisa dimuat: {error.message}.
+                  The site list couldn't load: {error.message}.
                 </li>
               )}
               {!isPending && !error && items.length === 0 && (
-                <li className="px-2 py-3 text-sm text-muted">Tidak ada site dengan nama "{query}".</li>
+                <li className="px-2 py-3 text-sm text-muted">No sites named "{query}".</li>
               )}
               {items.map((plant, i) => {
                 const active = plant.id === current.id;
@@ -163,7 +163,7 @@ export function SiteSwitcher({ current, trailing }: Props) {
                         {plant.location.address} · {PLANT_STATUS_LABEL[plant.status]}
                       </span>
                     </span>
-                    {active && <Check className="size-4 shrink-0 text-brand" aria-label="site saat ini" />}
+                    {active && <Check className="size-4 shrink-0 text-brand" aria-label="current site" />}
                   </li>
                 );
               })}

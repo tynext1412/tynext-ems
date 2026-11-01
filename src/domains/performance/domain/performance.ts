@@ -83,7 +83,8 @@ export interface OperatingData {
 export interface EnergyBucket {
   key: string; // YYYY-MM-DD | YYYY-MM | YYYY
   pvProductionKWh: KWh;
-  gridSupplyKWh: KWh;
+  gridSupplyKWh: KWh; // impor dari grid
+  gridExportKWh: KWh; // ekspor (feed-in) ke grid
   chargeKWh: KWh;
   dischargeKWh: KWh;
   generatorSupplyKWh: KWh;
@@ -104,11 +105,12 @@ export function sumEnergyBuckets(buckets: readonly EnergyBucket[]): Omit<EnergyB
     (acc, b) => ({
       pvProductionKWh: acc.pvProductionKWh + b.pvProductionKWh,
       gridSupplyKWh: acc.gridSupplyKWh + b.gridSupplyKWh,
+      gridExportKWh: acc.gridExportKWh + b.gridExportKWh,
       chargeKWh: acc.chargeKWh + b.chargeKWh,
       dischargeKWh: acc.dischargeKWh + b.dischargeKWh,
       generatorSupplyKWh: acc.generatorSupplyKWh + b.generatorSupplyKWh,
       loadKWh: acc.loadKWh + b.loadKWh,
     }),
-    { pvProductionKWh: 0, gridSupplyKWh: 0, chargeKWh: 0, dischargeKWh: 0, generatorSupplyKWh: 0, loadKWh: 0 },
+    { pvProductionKWh: 0, gridSupplyKWh: 0, gridExportKWh: 0, chargeKWh: 0, dischargeKWh: 0, generatorSupplyKWh: 0, loadKWh: 0 },
   );
 }

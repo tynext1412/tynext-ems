@@ -23,15 +23,16 @@ interface Props {
   today: string;
   // Tanpa activity = form tambah; dengan activity = form edit (jadwal, tipe, aktivitas, catatan).
   activity?: MaintenanceActivity;
+  initialDate?: string; // tanggal awal form tambah (mis. dari tombol "+" di kalender); bawaan hari ini
   onSaved: (activity: MaintenanceActivity) => void;
 }
 
 // Drawer "Add O&M Activity" / "Edit Activity". Status tidak dipilih di sini: Upcoming/Pending mengikuti
 // tanggal, Done ditandai dari panel detail setelah pekerjaan selesai.
-export function MaintenanceFormDrawer({ open, onClose, plant, today, activity, onSaved }: Props) {
+export function MaintenanceFormDrawer({ open, onClose, plant, today, activity, initialDate, onSaved }: Props) {
   return (
     <Drawer open={open} onClose={onClose} title={activity ? "Edit Activity" : "Add O&M Activity"} footer={<FormFooter formId={activity ? `edit-${activity.id}` : "om-create"} editing={Boolean(activity)} onCancel={onClose} />}>
-      {open && <MaintenanceForm key={activity?.id ?? "new"} plant={plant} today={today} activity={activity} onSaved={onSaved} />}
+      {open && <MaintenanceForm key={activity?.id ?? `new-${initialDate ?? today}`} plant={plant} today={today} activity={activity} initialDate={initialDate} onSaved={onSaved} />}
     </Drawer>
   );
 }
@@ -48,13 +49,13 @@ function FormFooter({ formId, editing, onCancel }: { formId: string; editing: bo
   );
 }
 
-function MaintenanceForm({ plant, today, activity, onSaved }: Omit<Props, "open" | "onClose">) {
+function MaintenanceForm({ plant, today, activity, initialDate, onSaved }: Omit<Props, "open" | "onClose">) {
   const create = useCreateMaintenance(plant.id);
   const update = useUpdateMaintenance(plant.id);
   const id = useId();
   const formId = activity ? `edit-${activity.id}` : "om-create";
   const [draft, setDraft] = useState<MaintenanceDraft>(
-    activity ? { date: activity.date, type: activity.type, activity: activity.activity, notes: activity.notes } : { date: today, type: "REGULAR", activity: "", notes: "" },
+    activity ? { date: activity.date, type: activity.type, activity: activity.activity, notes: activity.notes } : { date: initialDate ?? today, type: "REGULAR", activity: "", notes: "" },
   );
   const [errors, setErrors] = useState<MaintenanceDraftErrors>({});
   const [touched, setTouched] = useState(false);
@@ -101,7 +102,7 @@ function MaintenanceForm({ plant, today, activity, onSaved }: Omit<Props, "open"
       </Field>
 
       {error && (
-        <Alert tone="danger" title="Gagal menyimpan">
+        <Alert tone="danger" title="Couldn't save">
           {error.message}
         </Alert>
       )}

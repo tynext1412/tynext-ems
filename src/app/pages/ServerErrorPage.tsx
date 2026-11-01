@@ -13,14 +13,14 @@ interface Props {
 export function ServerErrorPage({ referenceCode, onRetry, error }: Props) {
   return (
     <main className="grid h-dvh place-items-center bg-bg p-6">
-      <div className="w-full max-w-lg rounded-3xl bg-surface p-6 shadow-surface">
+      <div className="w-full max-w-lg rounded-3xl bg-surface p-6">
         <EmptyState
           illustration="server-error"
           size="lg"
           title="Something broke on our end"
           description={
             <>
-              Terjadi galat yang tidak terduga. Coba lagi, atau kembali ke dashboard.
+              Something unexpected went wrong. Try again, or go back to the dashboard.
               {error?.message && <span className="mt-2 block font-mono text-xs text-muted">{error.message}</span>}
             </>
           }
@@ -37,7 +37,7 @@ export function ServerErrorPage({ referenceCode, onRetry, error }: Props) {
         />
         <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted">
           Reference code <span className="font-mono text-text">{referenceCode}</span>
-          <CopyButton value={referenceCode} label="kode referensi" />
+          <CopyButton value={referenceCode} label="reference code" />
         </p>
       </div>
     </main>

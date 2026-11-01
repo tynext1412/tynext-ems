@@ -1,5 +1,5 @@
 import { addDays, localMidnightUtc } from "@/shared/domain/time";
-import type { Device, Plant, PlantType, WeatherCondition } from "../domain/plant";
+import type { Device, MeterType, Plant, PlantType, WeatherCondition } from "../domain/plant";
 
 // Data dummy: 14 plant tersebar dari Medan sampai Jayapura.
 // Status TIDAK ditulis di sini; mock repository menurunkannya dari devices
@@ -8,6 +8,7 @@ export type PlantFixture = Omit<Plant, "status">;
 
 interface DeviceSpec {
   vendor: string;
+  plantType: PlantType;
   inverters: number;
   offlineInverters?: number; // sebagian inverter terputus → ALARM
   alarms?: number; // alarm aktif di inverter pertama → ALARM
@@ -15,8 +16,10 @@ interface DeviceSpec {
   hasBattery: boolean;
 }
 
-// Inverter, baterai, dan meter berdiri sendiri (tidak saling terhubung); semuanya
+// Inverter, baterai, meter, dan EMI berdiri sendiri (tidak saling terhubung); semuanya
 // melapor lewat satu datalogger. Baterai ±1 unit per 100 kWh, satu PCS per 2 unit baterai.
+// Meter: STG, PV, beban, dan power sensor (beban bantu) di semua plant; ESS bila ada baterai;
+// DEG di site tambang (genset diesel cadangan). Satu EMI / weather station per plant.
 function makeDevices(plantId: string, spec: DeviceSpec & { batteryKWh: number }): Device[] {
   const connected = (offline: boolean) => !(spec.allOffline || offline);
   const devices: Device[] = [];
@@ -53,7 +56,18 @@ function makeDevices(plantId: string, spec: DeviceSpec & { batteryKWh: number })
     });
   }
 
-  devices.push({ id: `${plantId}-MTR-01`, type: "METER", vendor: "Acrel", connected: connected(false), activeAlarms: 0 });
+  const meterTypes: MeterType[] = ["STG", "PV", "LOAD", ...(batteryUnits > 0 ? (["ESS"] as const) : []), ...(spec.plantType === "MINING" ? (["DEG"] as const) : []), "POWER_SENSOR"];
+  meterTypes.forEach((meterType, i) => {
+    devices.push({
+      id: `${plantId}-MTR-${String(i + 1).padStart(2, "0")}`,
+      type: "METER",
+      meterType,
+      vendor: meterType === "POWER_SENSOR" ? spec.vendor : "Acrel",
+      connected: connected(false),
+      activeAlarms: 0,
+    });
+  });
+  devices.push({ id: `${plantId}-EMI-01`, type: "EMI", vendor: spec.vendor, connected: connected(false), activeAlarms: 0 });
   devices.push({ id: `${plantId}-LOG-01`, type: "LOGGER", vendor: "Tynext", connected: connected(false), activeAlarms: 0 });
 
   return devices;
@@ -74,7 +88,7 @@ interface FixtureSpec {
   inverterKW: number;
   batteryKWh: number;
   modulePowerW: number;
-  devices: Omit<DeviceSpec, "hasBattery">;
+  devices: Omit<DeviceSpec, "hasBattery" | "plantType">;
   weather: { condition: WeatherCondition; temperatureC: number };
   commissionedAt: string;
 }
@@ -214,7 +228,7 @@ export const plantFixtures: PlantFixture[] = specs.map((s) => ({
   capacity: { pvKWp: s.pvKWp, inverterKW: s.inverterKW, batteryKWh: s.batteryKWh },
   moduleCount: Math.round((s.pvKWp * 1000) / s.modulePowerW),
   modulePowerW: s.modulePowerW,
-  devices: makeDevices(s.id, { ...s.devices, hasBattery: s.batteryKWh > 0, batteryKWh: s.batteryKWh }),
+  devices: makeDevices(s.id, { ...s.devices, plantType: s.plantType, hasBattery: s.batteryKWh > 0, batteryKWh: s.batteryKWh }),
   weather: { ...s.weather, observedAt: OBSERVED_AT },
   commissionedAt: s.commissionedAt,
   gridConnectedAt: s.commissionedAt,

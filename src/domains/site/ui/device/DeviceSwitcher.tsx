@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowLeftRight, BatteryCharging, ChevronDown, Gauge, Zap } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, BatteryCharging, ChevronDown, CloudSun, Gauge, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { usePlantDevices } from "@/domains/device/application/use-devices";
@@ -17,7 +17,7 @@ interface Props {
   backTo: string;
 }
 
-const ICON: Record<DeviceKind, typeof Zap> = { INVERTER: Zap, BATTERY: BatteryCharging, PCS: ArrowLeftRight, METER: Gauge };
+const ICON: Record<DeviceKind, typeof Zap> = { INVERTER: Zap, BATTERY: BatteryCharging, PCS: ArrowLeftRight, METER: Gauge, EMI: CloudSun };
 const DOT: Record<DeviceStatus, string> = { ONLINE: "bg-ok", ALARM: "bg-warn", OFFLINE: "bg-danger" };
 
 // Daftar perangkat sejenis di samping detail (semua inverter, atau semua baterai, atau semua
@@ -33,7 +33,7 @@ export function DeviceSwitcher({ plant, kind, backTo }: Props) {
   const loading = devices.isPending || !kind;
 
   return (
-    <aside className="rounded-[20px] bg-surface-2 p-1.5 md:sticky md:top-0 md:max-h-[calc(100dvh-10rem)] md:overflow-y-auto" aria-label="Perangkat sejenis">
+    <aside className="rounded-[20px] bg-surface-2 p-1.5 md:sticky md:top-0 md:max-h-[calc(100dvh-10rem)] md:overflow-y-auto" aria-label="Devices of the same type">
       <div className="flex items-center justify-between gap-2 px-2 py-1">
         {/* Relatif terhadap rute: dari device/:deviceId, ".." = /plants/:plantId */}
         <Link to={backTo} className="inline-flex h-9 items-center gap-2 text-sm font-medium text-muted hover:text-text">
@@ -47,14 +47,14 @@ export function DeviceSwitcher({ plant, kind, backTo }: Props) {
           aria-controls="device-switcher-body"
           onClick={() => setMobileOpen((o) => !o)}
         >
-          {kind ? `${DEVICE_KIND_LABEL[kind]} lain` : "Perangkat lain"}
+          {kind ? `Other ${DEVICE_KIND_LABEL[kind]} devices` : "Other devices"}
           {total > 0 && <span className="font-mono">({total})</span>}
           <ChevronDown className={cn("size-4 transition-transform", mobileOpen && "rotate-180")} aria-hidden />
         </button>
       </div>
 
       <div id="device-switcher-body" className={cn("rounded-2xl bg-surface p-2", mobileOpen ? "block" : "hidden md:block")}>
-        <SearchField value={search} onChange={setSearch} placeholder="Search name or SN" aria-label="Cari perangkat sejenis" className="h-9" />
+        <SearchField value={search} onChange={setSearch} placeholder="Search name or SN" aria-label="Search devices of this type" className="h-9" />
 
         {kind && !devices.isPending && (
           <p className="mt-3 flex items-baseline justify-between px-2 text-xs text-muted">
@@ -68,20 +68,20 @@ export function DeviceSwitcher({ plant, kind, backTo }: Props) {
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-3/4" />
-            <span className="sr-only">Memuat daftar perangkat…</span>
+            <span className="sr-only">Loading device list…</span>
           </div>
         )}
         {devices.error && (
           <div className="mt-3 px-2">
             <p role="alert" className="mb-2 text-xs text-danger-text">
-              Daftar perangkat tidak bisa dimuat.
+              The device list couldn't load.
             </p>
             <Button size="sm" onClick={() => void devices.refetch()}>
               Retry
             </Button>
           </div>
         )}
-        {!loading && items.length === 0 && <p className="mt-3 px-2 text-xs text-muted">Tidak ada perangkat yang cocok dengan “{search.trim()}”.</p>}
+        {!loading && items.length === 0 && <p className="mt-3 px-2 text-xs text-muted">No devices match “{search.trim()}”.</p>}
         {!loading && items.length > 0 && (
           <ul className="mt-1.5 grid gap-1 text-sm">
             {items.map((d) => {

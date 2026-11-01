@@ -104,7 +104,7 @@ export function SiteAlarmPage() {
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <SearchField value={searchDraft} onChange={setSearchDraft} onSubmit={applySearch} placeholder="Search name or serial number" aria-label="Cari alarm" wrapperClassName="w-[280px] max-w-full" />
+        <SearchField value={searchDraft} onChange={setSearchDraft} onSubmit={applySearch} placeholder="Search name or serial number" aria-label="Search alarms" wrapperClassName="w-[280px] max-w-full" />
         <Button variant="primary" onClick={applySearch}>
           Search
         </Button>

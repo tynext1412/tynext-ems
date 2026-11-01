@@ -12,18 +12,19 @@ export const ALARM_SEVERITIES: readonly AlarmSeverity[] = ["CRITICAL", "WARNING"
 
 export type AlarmDeviceType = DeviceType | "UNKNOWN";
 
-export const ALARM_DEVICE_TYPES: readonly DeviceType[] = ["INVERTER", "BATTERY", "PCS", "METER", "LOGGER"];
+export const ALARM_DEVICE_TYPES: readonly DeviceType[] = ["INVERTER", "BATTERY", "PCS", "METER", "EMI", "LOGGER"];
 
 export const ALARM_DEVICE_TYPE_LABEL: Record<AlarmDeviceType, string> = {
   INVERTER: "Inverter",
   BATTERY: "Battery",
   PCS: "PCS",
   METER: "Meter",
+  EMI: "EMI / Weather Station",
   LOGGER: "Data Logger",
   UNKNOWN: "Device",
 };
 
-const SEGMENT_TO_TYPE: Record<string, DeviceType> = { INV: "INVERTER", BAT: "BATTERY", PCS: "PCS", MTR: "METER", LOG: "LOGGER" };
+const SEGMENT_TO_TYPE: Record<string, DeviceType> = { INV: "INVERTER", BAT: "BATTERY", PCS: "PCS", MTR: "METER", EMI: "EMI", LOG: "LOGGER" };
 
 // Jenis perangkat dari id device ("PLT-003-INV-01" → INVERTER). Alarm hanya membawa id device.
 export function deviceTypeFromId(deviceId: string): AlarmDeviceType {

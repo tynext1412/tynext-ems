@@ -6,7 +6,7 @@ import type { ScadaEmbed } from "../domain/scada-embed";
 // (bukan SCADA sungguhan) untuk membuktikan jalur embed; plant lain belum dikonfigurasi.
 const EMBED_BY_PLANT: Record<string, ScadaEmbed> = {
   "PLT-001": {
-    provider: "Placeholder (bukan SCADA)",
+    provider: "Placeholder (not SCADA)",
     url: "/scada-placeholder.html?plant={plantId}",
     allowFullscreen: true,
   },

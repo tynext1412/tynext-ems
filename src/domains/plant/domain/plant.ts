@@ -13,11 +13,15 @@ export const PLANT_STATUS_LABEL: Record<PlantStatus, string> = {
   OFFLINE: "Offline",
 };
 
-export type DeviceType = "INVERTER" | "BATTERY" | "PCS" | "METER" | "LOGGER";
+export type DeviceType = "INVERTER" | "BATTERY" | "PCS" | "METER" | "EMI" | "LOGGER";
+
+// Jenis meter menurut titik ukurnya: STG, DEG (genset diesel), ESS (baterai), PV, beban, dan power sensor.
+export type MeterType = "STG" | "DEG" | "ESS" | "PV" | "LOAD" | "POWER_SENSOR";
 
 export interface Device {
   id: string;
   type: DeviceType;
+  meterType?: MeterType; // hanya untuk type METER
   vendor: string;
   connected: boolean;
   activeAlarms: number;

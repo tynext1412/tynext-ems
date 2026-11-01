@@ -62,7 +62,7 @@ export function PlantListPanel({ statusCount, onCheckAgain }: Props) {
         <EmptyState
           illustration="no-search-results"
           title={`No sites match “${query.search.trim()}”`}
-          description="Periksa ejaan, atau coba nama plant dan nama owner yang lain."
+          description="Check the spelling, or try another plant or owner name."
           action={<Button onClick={resetAll}>Clear search</Button>}
         />
       );
@@ -70,13 +70,13 @@ export function PlantListPanel({ statusCount, onCheckAgain }: Props) {
     const again = <Button onClick={checkAgain}>Check again</Button>;
     switch (query.status) {
       case "ONLINE":
-        return <EmptyState illustration="empty-sites" title={<span className="text-warn-text">No sites are online right now</span>} description="Semua site sedang Alarm atau Offline. Periksa tab Alarm dan Offline." action={again} />;
+        return <EmptyState illustration="empty-sites" title={<span className="text-warn-text">No sites are online right now</span>} description="Every site is in Alarm or Offline. Check the Alarm and Offline tabs." action={again} />;
       case "ALARM":
-        return <EmptyState illustration="no-active-alarms" title="No active alarms" description="Tidak ada site dengan alarm aktif saat ini." action={again} />;
+        return <EmptyState illustration="no-active-alarms" title="No active alarms" description="No sites have active alarms right now." action={again} />;
       case "OFFLINE":
-        return <EmptyState illustration="all-sites-online" title="No offline sites" description="Semua site sedang terhubung." action={again} />;
+        return <EmptyState illustration="all-sites-online" title="No offline sites" description="Every site is connected." action={again} />;
       default:
-        return <EmptyState illustration="empty-sites" title="No sites connected yet" description="Belum ada site yang terhubung ke akun ini." action={again} />;
+        return <EmptyState illustration="empty-sites" title="No sites connected yet" description="No sites are connected to this account yet." action={again} />;
     }
   })();
 
@@ -90,7 +90,7 @@ export function PlantListPanel({ statusCount, onCheckAgain }: Props) {
           onChange={setSearchDraft}
           onSubmit={applySearch}
           placeholder="Search plant name or owner"
-          aria-label="Cari plant"
+          aria-label="Search plants"
           wrapperClassName="w-[280px] max-w-full"
         />
         <Button variant="primary" onClick={applySearch} loading={searching} className="px-[17px]">

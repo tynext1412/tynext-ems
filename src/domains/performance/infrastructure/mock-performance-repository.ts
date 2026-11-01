@@ -5,6 +5,7 @@ import { plantFixtures } from "@/domains/plant/infrastructure/fixtures";
 import { addDays, daysBetween, hashSeed, localMidnightUtc, toDateKey } from "@/shared/domain/time";
 import type { PerformanceRepository } from "../application/performance-repository";
 import type { EnergyBucket, EnergySeriesGranularity, OperatingData, OperatingDataQuery, PlantPerformance, TariffPoint } from "../domain/performance";
+import { hasTariffErrors, rateAt, validateTariff, type PurchaseTariff } from "../domain/tariff";
 
 const SIMULATED_LATENCY_MS = 500;
 const DAY_MS = 86_400_000;
@@ -72,25 +73,32 @@ interface DayEnergy {
   charge: number;
   discharge: number;
   load: number;
-  grid: number;
+  grid: number; // impor
+  exported: number; // ekspor
   hours: number;
 }
 
 function dayEnergy(fixture: PlantFixture, lifetime: PlantPerformance, lifetimeDays: number, date: string, offline: boolean): DayEnergy {
-  if (offline) return { pv: 0, charge: 0, discharge: 0, load: 0, grid: 0, hours: 0 };
+  if (offline) return { pv: 0, charge: 0, discharge: 0, load: 0, grid: 0, exported: 0, hours: 0 };
   const f = dailyFactor(fixture.id, date);
   const pv = (lifetime.generationKWh / lifetimeDays) * f;
   const charge = (lifetime.chargeKWh / lifetimeDays) * f;
   const discharge = charge * 0.92;
   const load = fixture.capacity.inverterKW * (0.45 * 24 + 0.2 * 7.6) * (0.95 + 0.1 * (f - 0.75));
-  const grid = Math.max(0, load + charge - pv - discharge);
+  // Surplus PV siang hari sebagian diekspor lalu dibeli kembali malam hari, jadi impor dan ekspor
+  // sama-sama ada walau neraca harian defisit. Neraca tetap: PV + impor + discharge = beban + charge + ekspor.
+  const net = load + charge - pv - discharge;
+  const spill = pv * 0.06;
+  const grid = Math.max(0, net) + spill;
+  const exported = Math.max(0, -net) + spill;
   const hours = 10.5 + 2 * (f - 0.75); // jam PV menghasilkan daya
-  return { pv, charge, discharge, load, grid, hours };
+  return { pv, charge, discharge, load, grid, exported, hours };
 }
 
 export class MockPerformanceRepository implements PerformanceRepository {
   private readonly items: PlantPerformance[];
   private readonly fixtures: Map<string, PlantFixture>;
+  private readonly purchaseTariffs = new Map<string, PurchaseTariff>();
 
   constructor(
     fixtures: PlantFixture[] = plantFixtures,
@@ -147,8 +155,8 @@ export class MockPerformanceRepository implements PerformanceRepository {
     for (const d of dates) {
       const e = dayEnergy(fixture, lifetime, lifetimeDays, d, offlineToday && d === today);
       const key = keyOf(d);
-      const b = buckets.get(key) ?? { key, pvProductionKWh: 0, gridSupplyKWh: 0, chargeKWh: 0, dischargeKWh: 0, generatorSupplyKWh: 0, loadKWh: 0 };
-      b.pvProductionKWh += e.pv; b.gridSupplyKWh += e.grid; b.chargeKWh += e.charge; b.dischargeKWh += e.discharge; b.loadKWh += e.load;
+      const b = buckets.get(key) ?? { key, pvProductionKWh: 0, gridSupplyKWh: 0, gridExportKWh: 0, chargeKWh: 0, dischargeKWh: 0, generatorSupplyKWh: 0, loadKWh: 0 };
+      b.pvProductionKWh += e.pv; b.gridSupplyKWh += e.grid; b.gridExportKWh += e.exported; b.chargeKWh += e.charge; b.dischargeKWh += e.discharge; b.loadKWh += e.load;
       buckets.set(key, b);
     }
 
@@ -156,6 +164,7 @@ export class MockPerformanceRepository implements PerformanceRepository {
       ...b,
       pvProductionKWh: round2(b.pvProductionKWh),
       gridSupplyKWh: round2(b.gridSupplyKWh),
+      gridExportKWh: round2(b.gridExportKWh),
       chargeKWh: round2(b.chargeKWh),
       dischargeKWh: round2(b.dischargeKWh),
       loadKWh: round2(b.loadKWh),
@@ -169,9 +178,38 @@ export class MockPerformanceRepository implements PerformanceRepository {
     const start = localMidnightUtc(date, ctx.fixture.location.timezone);
     return Array.from({ length: 25 }, (_, hour) => ({
       at: new Date(start.getTime() + hour * 3_600_000).toISOString(),
-      purchaseIDRPerKWh: hour >= 17 && hour < 22 ? round2(ctx.lifetime.purchaseTariffIDRPerKWh * PURCHASE_WBP_FACTOR) : ctx.lifetime.purchaseTariffIDRPerKWh,
+      purchaseIDRPerKWh: rateAt(this.tariffOf(plantId), hour),
       feedInIDRPerKWh: ctx.lifetime.tariffIDRPerKWh,
     }));
+  }
+
+  async purchaseTariff(plantId: PlantId): Promise<PurchaseTariff> {
+    await delay(SIMULATED_LATENCY_MS);
+    return structuredClone(this.tariffOf(plantId));
+  }
+
+  async updatePurchaseTariff(plantId: PlantId, tariff: PurchaseTariff): Promise<PurchaseTariff> {
+    await delay(SIMULATED_LATENCY_MS);
+    if (!this.fixtures.has(plantId)) throw new Error(`Plant ${plantId} not found`);
+    if (hasTariffErrors(validateTariff(tariff))) throw new Error("Invalid tariff schedule");
+    // Simpan periode terurut dari jam mulai; flat tidak menyimpan periode.
+    const saved: PurchaseTariff = {
+      mode: tariff.mode,
+      baseRateIDRPerKWh: round2(tariff.baseRateIDRPerKWh),
+      bands: tariff.mode === "FLAT" ? [] : [...tariff.bands].sort((a, b) => a.startHour - b.startHour).map((b) => ({ ...b, rateIDRPerKWh: round2(b.rateIDRPerKWh) })),
+    };
+    this.purchaseTariffs.set(plantId, saved);
+    const perf = this.items.find((p) => p.plantId === plantId);
+    if (perf) perf.purchaseTariffIDRPerKWh = saved.baseRateIDRPerKWh;
+    return structuredClone(saved);
+  }
+
+  // Bawaan: LWBP sepanjang hari, WBP 17:00–22:00 = LWBP × faktor K (pola tarif PLN).
+  private tariffOf(plantId: PlantId): PurchaseTariff {
+    const stored = this.purchaseTariffs.get(plantId);
+    if (stored) return stored;
+    const base = this.items.find((p) => p.plantId === plantId)?.purchaseTariffIDRPerKWh ?? PURCHASE_LWBP;
+    return { mode: "TIME_OF_USE", baseRateIDRPerKWh: base, bands: [{ startHour: 17, endHour: 22, rateIDRPerKWh: round2(base * PURCHASE_WBP_FACTOR) }] };
   }
 
   private context(plantId: PlantId) {

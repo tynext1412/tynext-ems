@@ -32,7 +32,7 @@ export function PlantTable({ rows, expanded, loading, searching, sortBy, order, 
   const columnCount = expanded ? BASE_COLUMNS + EXTRA_COLUMNS : BASE_COLUMNS;
 
   return (
-    <DataTable stickyAction minWidth={expanded ? "2320px" : "1384px"} caption="Daftar site" footer={footer} busy={loading || searching}>
+    <DataTable stickyAction minWidth={expanded ? "2320px" : "1384px"} caption="Site list" footer={footer} busy={loading || searching}>
       <THead>
         <tr>
           <Th sortKey="status" width={129} {...sortProps}>Plant Status</Th>
@@ -112,7 +112,7 @@ export function PlantTable({ rows, expanded, loading, searching, sortBy, order, 
                   </>
                 )}
                 <Td align="center">
-                  <Button iconOnly size="sm" variant="tertiary" onClick={() => onOpen(plant.id)} aria-label={`Buka detail ${plant.name}`} title="Lihat detail site">
+                  <Button iconOnly size="sm" variant="tertiary" onClick={() => onOpen(plant.id)} aria-label={`Open details for ${plant.name}`} title="View site details">
                     <Eye className="size-4" aria-hidden />
                   </Button>
                 </Td>

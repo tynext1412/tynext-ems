@@ -1,4 +1,4 @@
-import { ChartColumn, RefreshCw, Zap } from "lucide-react";
+import { RefreshCw, Zap } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import energyArt from "@/assets/figma/artwork/energy-generation.png";
 import lifetimeArt from "@/assets/figma/artwork/lifetime-energy.png";
@@ -22,7 +22,7 @@ import { WeatherCard } from "./WeatherCard";
 // recharts dimuat terpisah supaya halaman lain tidak membayar ukurannya.
 const OverviewCharts = lazy(() => import("./charts/OverviewCharts"));
 
-// Overview: kolom kiri (aliran energi, operating data, grafik) dan kolom kanan 304 px
+// Overview: kolom kiri (aliran energi, operating data + grafik dalam satu section) dan kolom kanan 304 px
 // (baterai, informasi plant, cuaca, environmental benefits), mengikuti frame Details-Overview.
 export function SiteOverviewPage() {
   const { plant, snapshot } = useSiteContext();
@@ -42,7 +42,7 @@ export function SiteOverviewPage() {
   const retryPerformances = () => void performances.refetch();
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_304px]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,800fr)_minmax(304px,304fr)]">
       <div className="grid min-w-0 content-start gap-4">
         <Panel icon={<Zap className="fill-warn text-warn" />} title="Live Energy Flow" cards>
           <EnergyFlowView plant={plant} snapshot={snapshot} />
@@ -53,17 +53,11 @@ export function SiteOverviewPage() {
           </div>
         </Panel>
 
-        <OperatingDataPanel plant={plant} period={period} onPeriodChange={setPeriod} />
-
-        <Suspense
-          fallback={
-            <Panel icon={<ChartColumn />} title="Charts">
-              <Skeleton className="h-72 w-full" />
-            </Panel>
-          }
-        >
-          <OverviewCharts plant={plant} />
-        </Suspense>
+        <OperatingDataPanel plant={plant} period={period} onPeriodChange={setPeriod}>
+          <Suspense fallback={<Skeleton className="h-72 w-full rounded-xl" />}>
+            <OverviewCharts key={`${period.granularity}-${period.date}`} plant={plant} period={period} />
+          </Suspense>
+        </OperatingDataPanel>
       </div>
 
       <div className="grid min-w-0 content-start gap-4">
@@ -90,7 +84,7 @@ function StatCard({ label, value, unit, artwork, loading, error, onRetry }: { la
         ) : error ? (
           <div className="mt-1 flex items-center gap-1.5 text-sm text-danger-text">
             <span>Couldn't load</span>
-            <Button iconOnly size="sm" variant="tertiary" onClick={onRetry} aria-label={`Muat ulang ${label}`} className="size-7">
+            <Button iconOnly size="sm" variant="tertiary" onClick={onRetry} aria-label={`Reload ${label}`} className="size-7">
               <RefreshCw className="size-3.5" aria-hidden />
             </Button>
           </div>

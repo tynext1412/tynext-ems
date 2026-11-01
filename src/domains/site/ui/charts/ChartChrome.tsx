@@ -8,7 +8,7 @@ import { SERIES_COLOR, SERIES_LABEL, type SeriesKey } from "./chart-theme";
 // Legenda yang bisa dimatikan per seri. Warna tetap mengikuti entitas saat seri lain disembunyikan.
 export function ChartLegend({ series, hidden, onToggle }: { series: readonly SeriesKey[]; hidden: ReadonlySet<SeriesKey>; onToggle: (key: SeriesKey) => void }) {
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-1" role="group" aria-label="Seri chart">
+    <div className="flex flex-wrap gap-x-3 gap-y-1" role="group" aria-label="Chart series">
       {series.map((key) => {
         const off = hidden.has(key);
         return (
@@ -19,7 +19,7 @@ export function ChartLegend({ series, hidden, onToggle }: { series: readonly Ser
             onClick={() => onToggle(key)}
             className={cn("flex h-7 items-center gap-1.5 rounded-full px-1.5 text-xs text-muted hover:bg-surface-2 hover:text-text", off && "opacity-50")}
           >
-            <span className="h-0.5 w-4 rounded-full" style={{ background: SERIES_COLOR[key] }} aria-hidden />
+            <span className="size-2 rounded-full" style={{ background: SERIES_COLOR[key] }} aria-hidden />
             <span className={off ? "line-through" : undefined}>{SERIES_LABEL[key]}</span>
           </button>
         );
@@ -37,9 +37,10 @@ export interface TooltipRow {
 }
 
 // Tooltip: judul (waktu/periode) + baris per seri dengan swatch; teks memakai token teks, bukan warna seri.
+// Latar 65 % buram dengan blur tipis supaya garis chart di belakangnya tetap terlihat tapi teks terbaca.
 export function ChartTooltipBox({ title, rows }: { title: string; rows: TooltipRow[] }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-3 py-2 text-xs shadow-overlay">
+    <div className="rounded-xl border border-border/65 bg-surface/65 px-3 py-2 text-xs shadow-overlay backdrop-blur-sm">
       <div className="mb-1 font-mono text-muted">{title}</div>
       <dl className="space-y-0.5">
         {rows.map((r, i) => (

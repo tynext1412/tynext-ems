@@ -57,12 +57,12 @@ const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 export function validateDraft(d: MaintenanceDraft): MaintenanceDraftErrors {
   const errors: MaintenanceDraftErrors = {};
-  if (!DATE_KEY.test(d.date) || Number.isNaN(Date.parse(d.date))) errors.date = "Tanggal harus diisi.";
-  if (!MAINTENANCE_TYPES.includes(d.type)) errors.type = "Tipe tidak dikenal.";
+  if (!DATE_KEY.test(d.date) || Number.isNaN(Date.parse(d.date))) errors.date = "Date is required.";
+  if (!MAINTENANCE_TYPES.includes(d.type)) errors.type = "Unknown type.";
   const activity = d.activity.trim();
-  if (activity.length === 0) errors.activity = "Aktivitas harus diisi.";
-  else if (activity.length > ACTIVITY_MAX_LENGTH) errors.activity = `Maksimal ${ACTIVITY_MAX_LENGTH} karakter.`;
-  if (d.notes.length > NOTES_MAX_LENGTH) errors.notes = `Maksimal ${NOTES_MAX_LENGTH} karakter.`;
+  if (activity.length === 0) errors.activity = "Activity is required.";
+  else if (activity.length > ACTIVITY_MAX_LENGTH) errors.activity = `Maximum ${ACTIVITY_MAX_LENGTH} characters.`;
+  if (d.notes.length > NOTES_MAX_LENGTH) errors.notes = `Maximum ${NOTES_MAX_LENGTH} characters.`;
   return errors;
 }
 
@@ -135,4 +135,27 @@ export function applyMaintenanceQuery(items: readonly MaintenanceActivity[], q: 
   const pages = Math.max(1, Math.ceil(sorted.length / q.pageSize));
   const page = Math.min(Math.max(1, q.page), pages);
   return { rows: sorted.slice((page - 1) * q.pageSize, page * q.pageSize), total: sorted.length, page, counts };
+}
+
+// ── Tampilan kalender ───────────────────────────────────────────────────────
+
+// Aktivitas yang lolos filter tipe dan pencarian (tanpa filter status), untuk kalender tab All.
+export function filterMaintenance(items: readonly MaintenanceActivity[], q: Pick<MaintenanceQuery, "type" | "search">): MaintenanceActivity[] {
+  return items.filter((i) => (q.type === "ALL" || i.type === q.type) && matchesMaintenanceSearch(i, q.search ?? ""));
+}
+
+const STATUS_ORDER: Record<MaintenanceStatus, number> = { PENDING: 0, UPCOMING: 1, DONE: 2 };
+
+// Aktivitas satu bulan ("YYYY-MM") dikelompokkan per tanggal. Dalam satu hari: Pending dulu
+// (perlu tindakan), lalu Upcoming, lalu Done; sisanya urut waktu dibuat.
+export function activitiesByDate(items: readonly MaintenanceActivity[], month: string, today: string): Map<string, MaintenanceActivity[]> {
+  const byDate = new Map<string, MaintenanceActivity[]>();
+  for (const a of items) {
+    if (a.date.slice(0, 7) !== month) continue;
+    byDate.set(a.date, [...(byDate.get(a.date) ?? []), a]);
+  }
+  for (const list of byDate.values()) {
+    list.sort((a, b) => STATUS_ORDER[maintenanceStatus(a, today)] - STATUS_ORDER[maintenanceStatus(b, today)] || a.createdAt.localeCompare(b.createdAt));
+  }
+  return byDate;
 }

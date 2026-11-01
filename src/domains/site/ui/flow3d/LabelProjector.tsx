@@ -8,10 +8,12 @@ interface Props {
   refs: RefObject<Record<string, HTMLDivElement | null>>;
 }
 
-// Memproyeksikan titik 3D ke koordinat kanvas dan memindahkan label DOM ke sana tiap frame.
+// Memproyeksikan titik 3D ke koordinat kanvas dan memindahkan label DOM ke sana tiap frame;
+// titik tengah-bawah label menempel di titik tersebut (ujung garis penunjuk).
 // Dipakai sebagai ganti portal (drei Html) supaya label hidup di pohon React biasa.
 export function LabelProjector({ targets, refs }: Props) {
   const { camera, size, invalidate } = useThree();
+  // Proyeksi memakai matriks kamera termasuk view offset dari FitCamera.
   const vec = useMemo(() => new THREE.Vector3(), []);
 
   useEffect(() => invalidate(), [invalidate, targets]);
@@ -23,7 +25,7 @@ export function LabelProjector({ targets, refs }: Props) {
       vec.set(p[0], p[1], p[2]).project(camera);
       const x = (vec.x * 0.5 + 0.5) * size.width;
       const y = (-vec.y * 0.5 + 0.5) * size.height;
-      el.style.setProperty("transform", `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`);
+      el.style.setProperty("transform", `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`);
       el.style.setProperty("visibility", vec.z > 1 ? "hidden" : "visible");
     }
   });

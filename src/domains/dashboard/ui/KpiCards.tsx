@@ -37,7 +37,7 @@ export function KpiCard({ label, value, unit, artwork, loading, error, onRetry, 
         ) : error ? (
           <div className="mt-1 flex items-center gap-1.5 text-sm text-danger-text">
             <span>Couldn't load</span>
-            <Button iconOnly size="sm" variant="tertiary" onClick={onRetry} aria-label={`Muat ulang ${label}`} className="size-7">
+            <Button iconOnly size="sm" variant="tertiary" onClick={onRetry} aria-label={`Reload ${label}`} className="size-7">
               <RefreshCw className="size-3.5" aria-hidden />
             </Button>
           </div>
@@ -68,7 +68,7 @@ export function KpiRow({ plantSummary, performanceSummary, plantsState, performa
   const perfProps = { loading: performancesState.isPending, error: performancesState.error, onRetry: performancesState.retry };
 
   return (
-    <div className={cn("flex gap-3 overflow-x-auto px-6 [scrollbar-width:none]", className)} role="group" aria-label="Ringkasan fleet">
+    <div className={cn("flex gap-3 overflow-x-auto px-6 [scrollbar-width:none]", className)} role="group" aria-label="Fleet summary">
       <div className="mx-auto flex shrink-0 gap-3">
         <KpiCard label="Total Sites" value={plantSummary && formatNumber(plantSummary.totalSites, 0)} artwork={sitesArt} {...plantProps} />
         <KpiCard label="PV Install Capacity" value={plantSummary && formatNumber(plantSummary.pvCapacityKWp, 1)} unit="kWp" artwork={pvArt} {...plantProps} />

@@ -71,7 +71,7 @@ export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
             <Stat label="Internal Temperature" value={reading && formatNumber(reading.internalTempC, 1)} unit="°C" loading={loading} />
           </div>
           <MeasureTable
-            caption="Fasa AC"
+            caption="AC phases"
             columns={["AC", "Voltage (V)", "Current (A)", "Frequency (Hz)"]}
             loading={loading}
             rows={(reading?.phases ?? []).map((p) => [p.name, formatNumber(p.voltageV, 1), formatNumber(p.currentA, 1), formatNumber(p.frequencyHz, 2)])}
@@ -80,7 +80,7 @@ export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
 
         <Panel title="Energy Throughput" cards>
           <MeasureTable
-            caption="Charge dan discharge melalui PCS"
+            caption="Charge and discharge through the PCS"
             columns={["", "Today", "Total"]}
             loading={loading}
             rows={[
@@ -88,7 +88,7 @@ export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
               ["Discharge (DC → AC)", e(reading?.dailyDischargeKWh), e(reading?.totalDischargeKWh)],
             ]}
           />
-          <p className="px-2 pb-1 text-xs text-muted">Angka per unit PCS (mock membagi rata energi baterai plant ke semua PCS).</p>
+          <p className="px-2 pb-1 text-xs text-muted">Values per PCS unit (the mock splits plant battery energy evenly across all PCS units).</p>
         </Panel>
       </div>
     </>

@@ -7,8 +7,19 @@ export const SERIES_COLOR = {
   battery: "#199e70",
   genset: "#c98500",
   load: "#d55181",
-  purchase: "#008300",
+  soc: "#199e70", // SOC = baterai, jadi warnanya sama dengan seri Battery
+  // Tarif hanya tampil bersama SOC; hijau #008300 terlalu dekat dengan hijau SOC (ΔE 11,9),
+  // jadi tarif beli memakai oranye: SOC/beli/jual lolos validator all-pairs terang & gelap.
+  purchase: "#d95926",
   feedIn: "#9085e9",
+  // Chart energi Month/Year/Lifetime (batang berkelompok, urutan PV, Import, Export, Charge,
+  // Discharge, Consumption). PV/Import/Charge/Consumption memakai warna entitasnya (PV, Grid,
+  // Battery, Load); urutan ini lolos validator pasangan bersebelahan di tema terang & gelap.
+  import: "#3987e5",
+  export: "#c98500",
+  charge: "#199e70",
+  discharge: "#9085e9",
+  consumption: "#d55181",
 } as const;
 
 export type SeriesKey = keyof typeof SERIES_COLOR;
@@ -19,8 +30,14 @@ export const SERIES_LABEL: Record<SeriesKey, string> = {
   battery: "Battery",
   genset: "Generator",
   load: "Load",
+  soc: "SOC",
   purchase: "Purchase tariff",
   feedIn: "Feed-in tariff",
+  import: "Import",
+  export: "Export",
+  charge: "Charge",
+  discharge: "Discharge",
+  consumption: "Consumption",
 };
 
 // Chrome chart memakai token tema (var CSS diterima atribut presentasi SVG) supaya ikut
@@ -40,4 +57,13 @@ export function compactNumber(value: number): string {
   if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(".", ",")}M`;
   if (abs >= 1_000) return `${(value / 1_000).toFixed(abs >= 10_000 ? 0 : 1).replace(".", ",")}K`;
   return `${Math.round(value)}`;
+}
+
+// Label sumbu Y untuk rentang sempit (mis. 7,1–7,4 kW atau 24,0–24,6 °C): bilangan bulat dan
+// angka besar memakai compactNumber; pecahan di bawah 1.000 tetap menampilkan 1–2 desimal
+// supaya label tidak berulang ("7, 7, 7").
+export function axisNumber(value: number): string {
+  if (Number.isInteger(value) || Math.abs(value) >= 1000) return compactNumber(value);
+  const digits = Math.abs(value) < 10 ? 2 : 1;
+  return value.toFixed(digits).replace(/\.?0+$/, "").replace(".", ",");
 }

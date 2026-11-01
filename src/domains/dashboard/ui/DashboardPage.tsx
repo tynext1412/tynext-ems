@@ -13,6 +13,9 @@ import { BessPerformanceCard } from "./BessPerformanceCard";
 import { KpiRow } from "./KpiCards";
 import { PlantListPanel } from "./PlantListPanel";
 
+// Baris KPI menempel di top 68 px dengan tinggi 80 px; kartu hover peta tidak boleh masuk ke area ini.
+const KPI_ROW_BOTTOM = 68 + 80 + 8;
+
 // Sheet terbuka disimpan di hash URL supaya bisa dibagikan dan tombol Back menutupnya.
 const SHEET_HASH = "#site-list";
 // Sheet berhenti di bawah kartu KPI (header 56 + jarak 12 + kartu 80 + 28).
@@ -34,7 +37,7 @@ export function DashboardPage() {
   return (
     <div className="relative isolate h-dvh overflow-hidden bg-bg">
       <div className="absolute inset-0 z-0">
-        <PlantMap plants={plants} loading={plantsState.isPending} onSelect={(id) => navigate(`/plants/${id}`)} />
+        <PlantMap plants={plants} loading={plantsState.isPending} onSelect={(id) => navigate(`/plants/${id}`)} popupTopInset={KPI_ROW_BOTTOM} />
       </div>
       <div className="map-vignette pointer-events-none absolute inset-0 z-[1]" aria-hidden />
 
@@ -72,7 +75,7 @@ function SiteListHeader({ statusCount, loading, open }: { statusCount?: StatusCo
       {open ? null : loading || !statusCount ? (
         <Skeleton className="mt-3.5 hidden h-6 w-64 sm:block" />
       ) : (
-        <div className="mt-3.5 hidden items-center gap-4 text-sm leading-6 sm:flex" aria-label="Ringkasan status">
+        <div className="mt-3.5 hidden items-center gap-4 text-sm leading-6 sm:flex" aria-label="Status summary">
           <LegendItem color="bg-[#2b7a30]" textClass="text-[#2b7a30]" label="Online" value={statusCount.ONLINE} />
           <span className="h-6 w-px bg-border" aria-hidden />
           <LegendItem color="bg-[#f5a524]" textClass="text-[#f5a524]" label="Alarm" value={statusCount.ALARM} />

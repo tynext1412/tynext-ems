@@ -35,14 +35,14 @@ export function SiteLayout() {
               <div className="grid gap-4" aria-busy>
                 <Skeleton className="h-64 w-full rounded-[20px]" />
                 <Skeleton className="h-40 w-full rounded-[20px]" />
-                <span className="sr-only">Memuat data plant…</span>
+                <span className="sr-only">Loading plant data…</span>
               </div>
             )}
 
             {site.error && (
               <EmptyState
                 illustration="server-error"
-                title="Data plant tidak bisa dimuat"
+                title="Plant data couldn't load"
                 description={site.error.message}
                 action={
                   <Button variant="primary" onClick={site.retry}>
@@ -53,7 +53,7 @@ export function SiteLayout() {
             )}
 
             {!site.isPending && !site.error && site.plant === null && (
-              <EmptyState illustration="not-found" title="Plant tidak ditemukan" description={`Plant ${plantId} tidak ada di daftar. Kembali ke Home untuk memilih plant lain.`} />
+              <EmptyState illustration="not-found" title="Plant not found" description={`Plant ${plantId} isn't in your list. Go back to Home to choose another plant.`} />
             )}
 
             {site.plant && <Outlet context={context} />}

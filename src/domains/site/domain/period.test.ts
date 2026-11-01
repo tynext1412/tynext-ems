@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canStepBack, canStepForward, clampWindow, FULL_DAY, isFullDay, periodLabel, stepPeriod, zoomIn, zoomOut, zoomTicks } from "./period";
-import { zoomAround } from "./period";
+import { calendarWeeks, inRange, selectableYears, shiftMonth, zoomAround } from "./period";
 
 describe("period navigation", () => {
   it("steps by day, month, and year", () => {
@@ -56,5 +56,31 @@ describe("zoomAround", () => {
     expect(zoomAround([360, 1080], 720, 2)).toEqual([0, 1440]);
     expect(zoomAround([600, 660], 630, 0.1)).toEqual([615, 645]); // dijepit ke rentang minimum 30 menit
     expect(zoomAround([360, 1080], 9999, 0.5)).toEqual([720, 1080]); // anchor di luar rentang dijepit ke tepi
+  });
+});
+
+describe("period picker", () => {
+  it("lays out a month Monday-first with padded weeks", () => {
+    const weeks = calendarWeeks(2026, 11); // 1 Nov 2026 = Minggu
+    expect(weeks[0]).toEqual([null, null, null, null, null, null, "2026-11-01"]);
+    expect(weeks.every((w) => w.length === 7)).toBe(true);
+    expect(weeks.flat().filter(Boolean)).toHaveLength(30);
+    expect(weeks.at(-1)?.[0]).toBe("2026-11-30");
+    expect(calendarWeeks(2024, 2).flat().filter(Boolean)).toHaveLength(29); // kabisat
+  });
+
+  it("shifts months across year boundaries", () => {
+    expect(shiftMonth(2026, 1, -1)).toEqual([2025, 12]);
+    expect(shiftMonth(2026, 12, 1)).toEqual([2027, 1]);
+    expect(shiftMonth(2026, 5, 0)).toEqual([2026, 5]);
+  });
+
+  it("checks day, month and year keys against commissioning and today", () => {
+    expect(inRange("2026-11-02", "2023-04-10", "2026-11-02")).toBe(true);
+    expect(inRange("2026-11-03", "2023-04-10", "2026-11-02")).toBe(false);
+    expect(inRange("2023-04", "2023-04-10", "2026-11-02")).toBe(true); // bulan commissioning boleh
+    expect(inRange("2023-03", "2023-04-10", "2026-11-02")).toBe(false);
+    expect(inRange("2023", "2023-04-10", "2026-11-02")).toBe(true);
+    expect(selectableYears("2023-04-10", "2026-11-02")).toEqual([2026, 2025, 2024, 2023]);
   });
 });

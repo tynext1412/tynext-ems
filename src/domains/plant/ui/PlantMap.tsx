@@ -1,4 +1,4 @@
-import type { LatLngBoundsExpression } from "leaflet";
+import { point, type CircleMarker as LeafletCircleMarker, type LatLngBoundsExpression, type LeafletMouseEvent } from "leaflet";
 import { Minus, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
@@ -16,6 +16,9 @@ const INDONESIA_BOUNDS: LatLngBoundsExpression = [
   [-11, 94],
   [6.5, 141.5],
 ];
+const POPUP_GAP = 6; // jarak kartu ke marker (px)
+const MARKER_RADIUS = 9; // radius marker 7 px + garis putih 2 px
+
 // Bila tile pertama-tama gagal beruntun tanpa satu pun yang berhasil, layanan peta dianggap tidak bisa diakses.
 const TILE_FAILURES_BEFORE_FALLBACK = 8;
 
@@ -24,11 +27,45 @@ interface PlantMapProps {
   loading?: boolean;
   onSelect?: (id: PlantId) => void;
   className?: string;
+  // Tinggi area atas peta yang tertutup overlay (mis. baris KPI di Home). Kartu hover yang tidak muat
+  // di atas marker tanpa masuk ke area ini dibuka di bawah marker.
+  popupTopInset?: number;
+}
+
+// Buka kartu hover di atas marker; bila puncaknya akan tertutup overlay atas, pindahkan ke bawah marker.
+// Diukur setelah render (kartu dirender React ke dalam popup), jadi pergeseran terjadi beberapa frame kemudian.
+function openPlantPopup(e: LeafletMouseEvent, topInset: number) {
+  const marker = e.target as LeafletCircleMarker;
+  const popup = marker.getPopup();
+  if (!popup) return;
+  popup.options.offset = point(0, -POPUP_GAP);
+  popup.getElement()?.classList.remove("plant-popup--below");
+  marker.openPopup();
+  if (topInset <= 0) return;
+  const markerY = e.containerPoint.y;
+  let frames = 0;
+  const place = () => {
+    const el = popup.getElement();
+    if (!el || !popup.isOpen()) return;
+    const height = el.offsetHeight;
+    // Isi kartu dirender React setelah popup terbuka; tunggu beberapa frame sampai tingginya ada.
+    if (height < 40 && frames++ < 10) {
+      requestAnimationFrame(place);
+      return;
+    }
+    // Leaflet memberi .leaflet-popup margin-bottom 20 px; hitung juga supaya kartu benar-benar di bawah titik.
+    const margin = parseFloat(getComputedStyle(el).marginBottom) || 0;
+    if (markerY - POPUP_GAP - margin - height >= topInset) return;
+    popup.options.offset = point(0, height + margin + MARKER_RADIUS + POPUP_GAP);
+    el.classList.add("plant-popup--below");
+    popup.update();
+  };
+  requestAnimationFrame(place);
 }
 
 // Peta sebaran site: marker berwarna status, kartu ringkas saat hover, kontrol zoom kanan.
 // Saat tile gagal dimuat, area peta diganti fallback + "Reload map"; widget lain tetap dipakai.
-export function PlantMap({ plants, loading, onSelect, className }: PlantMapProps) {
+export function PlantMap({ plants, loading, onSelect, className, popupTopInset = 0 }: PlantMapProps) {
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const tiles = useRef({ ok: 0, failed: 0 });
@@ -54,7 +91,7 @@ export function PlantMap({ plants, loading, onSelect, className }: PlantMapProps
           illustration="map-error"
           size="lg"
           title="Map couldn't load"
-          description="Layanan peta tidak bisa diakses saat ini. KPI, panel, dan Site List tetap bisa dipakai."
+          description="The map service can't be reached right now. KPIs, panels, and the Site List still work."
           action={
             <Button variant="primary" onClick={reload}>
               Reload map
@@ -76,14 +113,14 @@ export function PlantMap({ plants, loading, onSelect, className }: PlantMapProps
           <CircleMarker
             key={plant.id}
             center={[plant.location.point.lat, plant.location.point.lng]}
-            radius={7}
+            radius={MARKER_RADIUS - 2}
             pathOptions={{ color: "#ffffff", weight: 2, fillColor: STATUS_COLOR[plant.status], fillOpacity: 1 }}
             eventHandlers={{
-              mouseover: (e) => e.target.openPopup(),
-              click: (e) => e.target.openPopup(),
+              mouseover: (e) => openPlantPopup(e, popupTopInset),
+              click: (e) => openPlantPopup(e, popupTopInset),
             }}
           >
-            <Popup className="plant-popup" closeButton={false} autoPan={false} offset={[0, -6]}>
+            <Popup className="plant-popup" closeButton={false} autoPan={false} offset={[0, -POPUP_GAP]}>
               <PlantHoverCard plant={plant} onOpen={onSelect} />
             </Popup>
           </CircleMarker>
@@ -92,7 +129,7 @@ export function PlantMap({ plants, loading, onSelect, className }: PlantMapProps
 
       {loading && (
         <div className="absolute inset-0 z-[500] grid place-items-center bg-bg/85" aria-busy>
-          <div className="flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm text-muted shadow-surface">
+          <div className="flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm text-muted shadow-chip">
             <Spinner className="text-brand" />
             Loading map and site locations
           </div>
@@ -106,12 +143,12 @@ export function PlantMap({ plants, loading, onSelect, className }: PlantMapProps
 function ZoomButtons() {
   const map = useMap();
   return (
-    <div className="absolute right-6 top-[54%] z-[1000] flex flex-col overflow-hidden rounded-lg bg-surface shadow-control" role="group" aria-label="Zoom peta">
-      <button type="button" onClick={() => map.zoomIn()} aria-label="Perbesar" className="grid size-[34px] place-items-center text-text hover:bg-surface-2">
+    <div className="absolute right-6 top-[54%] z-[1000] flex flex-col overflow-hidden rounded-lg bg-surface shadow-control" role="group" aria-label="Map zoom">
+      <button type="button" onClick={() => map.zoomIn()} aria-label="Zoom in" className="grid size-[34px] place-items-center text-text hover:bg-surface-2">
         <Plus className="size-4" aria-hidden />
       </button>
       <span className="h-px bg-border" aria-hidden />
-      <button type="button" onClick={() => map.zoomOut()} aria-label="Perkecil" className="grid size-[34px] place-items-center text-text hover:bg-surface-2">
+      <button type="button" onClick={() => map.zoomOut()} aria-label="Zoom out" className="grid size-[34px] place-items-center text-text hover:bg-surface-2">
         <Minus className="size-4" aria-hidden />
       </button>
     </div>
@@ -119,7 +156,7 @@ function ZoomButtons() {
 }
 
 // Kartu ringkas site (frame "Plant Hover" di Figma, 280×142): nama/alamat/chip di latar abu-abu,
-// kartu putih berisi baris PV Capacity dan tombol View Details.
+// kartu putih berisi baris PV Capacity, BESS Capacity, dan tombol View Details.
 function PlantHoverCard({ plant, onOpen }: { plant: Plant; onOpen?: (id: PlantId) => void }) {
   return (
     <div className="w-[280px] rounded-[20px] bg-surface-2 p-1 pt-2.5 font-sans text-text shadow-overlay">
@@ -138,16 +175,28 @@ function PlantHoverCard({ plant, onOpen }: { plant: Plant; onOpen?: (id: PlantId
         <PlantStatusBadge status={plant.status} className="mt-0" />
       </div>
       <div className="rounded-2xl bg-surface px-2 pb-2 pt-1">
-        <div className="flex h-7 items-center justify-between">
-          <span className="text-xs leading-5 text-muted">PV Capacity</span>
-          <span className="font-mono text-lg font-semibold leading-7">
-            {formatNumber(plant.capacity.pvKWp, 0)} <span className="text-sm font-normal text-muted">kWp</span>
-          </span>
-        </div>
+        <CapacityRow label="PV Capacity" value={plant.capacity.pvKWp} unit="kWp" />
+        <CapacityRow label="BESS Capacity" value={plant.capacity.batteryKWh} unit="kWh" />
         <Button variant="primary" className="mt-1 w-full" onClick={() => onOpen?.(plant.id)}>
           View Details
         </Button>
       </div>
+    </div>
+  );
+}
+
+// Satu baris kapasitas di kartu hover: label kiri, angka + satuan kanan; 0 = belum terpasang.
+function CapacityRow({ label, value, unit }: { label: string; value: number; unit: string }) {
+  return (
+    <div className="flex h-7 items-center justify-between">
+      <span className="text-xs leading-5 text-muted">{label}</span>
+      {value > 0 ? (
+        <span className="font-mono text-lg font-semibold leading-7">
+          {formatNumber(value, 0)} <span className="text-sm font-normal text-muted">{unit}</span>
+        </span>
+      ) : (
+        <span className="text-sm leading-7 text-muted">Not installed</span>
+      )}
     </div>
   );
 }

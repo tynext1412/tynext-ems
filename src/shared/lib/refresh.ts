@@ -45,7 +45,7 @@ export function useRefreshAll() {
     try {
       await queryClient.refetchQueries({ type: "active", predicate: isDataQuery }, { throwOnError: true });
     } catch (e) {
-      setError(e instanceof Error ? e : new Error("Refresh gagal"));
+      setError(e instanceof Error ? e : new Error("Refresh failed"));
     } finally {
       setRunning(false);
     }

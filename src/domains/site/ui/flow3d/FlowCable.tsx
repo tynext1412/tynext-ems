@@ -14,8 +14,9 @@ interface Props {
   idleColor?: string;
 }
 
-// Kabel dari node ke bus. Bila mengalirkan daya: garis berwarna node dan partikel yang
-// bergerak searah aliran; jumlah dan kecepatannya mengikuti besar daya. Tanpa daya: garis redup.
+// Kabel dari node ke busbar. Selalu digambar supaya arsitektur sistem terbaca: tanpa daya = garis
+// abu-abu tipis putus-putus tanpa animasi; mengalirkan daya = garis berwarna node yang lebih tebal
+// dengan partikel bergerak searah aliran (jumlah dan kecepatannya mengikuti besar daya).
 export function FlowCable({ points, color, kw, direction, animate, idleColor = "#b5bcc3" }: Props) {
   const active = direction !== "none";
   const count = active ? particleCount(kw) : 0;
@@ -40,7 +41,11 @@ export function FlowCable({ points, color, kw, direction, animate, idleColor = "
 
   return (
     <group>
-      <Line points={linePoints} color={active ? color : idleColor} lineWidth={active ? 2.2 : 1.2} transparent opacity={active ? 0.95 : 0.6} />
+      {active ? (
+        <Line points={linePoints} color={color} lineWidth={3} />
+      ) : (
+        <Line points={linePoints} color={idleColor} lineWidth={1.6} dashed dashSize={0.18} gapSize={0.12} />
+      )}
       {Array.from({ length: count }, (_, i) => {
         const p = pointAt(points, direction === "from-bus" ? 1 - i / count : i / count);
         return (

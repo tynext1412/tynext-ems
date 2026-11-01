@@ -42,7 +42,7 @@ export function EnergyFlowDiagram({ snapshot, hasBattery, className }: Props) {
       viewBox={`0 0 ${W} ${H}`}
       className={cn("h-auto w-full", className)}
       role="img"
-      aria-label={snapshot ? describeFlow(snapshot, hasBattery) : "Menunggu data daya"}
+      aria-label={snapshot ? describeFlow(snapshot, hasBattery) : "Waiting for power data"}
     >
       {/* Bus AC */}
       <line x1={60} y1={BUS_Y} x2={W - 60} y2={BUS_Y} stroke="var(--color-border)" strokeWidth={4} strokeLinecap="round" />

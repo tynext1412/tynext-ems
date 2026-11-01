@@ -14,7 +14,7 @@ interface Props {
   leading?: React.ReactNode;
 }
 
-const WIB = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false });
+const WIB = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false });
 
 // Header global 56 px: logo, pill "Last Updated" + tombol refresh di tengah, menu profil di kanan.
 // Saat refresh: pill "Updating data", tombol jadi spinner, garis progres tipis di bawah header.
@@ -69,8 +69,8 @@ export function AppHeader({ className, leading }: Props) {
           type="button"
           onClick={() => void refresh()}
           disabled={!online || isRefreshing || (initialLoading && !lastUpdated)}
-          aria-label="Muat ulang semua data"
-          title="Muat ulang semua data"
+          aria-label="Reload all data"
+          title="Reload all data"
           className="refresh-button inline-grid size-6 place-items-center rounded-lg transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isRefreshing ? <Spinner className="size-3.5 text-white" /> : <RefreshCw className="size-3.5" aria-hidden />}
@@ -90,7 +90,7 @@ export function AppHeader({ className, leading }: Props) {
         <div className="pointer-events-none fixed inset-x-0 bottom-28 z-[60] flex flex-col items-center gap-2 px-4">
           {!online && (
             <Toast tone="warning" action={<RetryButton onClick={() => void refresh()}>Try now</RetryButton>}>
-              You're offline. Data yang tampil adalah data terakhir; sambungan dicoba ulang otomatis.
+              You're offline. The data shown is the latest received; reconnecting automatically.
             </Toast>
           )}
           {online && error && (
@@ -99,7 +99,7 @@ export function AppHeader({ className, leading }: Props) {
               action={
                 <span className="flex items-center gap-1">
                   <RetryButton onClick={() => void refresh()}>Try again</RetryButton>
-                  <RetryButton onClick={dismissError} aria-label="Tutup">
+                  <RetryButton onClick={dismissError} aria-label="Close">
                     ×
                   </RetryButton>
                 </span>

@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/shared/lib/cn";
 
 const FIELD_CLASS =
-  "h-9 w-full rounded-xl border border-border bg-surface px-3 shadow-surface text-sm text-text placeholder:text-muted transition-colors hover:border-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger";
+  "h-9 w-full rounded-xl border border-border bg-surface px-3 shadow-surface text-sm text-text placeholder:text-muted transition-colors hover:border-muted focus:border-transparent focus:shadow-focus focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger";
 
 // ComponentProps menyertakan `ref` (React 19), jadi field bisa difokuskan dari luar.
 export function Input({ className, ...props }: ComponentProps<"input">) {
@@ -54,7 +54,7 @@ export function SearchField({ value, onChange, onSubmit, onClear, className, wra
         <button
           type="button"
           onClick={() => (onClear ? onClear() : onChange(""))}
-          aria-label="Kosongkan pencarian"
+          aria-label="Clear search"
           className="absolute right-2 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-surface-3 hover:text-text"
         >
           <X className="size-3.5" aria-hidden />

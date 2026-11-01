@@ -101,7 +101,7 @@ export function useChartZoom(window: TimeWindow, onZoom: (from: number, to: numb
       ref: frameRef,
       tabIndex: 0,
       role: "group" as const,
-      "aria-label": "Grafik; scroll atau tombol + dan − untuk zoom, 0 untuk reset",
+      "aria-label": "Chart; scroll or press + and − to zoom, 0 to reset",
       onDoubleClick: onReset,
       onKeyDown,
       className: "rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent",

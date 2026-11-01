@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyMaintenanceQuery, applyPatch, maintenanceStatus, matchesMaintenanceSearch, validateDraft, type MaintenanceActivity } from "./maintenance";
+import { activitiesByDate, applyMaintenanceQuery, applyPatch, filterMaintenance, maintenanceStatus, matchesMaintenanceSearch, validateDraft, type MaintenanceActivity } from "./maintenance";
 
 const item = (id: string, date: string, extra: Partial<MaintenanceActivity> = {}): MaintenanceActivity => ({
   id,
@@ -100,5 +100,28 @@ describe("applyMaintenanceQuery", () => {
     expect(r.total).toBe(2);
     expect(r.page).toBe(2);
     expect(r.rows.map((x) => x.id)).toEqual(["upcoming"]);
+  });
+});
+
+describe("calendar grouping", () => {
+  const items = [
+    item("A", "2026-11-12", { createdAt: "2026-10-02T00:00:00.000Z" }),
+    item("B", "2026-11-12", { completedAt: "2026-11-12T08:00:00Z" }),
+    item("C", "2026-11-12", { type: "CORRECTIVE", createdAt: "2026-10-03T00:00:00.000Z" }),
+    item("D", "2026-11-30"),
+    item("E", "2026-12-01"),
+    item("F", "2026-10-31"),
+  ];
+
+  it("keeps only the month and orders a day by Pending, Upcoming, then Done", () => {
+    const byDate = activitiesByDate(items, "2026-11", "2026-11-20");
+    expect([...byDate.keys()].sort()).toEqual(["2026-11-12", "2026-11-30"]);
+    expect(byDate.get("2026-11-12")?.map((a) => a.id)).toEqual(["A", "C", "B"]); // A, C pending (urut dibuat), B done
+  });
+
+  it("filters by type and search but not by status", () => {
+    expect(filterMaintenance(items, { type: "CORRECTIVE", search: "" }).map((a) => a.id)).toEqual(["C"]);
+    expect(filterMaintenance(items, { type: "ALL", search: "aktivitas e" }).map((a) => a.id)).toEqual(["E"]);
+    expect(filterMaintenance(items, { type: "ALL", search: "" })).toHaveLength(6);
   });
 });

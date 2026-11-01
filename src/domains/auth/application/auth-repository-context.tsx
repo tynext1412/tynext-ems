@@ -11,6 +11,6 @@ export function AuthRepositoryProvider({ repository, children }: { repository: A
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuthRepository(): AuthRepository {
   const repo = useContext(AuthRepositoryContext);
-  if (!repo) throw new Error("AuthRepositoryProvider belum dipasang di composition root");
+  if (!repo) throw new Error("AuthRepositoryProvider is not mounted in the composition root");
   return repo;
 }

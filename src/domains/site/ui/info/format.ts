@@ -4,11 +4,11 @@ import { timezoneAbbrev, zoneOffsetMinutes } from "@/shared/domain/time";
 
 export function formatShortDate(dateKey: string): string {
   const [y, m, d] = dateKey.split("-").map(Number);
-  return new Intl.DateTimeFormat("id-ID", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(Date.UTC(y, m - 1, d)));
+  return new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
 export function formatShortDateTime(iso: string, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("id-ID", { timeZone, day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(iso));
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(iso));
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   return `${get("day")} ${get("month")} ${get("year")} ${get("hour")}:${get("minute")} ${timezoneAbbrev(timeZone)}`;
 }

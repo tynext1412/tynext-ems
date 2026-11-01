@@ -12,8 +12,8 @@ export function CopyButton({ value, label, className }: { value: string; label: 
         e.stopPropagation();
         void copy(value);
       }}
-      aria-label={copied ? `${label} tersalin` : `Salin ${label}`}
-      title={copied ? "Tersalin" : `Salin ${label}`}
+      aria-label={copied ? `${label} copied` : `Copy ${label}`}
+      title={copied ? "Copied" : `Copy ${label}`}
       className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-3 hover:text-text", className)}
     >
       {copied ? <Check className="size-3.5 text-ok-text" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}

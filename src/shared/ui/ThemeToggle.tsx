@@ -10,8 +10,8 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       type="button"
       onClick={() => setTheme(next)}
-      aria-label={next === "dark" ? "Ganti ke tema gelap" : "Ganti ke tema terang"}
-      title={next === "dark" ? "Tema gelap" : "Tema terang"}
+      aria-label={next === "dark" ? "Switch to dark theme" : "Switch to light theme"}
+      title={next === "dark" ? "Dark theme" : "Light theme"}
       className={cn("inline-flex size-9 items-center justify-center rounded-md border border-border bg-surface text-muted transition-colors hover:bg-surface-2 hover:text-text", className)}
     >
       {next === "dark" ? <Moon className="size-4" aria-hidden /> : <Sun className="size-4" aria-hidden />}

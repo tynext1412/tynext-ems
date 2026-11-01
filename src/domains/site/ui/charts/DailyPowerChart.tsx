@@ -1,9 +1,11 @@
-import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipProps } from "recharts";
+import { Area, AreaChart, CartesianGrid, Customized, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipProps } from "recharts";
 import { formatNumber } from "@/shared/domain/units";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { formatMinutes, type DailyPowerPoint } from "../../domain/chart-data";
 import { isFullDay, zoomTicks, type TimeWindow } from "../../domain/period";
 import { ChartFrame, ChartLegend, ChartTable, ChartTooltipBox } from "./ChartChrome";
+import { Crosshair, type CustomizedProps } from "./Crosshair";
+import { useCrosshair, withCrosshair } from "./useCrosshair";
 import { AXIS_TICK, CHART_CHROME, SERIES_COLOR, SERIES_LABEL } from "./chart-theme";
 import { useChartZoom } from "./useChartZoom";
 import { useSeriesToggle } from "./useSeriesToggle";
@@ -23,11 +25,15 @@ interface Props {
 }
 
 // Daya per 5 menit sepanjang hari. Satu sumbu (kW); baterai + = charge, − = discharge.
-// Seret untuk memperbesar rentang waktu; rentang dibagi dengan grafik SOC dan tarif.
+// Area bergradien (warna seri memudar ke bawah); saat di-hover muncul garis bantu vertikal dan
+// horizontal dengan label nilai di sumbu Y dan waktu di sumbu X, plus tooltip nilai semua seri.
+// Seret untuk memperbesar rentang waktu; rentang dibagi dengan grafik SOC & tarif.
 export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, window, onZoom, onReset }: Props) {
   const { hidden, toggle } = useSeriesToggle();
   const { selection, handlers, frameProps } = useChartZoom(window, onZoom, onReset);
   const visible = points?.filter((p) => p.t >= window[0] && p.t <= window[1]);
+  const crosshair = useCrosshair();
+  const mouse = withCrosshair(handlers, crosshair);
 
   return (
     <ChartFrame
@@ -38,8 +44,8 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
       table={
         visible && (
           <ChartTable
-            caption="Daya per 5 menit"
-            columns={[`Waktu (${timezoneAbbrev})`, ...SERIES.map((k) => `${SERIES_LABEL[k]} (kW)`)]}
+            caption="Power per 5 minutes"
+            columns={[`Time (${timezoneAbbrev})`, ...SERIES.map((k) => `${SERIES_LABEL[k]} (kW)`)]}
             rows={visible.map((p) => [formatMinutes(p.t), ...SERIES.map((k) => formatNumber(p[k], 1))])}
           />
         )
@@ -49,24 +55,37 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
         <Skeleton className="h-60 w-full" />
       ) : points.length === 0 ? (
         <p className="grid place-items-center text-sm text-muted" style={{ height: HEIGHT }}>
-          Belum ada sampel daya untuk tanggal ini.
+          No power samples for this date yet.
         </p>
       ) : (
         <div {...frameProps}>
           <ResponsiveContainer width="100%" height={HEIGHT}>
-            <AreaChart data={points} margin={{ top: 20, right: 12, left: 0, bottom: 0 }} syncId="daily" accessibilityLayer {...handlers} className="select-none">
+            <AreaChart data={points} margin={{ top: 20, right: 12, left: 8, bottom: 6 }} syncId="daily" accessibilityLayer {...mouse} className="select-none">
+              <defs>
+                {SERIES.map((k) => (
+                  <linearGradient key={k} id={`daily-fill-${k}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SERIES_COLOR[k]} stopOpacity={0.38} />
+                    <stop offset="100%" stopColor={SERIES_COLOR[k]} stopOpacity={0.02} />
+                  </linearGradient>
+                ))}
+              </defs>
               <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
               <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={44} tickFormatter={(v: number) => formatNumber(v, 0)} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} tickFormatter={(v: number) => formatNumber(v, 0)} />
               <Tooltip
-                cursor={{ stroke: CHART_CHROME.marker, strokeWidth: 1 }}
+                cursor={false}
+                offset={16}
                 content={({ active, payload, label }: TooltipProps<number, string>) => {
                   if (!active || !payload?.length) return null;
                   const p = payload[0]?.payload as DailyPowerPoint;
                   return (
                     <ChartTooltipBox
-                      title={`${formatMinutes(Number(label))} ${timezoneAbbrev}`}
-                      rows={SERIES.filter((k) => !hidden.has(k)).map((k) => ({ key: k, value: `${formatNumber(p[k], 1)} kW` }))}
+                      title={`${formatMinutes(Number(label))} (${timezoneAbbrev})`}
+                      rows={SERIES.filter((k) => !hidden.has(k)).map((k) => ({
+                        key: k,
+                        label: k === "battery" ? `Battery (${p.battery > 0.05 ? "Charging" : p.battery < -0.05 ? "Discharging" : "Idle"})` : undefined,
+                        value: `${formatNumber(Math.abs(k === "battery" ? p.battery : p[k]), 1)} kW`,
+                      }))}
                     />
                   );
                 }}
@@ -80,8 +99,8 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
                   hide={hidden.has(k)}
                   stroke={SERIES_COLOR[k]}
                   strokeWidth={2}
-                  fill={SERIES_COLOR[k]}
-                  fillOpacity={0.1}
+                  fill={`url(#daily-fill-${k})`}
+                  fillOpacity={1}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: CHART_CHROME.surface }}
                   isAnimationActive={false}
@@ -90,6 +109,9 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
               {nowMinutes !== undefined && (
                 <ReferenceLine x={nowMinutes} stroke={CHART_CHROME.marker} strokeDasharray="4 4" label={{ value: "Now", position: "top", fill: CHART_CHROME.ink, fontSize: 11 }} />
               )}
+              <Customized
+                component={(props: CustomizedProps) => <Crosshair {...props} hover={crosshair.hover} formatX={formatMinutes} formatY={(v) => formatNumber(v, 0)} />}
+              />
               {selection && <ReferenceArea x1={selection[0]} x2={selection[1]} fill="var(--color-brand)" fillOpacity={0.12} stroke="var(--color-brand)" strokeOpacity={0.6} />}
             </AreaChart>
           </ResponsiveContainer>

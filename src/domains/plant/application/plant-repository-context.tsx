@@ -11,6 +11,6 @@ export function PlantRepositoryProvider({ repository, children }: { repository: 
 // eslint-disable-next-line react-refresh/only-export-components
 export function usePlantRepository(): PlantRepository {
   const repo = useContext(PlantRepositoryContext);
-  if (!repo) throw new Error("PlantRepositoryProvider belum dipasang di composition root");
+  if (!repo) throw new Error("PlantRepositoryProvider is not mounted in the composition root");
   return repo;
 }

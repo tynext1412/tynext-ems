@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Placeholder embed SCADA</title>
+    <title>SCADA embed placeholder</title>
     <style>
       html, body { height: 100%; margin: 0; }
       body {
@@ -18,10 +18,10 @@
   </head>
   <body>
     <div class="box">
-      <h1>Placeholder embed SCADA (bukan SCADA sungguhan)</h1>
-      <p>Halaman ini hanya membuktikan bahwa viewer pihak ketiga bisa disematkan di menu SCADA. Diagram SCADA tidak dibuat di aplikasi ini.</p>
-      <p>Plant: <code id="plant">(tidak ada)</code></p>
-      <p>Ganti URL di konfigurasi dengan viewer SCADA Anda, misalnya Ignition Perspective, FUXA, atau WebAccess, yang mengizinkan embed (X-Frame-Options / CSP frame-ancestors).</p>
+      <h1>SCADA embed placeholder (not a real SCADA)</h1>
+      <p>This page only shows that a third-party viewer can be embedded in the SCADA menu. SCADA diagrams are not built in this app.</p>
+      <p>Plant: <code id="plant">(none)</code></p>
+      <p>Replace the URL in the configuration with your SCADA viewer, for example Ignition Perspective, FUXA, or WebAccess, that allows embedding (X-Frame-Options / CSP frame-ancestors).</p>
     </div>
     <script>
       var plant = new URLSearchParams(location.search).get("plant");

@@ -42,12 +42,12 @@ export function WeatherCard({ plantId }: { plantId: PlantId }) {
             </Button>
           }
         >
-          Data cuaca tidak bisa dimuat: {error.message}.
+          Weather data couldn't load: {error.message}.
         </Alert>
       )}
       {!isPending && !error && !data && (
         <Card>
-          <p className="text-sm text-muted">Belum ada data cuaca untuk plant ini.</p>
+          <p className="text-sm text-muted">No weather data for this plant yet.</p>
         </Card>
       )}
       {data && (

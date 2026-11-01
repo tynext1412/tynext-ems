@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { countDeviceStatus, deviceStatus, warrantyStatus, type DeviceRecord, type InverterRecord, type MeterRecord } from "./device";
 import { applyDeviceListQuery, DEFAULT_DEVICE_LIST_QUERY, sameKindDevices } from "./device-list";
-import { DEFAULT_PARAMETERS, DEVICE_PARAMETERS, groupByUnit } from "./parameters";
+import { catalogIdFor, DEFAULT_PARAMETERS, groupByUnit, PARAMETER_CATALOGS, parametersFor, type ParameterCatalogId } from "./parameters";
 import { DEVICE_KINDS } from "./device";
 
 function inverter(partial: Partial<InverterRecord> & Pick<InverterRecord, "id" | "name">): InverterRecord {
@@ -67,9 +67,11 @@ describe("device list query", () => {
 
 describe("parameters", () => {
   it("groups parameters by unit so no chart needs two axes", () => {
-    const groups = groupByUnit(DEVICE_PARAMETERS.INVERTER.filter((p) => ["powerKW", "acVoltageL1V", "acVoltageL2V", "acCurrentL1A"].includes(p.key)));
+    // Tegangan line dan tegangan fasa sama-sama Volt, jadi satu chart.
+    const groups = groupByUnit(PARAMETER_CATALOGS.INVERTER.filter((p) => ["activePowerKW", "lineVoltageABV", "phaseAVoltageV", "phaseACurrentA", "reactivePowerKvar"].includes(p.key)));
     expect(groups.map((g) => [g.unit, g.params.length])).toEqual([
       ["kW", 1],
+      ["kvar", 1],
       ["V", 2],
       ["A", 1],
     ]);
@@ -79,6 +81,7 @@ describe("parameters", () => {
 describe("sameKindDevices", () => {
   const meter: MeterRecord = {
     kind: "METER",
+    meterType: "STG",
     id: "MTR-1",
     plantId: "PLT-1",
     plantName: "Plant",
@@ -108,13 +111,24 @@ describe("sameKindDevices", () => {
 });
 
 describe("device kinds", () => {
-  it("offers Inverter, Battery, PCS and Meter, each with a catalog and valid defaults", () => {
-    expect(DEVICE_KINDS).toEqual(["INVERTER", "BATTERY", "PCS", "METER"]);
-    for (const kind of DEVICE_KINDS) {
-      const keys = new Set(DEVICE_PARAMETERS[kind].map((p) => p.key));
-      expect(keys.size).toBeGreaterThan(0);
-      for (const d of DEFAULT_PARAMETERS[kind]) expect(keys.has(d)).toBe(true);
+  it("offers Inverter, Battery, PCS, Meter and EMI; every catalog has unique keys and valid defaults", () => {
+    expect(DEVICE_KINDS).toEqual(["INVERTER", "BATTERY", "PCS", "METER", "EMI"]);
+    for (const id of Object.keys(PARAMETER_CATALOGS) as ParameterCatalogId[]) {
+      const keys = PARAMETER_CATALOGS[id].map((p) => p.key);
+      expect(new Set(keys).size).toBe(keys.length);
+      for (const d of DEFAULT_PARAMETERS[id]) expect(keys).toContain(d);
     }
-    expect(DEVICE_PARAMETERS.PCS.filter((p) => p.kind === "energy").map((p) => p.key)).toEqual(["dailyChargeKWh", "dailyDischargeKWh"]);
+    expect(PARAMETER_CATALOGS.PCS.filter((p) => p.kind === "energy").map((p) => p.key)).toEqual(["dailyChargeKWh", "dailyDischargeKWh"]);
+  });
+
+  it("uses the Grid Meter catalog for STG/DEG/ESS/PV/Load meters and its own catalog for the power sensor", () => {
+    for (const meterType of ["STG", "DEG", "ESS", "PV", "LOAD"]) expect(catalogIdFor({ kind: "METER", meterType })).toBe("GRID_METER");
+    expect(catalogIdFor({ kind: "METER", meterType: "POWER_SENSOR" })).toBe("POWER_SENSOR");
+    expect(catalogIdFor({ kind: "EMI" })).toBe("EMI");
+    // Power sensor tidak punya daya reaktif per fasa dan daya semu.
+    const sensorKeys = parametersFor({ kind: "METER", meterType: "POWER_SENSOR" }).map((p) => p.key);
+    expect(sensorKeys).not.toContain("apparentPowerKVA");
+    expect(sensorKeys).not.toContain("reactivePowerAKvar");
+    expect(parametersFor({ kind: "METER", meterType: "PV" }).map((p) => p.key)).toContain("apparentPowerKVA");
   });
 });

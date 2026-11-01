@@ -30,7 +30,7 @@ export class MockAuthRepository implements AuthRepository {
   async signIn(credentials: Credentials): Promise<Session> {
     await delay(LATENCY_MS);
     const errors = validateCredentials(credentials);
-    if (errors.email || errors.password) throw new Error(errors.email ?? errors.password ?? "Kredensial tidak valid");
+    if (errors.email || errors.password) throw new Error(errors.email ?? errors.password ?? "Invalid credentials");
     const email = credentials.email.trim().toLowerCase();
     return this.start({ id: `usr-${hash(email)}`, name: displayNameFromEmail(email), email, role: email.startsWith("admin") ? "ADMIN" : "OPERATOR" });
   }

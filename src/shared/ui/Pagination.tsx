@@ -22,7 +22,7 @@ export function Pagination({ page, pageSize, totalItems, pageSizeOptions = [10, 
     <div className={cn("flex w-full flex-wrap items-center justify-between gap-3 text-sm text-muted", disabled && "pointer-events-none opacity-50", className)} aria-disabled={disabled || undefined}>
       <div className="flex items-center gap-2">
         <span>Showing</span>
-        <Select value={pageSize} onChange={(e) => onPageSizeChange(Number(e.target.value))} aria-label="Baris per halaman" className="h-9 w-24 text-text">
+        <Select value={pageSize} onChange={(e) => onPageSizeChange(Number(e.target.value))} aria-label="Rows per page" className="h-9 w-24 text-text">
           {pageSizeOptions.map((size) => (
             <option key={size} value={size}>
               1-{size}

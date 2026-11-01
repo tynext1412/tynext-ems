@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PlantId } from "../domain/plant";
+import type { PlantInfoUpdate } from "../domain/plant-info";
 import { usePlantRepository } from "./plant-repository-context";
 
 export const plantKeys = {
@@ -32,5 +33,18 @@ export function useWeatherReport(id: PlantId) {
     queryFn: () => repository.weatherReport(id),
     enabled: id !== "",
     staleTime: 10 * 60_000,
+  });
+}
+
+// Setelah disimpan: detail plant diganti hasil server, daftar plant (Home, pemilih site) di-refresh.
+export function useUpdatePlantInfo(id: PlantId) {
+  const repository = usePlantRepository();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (info: PlantInfoUpdate) => repository.updateInfo(id, info),
+    onSuccess: (plant) => {
+      queryClient.setQueryData(plantKeys.detail(id), plant);
+      return queryClient.invalidateQueries({ queryKey: plantKeys.all });
+    },
   });
 }

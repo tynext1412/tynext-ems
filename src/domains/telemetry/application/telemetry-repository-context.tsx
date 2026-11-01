@@ -11,6 +11,6 @@ export function TelemetryRepositoryProvider({ repository, children }: { reposito
 // eslint-disable-next-line react-refresh/only-export-components
 export function useTelemetryRepository(): TelemetryRepository {
   const repo = useContext(TelemetryRepositoryContext);
-  if (!repo) throw new Error("TelemetryRepositoryProvider belum dipasang di composition root");
+  if (!repo) throw new Error("TelemetryRepositoryProvider is not mounted in the composition root");
   return repo;
 }

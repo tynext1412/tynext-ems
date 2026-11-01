@@ -1,50 +1,49 @@
-import { ChartColumn } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useEnergySeries, useTariffSeries } from "@/domains/performance/application/use-performances";
-import type { EnergySeriesGranularity, Granularity, Period } from "@/domains/performance/domain/performance";
+import type { Period } from "@/domains/performance/domain/performance";
 import type { Plant } from "@/domains/plant/domain/plant";
 import { useDailyPowerSeries } from "@/domains/telemetry/application/use-power-snapshot";
 import { timezoneAbbrev, toDateKey } from "@/shared/domain/time";
 import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
-import { Panel } from "@/shared/ui/Panel";
-import { dailyPowerPoints, energyBarPoints, minutesOfDay, tariffPoints } from "../../domain/chart-data";
+import { dailyPowerPoints, energyBarPoints, minutesOfDay, socTariffPoints, tariffPoints } from "../../domain/chart-data";
 import { clampWindow, FULL_DAY, type TimeWindow } from "../../domain/period";
-import { PeriodControl } from "../PeriodControl";
 import { DailyPowerChart } from "./DailyPowerChart";
 import { EnergyChart } from "./EnergyChart";
-import { SocChart } from "./SocChart";
-import { TariffChart } from "./TariffChart";
+import { SocTariffChart } from "./SocTariffChart";
 
-// Grafik punya filter periodenya sendiri (Day/Month/Year): Day → daya 5 menit,
-// SOC, tarif dengan zoom bersama; Month/Year → energi per hari/bulan.
-const CHART_GRANULARITIES: readonly Granularity[] = ["day", "month", "year"];
+interface Props {
+  plant: Plant;
+  // Periode dari filter section Operating Data. Komponen ini di-mount ulang (key) saat periode
+  // berganti, jadi rentang zoom tidak terbawa ke tanggal lain.
+  period: Period;
+}
 
-export default function OverviewCharts({ plant }: { plant: Plant }) {
+// Grafik di bawah kartu Operating Data, mengikuti filter yang sama: Day → daya 5 menit serta
+// SOC & tarif dengan zoom bersama; Month/Year/Lifetime → batang energi berkelompok per hari/bulan/tahun.
+export default function OverviewCharts({ plant, period }: Props) {
   const tz = plant.location.timezone;
   const abbrev = timezoneAbbrev(tz);
   const today = toDateKey(new Date(), tz);
   const hasBattery = plant.capacity.batteryKWh > 0;
 
-  const [period, setPeriod] = useState<Period>({ granularity: "day", date: today });
   const [window, setWindow] = useState<TimeWindow>(FULL_DAY);
-  const changePeriod = useCallback((p: Period) => {
-    setPeriod(p);
-    setWindow(FULL_DAY); // rentang zoom tidak dibawa ke tanggal lain
-  }, []);
   const onZoom = useCallback((from: number, to: number) => setWindow(clampWindow(from, to)), []);
   const onReset = useCallback(() => setWindow(FULL_DAY), []);
 
   const isDay = period.granularity === "day";
   const isToday = isDay && period.date === today;
-  const energyGranularity: EnergySeriesGranularity = period.granularity === "day" ? "month" : period.granularity;
+  const energyGranularity = period.granularity === "day" ? "month" : period.granularity;
 
   const daily = useDailyPowerSeries(isDay ? plant.id : "", period.date, isToday);
   const tariff = useTariffSeries(isDay ? plant.id : "", period.date);
   const energy = useEnergySeries(isDay ? "" : plant.id, energyGranularity, period.date);
 
   const dailyPoints = useMemo(() => (daily.data ? dailyPowerPoints(daily.data, tz) : undefined), [daily.data, tz]);
-  const tariffData = useMemo(() => (tariff.data ? tariffPoints(tariff.data, tz) : undefined), [tariff.data, tz]);
+  const socTariff = useMemo(
+    () => (dailyPoints && tariff.data ? socTariffPoints(hasBattery ? dailyPoints : [], tariffPoints(tariff.data, tz)) : undefined),
+    [dailyPoints, tariff.data, tz, hasBattery],
+  );
   const energyPoints = useMemo(() => (energy.data ? energyBarPoints(energy.data) : undefined), [energy.data]);
   const nowMinutes = isToday ? minutesOfDay(new Date().toISOString(), tz) : undefined;
 
@@ -59,12 +58,7 @@ export default function OverviewCharts({ plant }: { plant: Plant }) {
   };
 
   return (
-    <Panel
-      icon={<ChartColumn />}
-      title="Charts"
-      actions={<PeriodControl period={period} onChange={changePeriod} granularities={CHART_GRANULARITIES} minDate={plant.commissionedAt} today={today} />}
-      cards
-    >
+    <>
       {error && (
         <Alert
           tone="danger"
@@ -74,19 +68,18 @@ export default function OverviewCharts({ plant }: { plant: Plant }) {
             </Button>
           }
         >
-          Data grafik tidak bisa dimuat: {error.message}.
+          Chart data couldn't load: {error.message}.
         </Alert>
       )}
 
       {isDay ? (
         <>
           <DailyPowerChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} />
-          <SocChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} hasBattery={hasBattery} window={window} onZoom={onZoom} onReset={onReset} />
-          <TariffChart points={tariffData} loading={tariff.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} />
+          <SocTariffChart points={socTariff} loading={daily.isPending || tariff.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} hasBattery={hasBattery} window={window} onZoom={onZoom} onReset={onReset} />
         </>
       ) : (
-        <EnergyChart points={energyPoints} loading={energy.isPending} granularity={energyGranularity} />
+        <EnergyChart points={energyPoints} loading={energy.isPending} granularity={energyGranularity} hasBattery={hasBattery} />
       )}
-    </Panel>
+    </>
   );
 }

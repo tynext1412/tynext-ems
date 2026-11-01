@@ -31,12 +31,12 @@ export function connectorFor(node: FlowNode, s: PowerSample, hasBattery: boolean
       return {
         kw: Math.abs(s.gridKW),
         direction: flow.gridState === "import" ? "to-bus" : flow.gridState === "export" ? "from-bus" : "none",
-        caption: flow.gridState === "import" ? "impor" : flow.gridState === "export" ? "ekspor" : undefined,
+        caption: flow.gridState === "import" ? "import" : flow.gridState === "export" ? "export" : undefined,
       };
     case "load":
       return { kw: s.loadKW, direction: s.loadKW > EPSILON ? "from-bus" : "none" };
     case "battery":
-      if (!hasBattery) return { kw: 0, direction: "none", caption: "tidak terpasang" };
+      if (!hasBattery) return { kw: 0, direction: "none", caption: "not installed" };
       return {
         kw: Math.abs(s.batteryKW),
         direction: flow.batteryState === "discharging" ? "to-bus" : flow.batteryState === "charging" ? "from-bus" : "none",
@@ -46,8 +46,8 @@ export function connectorFor(node: FlowNode, s: PowerSample, hasBattery: boolean
 }
 
 export function describeFlow(s: PowerSample, hasBattery: boolean): string {
-  const parts = [`PV ${formatNumber(s.pvKW, 1)} kW`, `beban ${formatNumber(s.loadKW, 1)} kW`, `genset ${formatNumber(s.gensetKW, 1)} kW`];
-  if (hasBattery) parts.push(`baterai ${formatNumber(Math.abs(s.batteryKW), 1)} kW, SoC ${s.socPercent}%`);
-  parts.push(`grid ${formatNumber(Math.abs(s.gridKW), 1)} kW ${s.gridKW >= 0 ? "impor" : "ekspor"}`);
+  const parts = [`PV ${formatNumber(s.pvKW, 1)} kW`, `load ${formatNumber(s.loadKW, 1)} kW`, `genset ${formatNumber(s.gensetKW, 1)} kW`];
+  if (hasBattery) parts.push(`battery ${formatNumber(Math.abs(s.batteryKW), 1)} kW, SoC ${s.socPercent}%`);
+  parts.push(`grid ${formatNumber(Math.abs(s.gridKW), 1)} kW ${s.gridKW >= 0 ? "import" : "export"}`);
   return parts.join(", ");
 }

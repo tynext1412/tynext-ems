@@ -69,7 +69,7 @@ export function MaintenanceDetailDrawer({ open, onClose, onEdit, activity, activ
         </div>
       ) : (
         <p className="p-5 text-sm text-muted">
-          Aktivitas <span className="font-mono">{activityId}</span> tidak ada di plant ini.
+          Activity <span className="font-mono">{activityId}</span> isn't in this plant.
         </p>
       )}
     </Drawer>
@@ -98,7 +98,7 @@ function MaintenanceDetail({ activity, plant, status, updateError }: { activity:
       for (const file of Array.from(files)) photos.push(await compressImage(file));
       await patch({ addPhotos: photos });
     } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "Foto gagal diunggah");
+      setUploadError(e instanceof Error ? e.message : "Photo upload failed");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -135,7 +135,7 @@ function MaintenanceDetail({ activity, plant, status, updateError }: { activity:
             <Upload className="size-4" aria-hidden />
             Upload Photos
           </Button>
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png" multiple className="sr-only" onChange={(e) => void onFiles(e.target.files)} disabled={uploading} aria-label="Pilih foto" />
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png" multiple className="sr-only" onChange={(e) => void onFiles(e.target.files)} disabled={uploading} aria-label="Choose photos" />
         </div>
         {uploadError && (
           <p role="alert" className="mt-2 text-xs text-danger-text">
@@ -150,14 +150,14 @@ function MaintenanceDetail({ activity, plant, status, updateError }: { activity:
           <ul className="mt-4 grid grid-cols-5 gap-2">
             {activity.photos.map((p) => (
               <li key={p.id} className={cn("group relative overflow-hidden rounded-xl border border-border", expanded === p.id && "col-span-5")}>
-                <button type="button" className="block w-full" onClick={() => setExpanded(expanded === p.id ? null : p.id)} aria-label={`${expanded === p.id ? "Perkecil" : "Perbesar"} ${p.name}`}>
+                <button type="button" className="block w-full" onClick={() => setExpanded(expanded === p.id ? null : p.id)} aria-label={`${expanded === p.id ? "Collapse" : "Expand"} ${p.name}`}>
                   <img src={p.dataUrl} alt={p.name} className={cn("w-full object-cover", expanded === p.id ? "max-h-96 object-contain" : "aspect-square")} />
                 </button>
                 <button
                   type="button"
                   onClick={() => void patch({ removePhotoIds: [p.id] })}
                   disabled={update.isPending}
-                  aria-label={`Hapus foto ${p.name}`}
+                  aria-label={`Remove photo ${p.name}`}
                   className="absolute right-1 top-1 inline-flex size-7 items-center justify-center rounded-lg bg-surface/90 text-muted shadow-surface hover:text-danger-text focus:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                 >
                   <Trash2 className="size-3.5" aria-hidden />
@@ -187,7 +187,7 @@ function MaintenanceDetail({ activity, plant, status, updateError }: { activity:
         </div>
         {editingNotes ? (
           <div className="mt-2 grid gap-2">
-            <Textarea id={notesId} value={notes} maxLength={NOTES_MAX_LENGTH} onChange={(e) => setNotes(e.target.value)} placeholder="Temuan di lapangan, part yang diganti, tindak lanjut" />
+            <Textarea id={notesId} value={notes} maxLength={NOTES_MAX_LENGTH} onChange={(e) => setNotes(e.target.value)} placeholder="Field findings, parts replaced, follow-up" />
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
@@ -214,7 +214,7 @@ function MaintenanceDetail({ activity, plant, status, updateError }: { activity:
 
       {(update.error || updateError) && (
         <div className="px-5 pb-5">
-          <Alert tone="danger" title="Perubahan gagal disimpan">
+          <Alert tone="danger" title="Changes couldn't be saved">
             {(update.error ?? updateError)?.message}
           </Alert>
         </div>

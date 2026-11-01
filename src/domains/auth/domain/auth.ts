@@ -24,8 +24,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function validateCredentials(c: Credentials): CredentialErrors {
   const errors: CredentialErrors = {};
-  if (!EMAIL.test(c.email.trim())) errors.email = "Masukkan alamat email yang valid.";
-  if (c.password.length < PASSWORD_MIN_LENGTH) errors.password = `Kata sandi minimal ${PASSWORD_MIN_LENGTH} karakter.`;
+  if (!EMAIL.test(c.email.trim())) errors.email = "Enter a valid email address.";
+  if (c.password.length < PASSWORD_MIN_LENGTH) errors.password = `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
   return errors;
 }
 
@@ -33,7 +33,7 @@ export function validateCredentials(c: Credentials): CredentialErrors {
 export function displayNameFromEmail(email: string): string {
   const local = email.trim().split("@")[0] ?? "";
   const words = local.split(/[._-]+/).filter(Boolean);
-  if (words.length === 0) return "Pengguna";
+  if (words.length === 0) return "User";
   return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 }
 

@@ -54,7 +54,7 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           inputMode="email"
-          placeholder="nama@perusahaan.id"
+          placeholder="name@company.com"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -71,14 +71,14 @@ export function LoginForm() {
 
       <div className="grid gap-1">
         <label htmlFor={`${id}-password`} className="text-sm font-medium">
-          Kata sandi
+          Password
         </label>
         <div className="relative">
           <Input
             id={`${id}-password`}
             type={show ? "text" : "password"}
             autoComplete="current-password"
-            placeholder={`Minimal ${PASSWORD_MIN_LENGTH} karakter`}
+            placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
@@ -91,7 +91,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            aria-label={show ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+            aria-label={show ? "Hide password" : "Show password"}
             aria-pressed={show}
             className="absolute right-1 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-text"
           >
@@ -105,9 +105,9 @@ export function LoginForm() {
 
       <div className="-mt-1 text-sm">
         <button type="button" onClick={() => setForgot((f) => !f)} aria-expanded={forgot} className="text-accent underline-offset-2 hover:underline">
-          Lupa kata sandi?
+          Forgot password?
         </button>
-        {forgot && <p className="mt-1 text-xs text-muted">Reset kata sandi belum tersedia di versi dummy ini. Hubungi admin Tynext untuk akses.</p>}
+        {forgot && <p className="mt-1 text-xs text-muted">Password reset isn't available in this demo yet. Contact your Tynext admin for access.</p>}
       </div>
 
       {signIn.error && (
@@ -117,12 +117,12 @@ export function LoginForm() {
       )}
 
       <Button type="submit" variant="primary" disabled={signIn.isPending} className="h-11 w-full text-base">
-        {signIn.isPending ? "Memeriksa…" : "Masuk"}
+        {signIn.isPending ? "Signing in…" : "Sign in"}
       </Button>
 
       <div className="flex items-center gap-3 text-xs text-muted" aria-hidden>
         <span className="h-px flex-1 bg-border" />
-        atau
+        or
         <span className="h-px flex-1 bg-border" />
       </div>
 
@@ -130,7 +130,7 @@ export function LoginForm() {
         <span className="grid size-6 place-items-center rounded-full border border-border bg-surface font-semibold text-text" aria-hidden>
           G
         </span>
-        Lanjutkan dengan Google
+        Continue with Google
       </Button>
       <Button type="button" onClick={() => sso("microsoft")} disabled={signIn.isPending} className="h-11 w-full justify-start gap-3">
         <span className="grid size-6 grid-cols-2 gap-0.5 p-1" aria-hidden>
@@ -139,11 +139,11 @@ export function LoginForm() {
           <span className="bg-[#00a4ef]" />
           <span className="bg-[#ffb900]" />
         </span>
-        Lanjutkan dengan Microsoft
+        Continue with Microsoft
       </Button>
 
       <p className="rounded-md border border-warn/40 bg-warn/5 px-3 py-2 text-xs text-muted">
-        <span className="font-medium text-warn">Data dummy.</span> Email valid apa pun dengan kata sandi minimal {PASSWORD_MIN_LENGTH} karakter diterima; tombol Google/Microsoft masuk sebagai akun demo.
+        <span className="font-medium text-warn">Demo data.</span> Any valid email with a password of at least {PASSWORD_MIN_LENGTH} characters is accepted; the Google/Microsoft buttons sign in as a demo account.
       </p>
     </form>
   );

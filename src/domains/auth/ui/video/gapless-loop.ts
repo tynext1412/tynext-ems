@@ -74,7 +74,7 @@ export async function startGaplessLoop(video: HTMLVideoElement, url: string, sig
   const frames = countSamples(bytes);
   const split = firstMoofOffset(bytes);
   const mime = codec ? `video/mp4; codecs="${codec}"` : "";
-  if (!codec || frames < 2 || split <= 0 || !MediaSource.isTypeSupported(mime)) throw new Error("Berkas tidak cocok untuk MSE");
+  if (!codec || frames < 2 || split <= 0 || !MediaSource.isTypeSupported(mime)) throw new Error("File is not suitable for MSE");
   const initSegment = bytes.slice(0, split);
   const mediaSegment = bytes.slice(split);
 
@@ -83,7 +83,7 @@ export async function startGaplessLoop(video: HTMLVideoElement, url: string, sig
   video.src = objectUrl;
   await new Promise<void>((resolve, reject) => {
     source.addEventListener("sourceopen", () => resolve(), { once: true });
-    signal.addEventListener("abort", () => reject(new DOMException("dibatalkan", "AbortError")), { once: true });
+    signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
   });
   const buffer = source.addSourceBuffer(mime);
   buffer.mode = "segments";
@@ -96,7 +96,7 @@ export async function startGaplessLoop(video: HTMLVideoElement, url: string, sig
       };
       const fail = () => {
         buffer.removeEventListener("updateend", done);
-        reject(new Error("appendBuffer gagal"));
+        reject(new Error("appendBuffer failed"));
       };
       buffer.addEventListener("updateend", done, { once: true });
       buffer.addEventListener("error", fail, { once: true });

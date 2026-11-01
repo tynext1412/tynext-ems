@@ -39,6 +39,10 @@ framer-motion · lucide-react · vitest.
 
 ## Tampilan
 
+Semua teks UI (label, pesan, aria-label, data mock) berbahasa Inggris. Tanggal memakai format en-GB ("2 Nov 2026");
+angka tetap memakai pemisah Indonesia seperti di Figma ("443,19"), dan rupiah diringkas dengan singkatan Inggris
+K / M / B / T (ribu, juta, miliar, triliun). Nama plant, alamat, dan perusahaan adalah nama diri, jadi tidak diterjemahkan.
+
 Tampilan mengikuti desain Figma **"Tynext"** (kit HeroUI v3 + layar EMS buatan desainer; lihat
 `docs/prd/home-dashboard.md` untuk PRD Home). Token tema ada di `src/styles/index.css`
 (Tailwind v4 `@theme`), font **Inter** untuk semua teks (angka memakai figur tabular lewat kelas `font-mono`).
@@ -104,19 +108,56 @@ putih berisi judul plant (pemilih site: klik nama untuk mencari dan berpindah si
 dipertahankan) dengan chip status, lokasi, ID, dan owner. Setiap halaman tersusun dari panel abu-abu berjudul
 (ikon + nama) yang berisi kartu putih, mengikuti frame Details-* di Figma.
 
-- **Overview**: Live Energy Flow (adegan 3D per jenis site dengan sakelar 3D/2D; versi 2D SVG bila WebGL tidak ada),
+- **Overview**: Live Energy Flow (diorama 3D per jenis site dengan sakelar 3D/2D; versi 2D SVG bila WebGL tidak ada),
   tiga kartu Daily Energy Generation / Lifetime Energy Production / Total Revenue dengan artwork, Operating Data
-  (pemilih tanggal + Day/Month/Year/Lifetime), Charts (Daily Power, Battery State of Charge, Tariff dengan zoom
-  bersama dan "View as table"), serta kolom kanan Battery, Plant Information, Weather, Environmental Benefits.
+  dengan grafiknya dalam satu section dan satu filter (pemilih tanggal + Day/Month/Year/Lifetime). Tombol
+  "Download report" di samping tanggal mengunduh .xlsx: sheet Operating Data + satu sheet per grafik (Day: Daily
+  Power dan Battery SOC & Tariff; Month/Year/Lifetime: grafik energi). Grafik: Day → Daily Power
+  serta Battery SOC & Tariff (SOC di sumbu kiri %, tarif beli/jual di sumbu kanan Rp/kWh) dengan zoom bersama;
+  Month/Year/Lifetime → batang energi berkelompok (tidak ditumpuk) per hari/bulan/tahun: PV, Import, Export, Charge,
+  Discharge, Consumption. Semua grafik punya "View as table". Kolom kanan: Battery, Plant
+  Information, Weather, Environmental Benefits. Grafik harian memakai isian area bergradien; saat di-hover muncul
+  crosshair putus-putus vertikal dan horizontal dengan label nilai dan jam, plus tooltip semi-transparan (65 %)
+  berisi semua seri (baterai ditandai Charging/Discharging). Legenda berupa titik warna.
+
+  **Diorama 3D** dibangun dari satu builder berbasis konfigurasi (`src/domains/site/domain/flow-scenes.ts`): tiap
+  jenis site (Plantation, Resort / Hotel, Mining) hanya berisi ukuran dan warna panggung, model beban (pabrik,
+  hotel, pabrik pengolahan), dekorasi, area pohon, dan jalan; posisi PV, baterai, grid, genset, dan busbar AC
+  sama di semua site. Semua jalur ke busbar selalu tergambar: 0 kW = garis abu-abu putus-putus, aktif = garis
+  berwarna dengan partikel searah aliran. Label berada di atas objek dengan garis penunjuk; sumber 0 kW tampil
+  ringkas dan membesar saat di-hover. Kamera otomatis pas dengan isi adegan (dihitung ulang saat ukuran berubah),
+  pohon berupa InstancedMesh dengan sebaran acak deterministik, jendela bangunan beban menyala sesuai beban.
+  Menambah jenis site = menambah satu entri konfigurasi.
+
+  **Efek cuaca** di diorama mengikuti cuaca plant saat ini (`plant.weather`, parameter di
+  `src/domains/site/domain/weather-fx.ts`): Cerah = matahari dengan sinar berputar dan cahaya hangat; Berawan
+  sebagian = matahari + awan melayang yang berbayang; Berawan = lebih banyak awan, cahaya redup; Hujan = awan
+  kelabu dan rintik miring; Badai petir = hujan lebat, kilat bercabang dengan kilatan cahaya tiap 4–9 detik.
+  Langit tipis di belakang kanvas dan chip cuaca di pojok kanan atas ikut berubah. `prefers-reduced-motion`
+  menampilkan versi diam tanpa petir. Data cuaca masih dummy (fixture plant + prakiraan dari mock repository).
 - **SCADA**: viewer pihak ketiga yang disematkan (iframe ber-sandbox, `VITE_SCADA_URL_TEMPLATE` mendukung
   `{plantId}`); tanpa konfigurasi tampil empty state "SCADA isn't connected yet".
-- **Information**: Basic Information, System Capacity, Key Dates (timeline), Tariff Management (bar jam puncak
-  WBP 17:00–22:00), Location (citra satelit + Open Maps), Organization & Contact.
-- **Device**: tab Inverter/Battery/PCS/Meter, pencarian nama/SN, filter status, tabel dengan kolom Action menempel,
-  paginasi; detail perangkat dengan daftar perangkat sejenis di kiri, informasi, data real-time, dan chart parameter.
+- **Information**: tombol "Edit Information" di baris judul membuka drawer untuk Plant Name, Plant Type, Time Zone
+  (WIB/WITA/WIT), alamat, koordinat (menerima -0.0263 atau S0.026300, dengan pratinjau peta), Owner, Owner’s Contact,
+  Assigner Organization, dan Installer. Panel: Basic Information, System Capacity, Key Dates (timeline), Tariff Management (tarif beli
+  dari grid dengan tombol Edit: Flat 24 hours atau Time of use = tarif dasar + periode jam bertarif sendiri, boleh
+  melewati tengah malam; bar 24 jam dan grafik SOC & Tariff di Overview mengikuti), Location (citra satelit + Open Maps), Organization & Contact.
+- **Device**: tab Inverter / Battery / PCS / Meter / EMI / Weather Station, pencarian nama/SN, filter status, tabel
+  dengan kolom Action menempel, paginasi; detail perangkat dengan daftar perangkat sejenis di kiri, informasi, data
+  real-time, dan chart parameter (tabel di bawah setiap chart bisa dibuka/ditutup; "Download report" mengunduh
+  identitas perangkat + satu sheet per chart yang tampil). Parameter real-time dan chart
+  mengikuti sheet "Device RealTime" di `public/EMS Parameter List.xlsx`:
+  - Inverter = String Inverter; Battery = C&I ESS (SOC/SOH, working mode, daya charge/discharge, data per rak, sel
+    max/min, daya PCS, energi tersedia, HVAC, fire suppression); PCS belum ada di sheet, parameternya tetap.
+  - Meter punya jenis STG, DEG, ESS, PV, Load (parameter "Grid Meter") dan Power Sensor (parameter "Power Sensor").
+    Daya ditampilkan dalam kW/kvar walau API mengirim W/var.
+  - EMI / Weather Station: iradiansi & iradiasi harian (POA dan horizontal), suhu udara dan modul, angin.
 - **Alarm**: tab Active/Recovered, pencarian, filter tipe perangkat dan level, tabel (Level, Status, Device Type, SN,
   Alarm Content, Alarm Time, Recovery Time, Duration) dengan empty state berilustrasi.
 - **O&M Schedule**: tombol Add Activity di baris judul, tab All/Pending/Upcoming/Done, pencarian, filter tipe, tabel;
+  di tab All ada pengalih List / Calendar (`?view=calendar`): kalender bulanan (Senin pertama) dengan aktivitas
+  berwarna per status, klik membuka detail, "+" di tiap tanggal menambah aktivitas pada tanggal itu; layar sempit
+  menampilkan agenda bulan;
   drawer Add Activity, Activity Details (foto dokumentasi, catatan, Mark as Done), dan Edit Activity. Status
   diturunkan (Done bila ditandai selesai; Upcoming bila tanggal masih di depan; Pending bila sudah tiba). Mock
   menyimpan perubahan di `localStorage` (`tynext-ems.maintenance.v1`).
@@ -138,7 +179,7 @@ src/
     impact/       rumus Environmental Benefits
     dashboard/    komposisi: overview, query Site list, halaman dashboard
     maintenance/  jadwal O&M: aktivitas, aturan status, validasi form, create/update (mock di localStorage)
-    site/         komposisi: layout sidebar + halaman Overview/Info/Device/Alarm/O&M; domain geometri aliran (polyline, tata letak 3D, konektor) + adegan three.js
+    site/         komposisi: layout sidebar + halaman Overview/Info/Device/Alarm/O&M; domain geometri aliran (polyline, konfigurasi diorama 3D per jenis site, framing kamera, konektor) + builder adegan three.js
 ```
 
 Setiap domain berlapis `domain/ → application/ → infrastructure/ → ui/`. Logika bisnis

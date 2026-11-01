@@ -19,7 +19,7 @@ export class AppErrorBoundary extends Component<{ children: ReactNode }, State> 
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("Galat tak tertangani:", error, info.componentStack);
+    console.error("Unhandled error:", error, info.componentStack);
   }
 
   render() {

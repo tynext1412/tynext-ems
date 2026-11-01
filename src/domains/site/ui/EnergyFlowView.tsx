@@ -56,23 +56,25 @@ export function EnergyFlowView({ plant, snapshot }: Props) {
 
   return (
     <Card className="relative overflow-hidden p-0">
-      <div className="h-[288px] md:h-[304px]">
+      {/* Rasio kartu adegan mengikuti Figma (788 × 304) supaya proporsinya tetap di layar yang lebih lebar dari 1440 px. */}
+      <div className="h-[288px] md:h-auto md:aspect-[788/304]">
         {show3d ? (
           <ErrorBoundary fallback={fallback} onError={() => setFailed(true)}>
             <Suspense fallback={<Skeleton className="h-full w-full rounded-none" />}>
-              <EnergyFlow3D snapshot={snapshot} hasBattery={hasBattery} batteryUnits={batteryUnits} plantType={plant.plantType} />
+              <EnergyFlow3D snapshot={snapshot} hasBattery={hasBattery} batteryUnits={batteryUnits} plantType={plant.plantType} loadCapacityKW={plant.capacity.inverterKW} weather={plant.weather} />
             </Suspense>
           </ErrorBoundary>
         ) : (
           fallback
         )}
       </div>
-      <HintChip className="absolute bottom-3 left-3 z-30">{show3d ? "Drag to rotate • Scroll to zoom" : "Diagram satu garis"}</HintChip>
-      <div className="absolute bottom-3 right-3 z-30" title={failed ? "Adegan 3D gagal dirender" : !webgl ? "WebGL tidak tersedia" : undefined}>
+      <HintChip className="absolute bottom-3 left-3 z-30">{show3d ? "Drag to rotate • Scroll to zoom" : "Single-line diagram"}</HintChip>
+      <div className="absolute bottom-3 right-3 z-30" title={failed ? "The 3D scene failed to render" : !webgl ? "WebGL is not available" : undefined}>
         <Tabs
           variant="segmented"
           size="sm"
-          aria-label="Tampilan diagram"
+          activeShadow="toggle"
+          aria-label="Diagram view"
           items={[
             { value: "3d", label: "3D", disabled: !webgl || failed },
             { value: "2d", label: "2D" },

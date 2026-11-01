@@ -61,15 +61,15 @@ export function scaleEnergy(value: KWh, fractionDigits = 2): ScaledEnergy {
 
 export interface ScaledIDR {
   value: string;
-  unit: "" | "rb" | "jt" | "M" | "T";
+  unit: "" | "K" | "M" | "B" | "T";
 }
 
 // Rp 43.396.698.905 → 43,40 M (miliar).
 export function scaleIDR(value: IDR, fractionDigits = 2): ScaledIDR {
   const abs = Math.abs(value);
   if (abs >= 1e12) return { value: formatNumber(value / 1e12, fractionDigits), unit: "T" };
-  if (abs >= 1e9) return { value: formatNumber(value / 1e9, fractionDigits), unit: "M" };
-  if (abs >= 1e6) return { value: formatNumber(value / 1e6, fractionDigits), unit: "jt" };
-  if (abs >= 1e3) return { value: formatNumber(value / 1e3, fractionDigits), unit: "rb" };
+  if (abs >= 1e9) return { value: formatNumber(value / 1e9, fractionDigits), unit: "B" };
+  if (abs >= 1e6) return { value: formatNumber(value / 1e6, fractionDigits), unit: "M" };
+  if (abs >= 1e3) return { value: formatNumber(value / 1e3, fractionDigits), unit: "K" };
   return { value: formatNumber(value, 0), unit: "" };
 }

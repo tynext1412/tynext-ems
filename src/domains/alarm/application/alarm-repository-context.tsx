@@ -11,6 +11,6 @@ export function AlarmRepositoryProvider({ repository, children }: { repository: 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAlarmRepository(): AlarmRepository {
   const repo = useContext(AlarmRepositoryContext);
-  if (!repo) throw new Error("AlarmRepositoryProvider belum dipasang di composition root");
+  if (!repo) throw new Error("AlarmRepositoryProvider is not mounted in the composition root");
   return repo;
 }

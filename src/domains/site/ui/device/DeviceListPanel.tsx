@@ -2,7 +2,7 @@ import { Eye } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePlantDeviceReadings, usePlantDevices } from "@/domains/device/application/use-devices";
-import { countDeviceStatus, DEVICE_KIND_LABEL, DEVICE_KINDS, deviceStatus, type DeviceKind, type DeviceRecord } from "@/domains/device/domain/device";
+import { countDeviceStatus, DEVICE_KIND_LABEL, DEVICE_KINDS, deviceStatus, METER_TYPE_LABEL, type DeviceKind, type DeviceRecord } from "@/domains/device/domain/device";
 import { applyDeviceListQuery, DEFAULT_DEVICE_LIST_QUERY, type DeviceStatusFilter } from "@/domains/device/domain/device-list";
 import type { DeviceReading } from "@/domains/device/domain/reading";
 import { DeviceStatusBadge } from "@/domains/device/ui/DeviceStatusBadge";
@@ -88,14 +88,14 @@ export function DeviceListPanel({ plant }: { plant: Plant }) {
     }
     if (result.totalItems > 0) return null;
     if (search.trim()) {
-      return <EmptyState illustration="no-search-results" title={`No devices match “${search.trim()}”`} description="Periksa ejaan, atau coba nama atau serial number yang lain." action={<Button onClick={reset}>Clear search</Button>} />;
+      return <EmptyState illustration="no-search-results" title={`No devices match “${search.trim()}”`} description="Check the spelling, or try another name or serial number." action={<Button onClick={reset}>Clear search</Button>} />;
     }
     if (ofKind.length === 0) {
-      return <EmptyState illustration="empty-sites" title={`No ${kindLabel.toLowerCase()} on this plant`} description={`Belum ada ${kindLabel.toLowerCase()} yang terdaftar untuk ${plant.name}.`} />;
+      return <EmptyState illustration="empty-sites" title={`No ${kindLabel.toLowerCase()} on this plant`} description={`No ${kindLabel.toLowerCase()} registered for ${plant.name} yet.`} />;
     }
     const again = <Button onClick={() => void devices.refetch()}>Check again</Button>;
     if (status === "ALARM") return <EmptyState illustration="no-active-alarms" title={`No ${kindLabel.toLowerCase()} with active alarms`} action={again} />;
-    if (status === "OFFLINE") return <EmptyState illustration="all-sites-online" title={`No offline ${kindLabel.toLowerCase()}`} description={`Semua ${kindLabel.toLowerCase()} sedang terhubung.`} action={again} />;
+    if (status === "OFFLINE") return <EmptyState illustration="all-sites-online" title={`No offline ${kindLabel.toLowerCase()}`} description={`Every ${kindLabel.toLowerCase()} is connected.`} action={again} />;
     return <EmptyState illustration="empty-sites" title={<span className="text-warn-text">No ${kindLabel.toLowerCase()} are online right now</span>} action={again} />;
   })();
 
@@ -104,12 +104,12 @@ export function DeviceListPanel({ plant }: { plant: Plant }) {
       <Tabs
         value={kind}
         onChange={changeKind}
-        aria-label="Tipe perangkat"
+        aria-label="Device type"
         items={DEVICE_KINDS.map((k) => ({ value: k, label: DEVICE_KIND_LABEL[k], count: all.filter((d) => d.kind === k).length }))}
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <SearchField value={searchDraft} onChange={setSearchDraft} onSubmit={() => void applySearch()} placeholder="Search name or serial number" aria-label="Cari perangkat" wrapperClassName="w-[280px] max-w-full" />
+        <SearchField value={searchDraft} onChange={setSearchDraft} onSubmit={() => void applySearch()} placeholder="Search name or serial number" aria-label="Search devices" wrapperClassName="w-[280px] max-w-full" />
         <Button variant="primary" onClick={() => void applySearch()} loading={searching}>
           {searching ? "Searching" : "Search"}
         </Button>
@@ -117,7 +117,7 @@ export function DeviceListPanel({ plant }: { plant: Plant }) {
         <Tabs
           variant="segmented"
           className="ml-auto"
-          aria-label="Filter status perangkat"
+          aria-label="Filter by device status"
           value={status}
           onChange={(s) => {
             setStatus(s);
@@ -171,11 +171,14 @@ interface TableProps {
 }
 
 const COLUMNS: Record<DeviceKind, string[]> = {
-  INVERTER: ["Status", "Name", "Inverter SN", "Rated Power", "Power", "Daily Yield", "Total Yield", "Action"],
-  BATTERY: ["Status", "Name", "Battery SN", "Type", "Model", "SOC", "Daily Charge", "Daily Discharge", "Action"],
+  INVERTER: ["Status", "Name", "Inverter SN", "Rated Power", "Active Power", "Yield Today", "Total Yield", "Action"],
+  BATTERY: ["Status", "Name", "Battery SN", "Type", "Model", "SOC", "SOH", "Charge Energy (Today)", "Discharge Energy (Today)", "Action"],
   PCS: ["Status", "Name", "PCS SN", "Rated Power", "Power", "Daily Charge", "Daily Discharge", "Coupled Batteries", "Action"],
-  METER: ["Status", "Name", "Meter SN", "Device Original SN", "Power", "Daily Export", "Daily Import", "Associated Datalogger", "Action"],
+  METER: ["Status", "Name", "Meter SN", "Meter Type", "Device Original SN", "Active Power", "Forward Energy (Today)", "Reverse Energy (Today)", "Associated Datalogger", "Action"],
+  EMI: ["Status", "Name", "EMI SN", "Model", "Irradiance (POA)", "Ambient Temp.", "Module Temp.", "Daily Irradiation (POA)", "Action"],
 };
+
+const MIN_WIDTH: Partial<Record<DeviceKind, string>> = { METER: "1320px", BATTERY: "1200px" };
 
 function DeviceTable({ kind, rows, readings, loading, searching, readingsLoading, onOpen, footer, message }: TableProps) {
   const columns = COLUMNS[kind];
@@ -186,7 +189,7 @@ function DeviceTable({ kind, rows, readings, loading, searching, readingsLoading
   };
 
   return (
-    <DataTable stickyAction minWidth="1120px" caption={`Daftar ${DEVICE_KIND_LABEL[kind].toLowerCase()}`} footer={footer} busy={loading || searching}>
+    <DataTable stickyAction minWidth={MIN_WIDTH[kind] ?? "1120px"} caption={`${DEVICE_KIND_LABEL[kind]} list`} footer={footer} busy={loading || searching}>
       <THead>
         <tr>
           {columns.map((c, i) => (
@@ -223,8 +226,8 @@ function DeviceTable({ kind, rows, readings, loading, searching, readingsLoading
               {d.kind === "INVERTER" && (
                 <>
                   <Td className="font-mono">{formatNumber(d.ratedPowerKW, 0)} kW</Td>
-                  <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && `${formatNumber(r.powerKW, 1)} kW`)}</Td>
-                  <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && energy(r.dailyYieldKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && `${formatNumber(r.activePowerKW, 1)} kW`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && energy(r.yieldTodayKWh))}</Td>
                   <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && energy(r.totalYieldKWh))}</Td>
                 </>
               )}
@@ -233,8 +236,9 @@ function DeviceTable({ kind, rows, readings, loading, searching, readingsLoading
                   <Td>{d.batteryType}</Td>
                   <Td>{d.model}</Td>
                   <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && `${r.socPercent}%`)}</Td>
-                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && energy(r.dailyChargeKWh))}</Td>
-                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && energy(r.dailyDischargeKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && `${formatNumber(r.sohPercent, 1)}%`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && energy(r.chargeEnergyTodayKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && energy(r.dischargeEnergyTodayKWh))}</Td>
                 </>
               )}
               {d.kind === "PCS" && (
@@ -248,15 +252,25 @@ function DeviceTable({ kind, rows, readings, loading, searching, readingsLoading
               )}
               {d.kind === "METER" && (
                 <>
+                  <Td>{METER_TYPE_LABEL[d.meterType]}</Td>
                   <Td className="font-mono">{d.originalSerialNumber ?? <span className="text-muted">–</span>}</Td>
                   <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && `${formatNumber(r.activePowerKW, 1)} kW`)}</Td>
-                  <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && energy(r.dailyExportKWh))}</Td>
-                  <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && energy(r.dailyImportKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && energy(r.forwardActiveEnergyTodayKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && energy(r.reverseActiveEnergyTodayKWh))}</Td>
                   <Td className="font-mono">{d.dataloggerId}</Td>
                 </>
               )}
+              {d.kind === "EMI" && (
+                <>
+                  <Td>{d.model}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "EMI" && `${formatNumber(r.irradiancePoaWm2, 0)} W/m²`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "EMI" && `${formatNumber(r.ambientTempC, 1)} °C`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "EMI" && `${formatNumber(r.moduleTempC, 1)} °C`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "EMI" && `${formatNumber(r.dailyIrradiationPoaKWhM2, 2)} kWh/m²`)}</Td>
+                </>
+              )}
               <Td align="center">
-                <Button iconOnly size="sm" variant="tertiary" onClick={() => onOpen(d.id)} aria-label={`Buka detail ${d.name}`} title="Lihat detail perangkat">
+                <Button iconOnly size="sm" variant="tertiary" onClick={() => onOpen(d.id)} aria-label={`Open details for ${d.name}`} title="View device details">
                   <Eye className="size-4" aria-hidden />
                 </Button>
               </Td>

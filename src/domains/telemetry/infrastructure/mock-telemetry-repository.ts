@@ -9,8 +9,9 @@ const SIMULATED_LATENCY_MS = 200;
 const SAMPLE_MINUTES = 5;
 const SAMPLES_PER_DAY = (24 * 60) / SAMPLE_MINUTES;
 
-// Kurva irradiansi sederhana: nol di luar 06:00–18:00, puncak di tengah hari.
-function irradiance(hour: number): number {
+// Kurva irradiansi sederhana: nol di luar 06:00–18:00, puncak di tengah hari (0–1).
+// Diekspor supaya mock EMI / weather station memakai kurva yang sama dengan daya PV.
+export function irradiance(hour: number): number {
   if (hour < 6 || hour > 18) return 0;
   return Math.sin(((hour - 6) / 12) * Math.PI);
 }

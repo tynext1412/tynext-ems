@@ -89,3 +89,37 @@ export function zoomTicks([from, to]: TimeWindow): number[] {
   for (let t = Math.ceil(from / step) * step; t <= to; t += step) ticks.push(t);
   return ticks;
 }
+
+// ── Pemilih periode (popover kalender) ──────────────────────────────────────
+
+// Minggu-minggu satu bulan untuk grid kalender, Senin sebagai hari pertama. Sel di luar bulan
+// berisi null supaya grid selalu 7 kolom.
+export function calendarWeeks(year: number, month: number): (string | null)[][] {
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const lead = (first.getUTCDay() + 6) % 7; // Senin = 0
+  const cells: (string | null)[] = Array.from({ length: lead }, () => null);
+  for (let d = 1; d <= days; d++) cells.push(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: (string | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+// Bulan kalender sebelum/sesudah, sebagai [tahun, bulan 1–12].
+export function shiftMonth(year: number, month: number, delta: number): [number, number] {
+  const index = year * 12 + (month - 1) + delta;
+  return [Math.floor(index / 12), (index % 12) + 1];
+}
+
+// Apakah tanggal/bulan/tahun (prefix YYYY-MM-DD, YYYY-MM, atau YYYY) masih di dalam [minDate, today].
+export function inRange(key: string, minDate: string, today: string): boolean {
+  return key >= minDate.slice(0, key.length) && key <= today.slice(0, key.length);
+}
+
+// Tahun yang bisa dipilih: dari tahun commissioning sampai tahun ini, terbaru dulu.
+export function selectableYears(minDate: string, today: string): number[] {
+  const from = Number(minDate.slice(0, 4));
+  const to = Number(today.slice(0, 4));
+  return Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => to - i);
+}

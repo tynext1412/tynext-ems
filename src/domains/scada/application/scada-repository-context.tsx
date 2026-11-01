@@ -11,6 +11,6 @@ export function ScadaRepositoryProvider({ repository, children }: { repository: 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useScadaRepository(): ScadaRepository {
   const repo = useContext(ScadaRepositoryContext);
-  if (!repo) throw new Error("ScadaRepositoryProvider belum dipasang di composition root");
+  if (!repo) throw new Error("ScadaRepositoryProvider is not mounted in the composition root");
   return repo;
 }

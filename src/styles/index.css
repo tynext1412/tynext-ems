@@ -53,7 +53,15 @@
   --shadow-surface: 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
   --shadow-overlay: 0 14px 28px rgba(0, 0, 0, 0.08), 0 -6px 12px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-control: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --shadow-sticky: -10px 0 14px -10px rgba(0, 0, 0, 0.18);
+  --shadow-sticky: -8px 0 12px -4px rgba(15, 23, 41, 0.1); /* kolom Action menempel (col-action fixed) */
+  --shadow-menu: 0 12px 32px rgba(18, 23, 28, 0.16); /* menu profil */
+  --shadow-dialog: 0 24px 60px rgba(18, 23, 28, 0.3); /* dialog sign out / sesi habis */
+  --shadow-banner: 0 8px 24px rgba(18, 23, 28, 0.16); /* alert offline / refresh gagal */
+  --shadow-chip: 0 4px 16px rgba(18, 23, 28, 0.1); /* indikator "Loading map" */
+  --shadow-tab: 0 2px 8px rgba(0, 0, 0, 0.06); /* tab segmen terpilih */
+  --shadow-toggle: 0 1px 1px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1); /* sakelar 3D/2D terpilih */
+  --shadow-cell: 0 4px 4px rgba(0, 0, 0, 0.25); /* sel SOC baterai yang terisi */
+  --shadow-focus: 0 0 0 2px #0485f7; /* cincin fokus kolom isian */
   --inset-highlight: inset 0 3px 2px rgba(255, 255, 255, 0.2);
 }
 
@@ -156,16 +164,6 @@ body {
 
   /* Kolom Action yang menempel di kanan tabel; bayangan muncul hanya bila masih ada
      kolom yang tersembunyi di bawahnya (kelas is-overflowing dipasang oleh DataTable). */
-  .table-sticky-action th:last-child,
-  .table-sticky-action td:last-child {
-    position: sticky;
-    right: 0;
-    background: inherit;
-  }
-  .table-sticky-action.is-overflowing th:last-child,
-  .table-sticky-action.is-overflowing td:last-child {
-    box-shadow: var(--shadow-sticky);
-  }
 
   /* Diagram aliran energi 2D: garis putus-putus bergerak searah aliran daya. */
   .flow-line {
@@ -246,4 +244,19 @@ body {
 }
 .leaflet-popup.plant-popup .leaflet-popup-close-button {
   display: none;
+}
+
+/* Kolom Action yang menempel di kanan tabel. Di luar @layer supaya mengalahkan utility `relative`
+   pada sel header (dipakai garis pemisah kolom). Bayangan dari Figma (col-action fixed) hanya
+   muncul bila masih ada kolom tersembunyi di bawahnya (kelas is-overflowing dipasang DataTable). */
+.table-sticky-action th:last-child,
+.table-sticky-action td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: inherit;
+}
+.table-sticky-action.is-overflowing th:last-child,
+.table-sticky-action.is-overflowing td:last-child {
+  box-shadow: var(--shadow-sticky);
 }

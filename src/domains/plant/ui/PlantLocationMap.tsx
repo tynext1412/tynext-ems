@@ -10,10 +10,12 @@ interface Props {
 }
 
 // Citra satelit lokasi plant dari koordinat GPS (statis: tanpa zoom/geser), warna asli.
+// MapContainer hanya membaca center saat mount, jadi key koordinat memasang ulang peta bila lokasi diubah.
 export function PlantLocationMap({ plant, className }: Props) {
   const { lat, lng } = plant.location.point;
   return (
     <MapContainer
+      key={`${lat},${lng}`}
       center={[lat, lng]}
       zoom={16}
       zoomControl={false}

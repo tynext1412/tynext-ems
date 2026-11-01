@@ -76,7 +76,7 @@ export function UserMenu({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0 }}
             exit={reducedMotion ? undefined : { opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full z-50 mt-2 w-[260px] rounded-2xl border border-border bg-surface p-1.5 shadow-overlay"
+            className="absolute right-0 top-full z-50 mt-2 w-[260px] rounded-2xl border border-border bg-surface p-1.5 shadow-menu"
           >
             <div className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5">
               <Avatar name={user.name} className="size-9 text-sm" />
@@ -98,7 +98,7 @@ export function UserMenu({ className }: { className?: string }) {
               icon={theme === "dark" ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
-              {theme === "dark" ? "Tema terang" : "Tema gelap"}
+              {theme === "dark" ? "Light theme" : "Dark theme"}
             </MenuItem>
             <MenuItem
               icon={<LogOut className="size-4" aria-hidden />}
@@ -118,7 +118,7 @@ export function UserMenu({ className }: { className?: string }) {
         open={confirm}
         onClose={signOut.isPending ? undefined : () => setConfirm(false)}
         title="Sign out?"
-        description="Sesi Anda akan diakhiri dan Anda kembali ke halaman login."
+        description="Your session will end and you'll return to the sign-in page."
         actions={
           <>
             <Button onClick={() => setConfirm(false)} disabled={signOut.isPending}>
@@ -132,7 +132,7 @@ export function UserMenu({ className }: { className?: string }) {
       >
         {signOut.error && (
           <p role="alert" className="text-sm text-danger-text">
-            Gagal keluar: {signOut.error.message}
+            Sign out failed: {signOut.error.message}
           </p>
         )}
       </Dialog>

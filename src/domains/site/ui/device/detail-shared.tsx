@@ -85,3 +85,13 @@ export function MeasureTable({ caption, columns, rows, loading }: { caption: str
     </DataTable>
   );
 }
+
+// Nilai teks (enum: status, mode) dengan gaya yang sama seperti Stat.
+export function TextStat({ label, value, tone }: { label: string; value?: string; tone?: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted">{label}</div>
+      {value === undefined ? <Skeleton className="mt-1 h-6 w-20" /> : <div className={cn("mt-0.5 text-lg font-semibold leading-7", tone)}>{value}</div>}
+    </div>
+  );
+}

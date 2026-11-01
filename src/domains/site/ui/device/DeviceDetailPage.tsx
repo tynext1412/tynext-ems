@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { useDevice, useDeviceReading } from "@/domains/device/application/use-devices";
-import { DEVICE_KIND_LABEL, deviceStatus } from "@/domains/device/domain/device";
+import { deviceStatus, deviceTypeLabel } from "@/domains/device/domain/device";
 import { DeviceStatusBadge } from "@/domains/device/ui/DeviceStatusBadge";
 import { MasterChip } from "@/domains/device/ui/MasterChip";
 import { formatDateTime, formatRelative, timezoneAbbrev } from "@/shared/domain/time";
@@ -15,6 +15,7 @@ import { Skeleton } from "@/shared/ui/Skeleton";
 import { useSiteContext } from "../../application/use-site";
 import { BatteryDetail } from "./BatteryDetail";
 import { DevicePhotoCard } from "./DevicePhotoCard";
+import { EmiDetail } from "./EmiDetail";
 import { DeviceSwitcher } from "./DeviceSwitcher";
 import { InverterDetail } from "./InverterDetail";
 import { MeterDetail } from "./MeterDetail";
@@ -41,17 +42,17 @@ export function DeviceDetailPage() {
 
       <div className="@container grid min-w-0 gap-3">
         {device.isPending && (
-          <Panel aria-label="Memuat perangkat">
+          <Panel aria-label="Loading device">
             <Skeleton className="mb-3 h-6 w-64" />
             <Skeleton className="h-4 w-40" />
-            <span className="sr-only">Memuat perangkat…</span>
+            <span className="sr-only">Loading device…</span>
           </Panel>
         )}
         {device.error && (
           <Panel>
             <EmptyState
               illustration="server-error"
-              title="Perangkat tidak bisa dimuat"
+              title="Device couldn't load"
               description={device.error.message}
               action={
                 <Button variant="primary" onClick={() => void device.refetch()}>
@@ -63,7 +64,7 @@ export function DeviceDetailPage() {
         )}
         {!device.isPending && !device.error && device.data === null && (
           <Panel>
-            <EmptyState illustration="not-found" title="Perangkat tidak ditemukan" description={`Perangkat ${deviceId} tidak ada di plant ini.`} />
+            <EmptyState illustration="not-found" title="Device not found" description={`Device ${deviceId} isn't in this plant.`} />
           </Panel>
         )}
 
@@ -76,7 +77,7 @@ export function DeviceDetailPage() {
                   <DeviceStatusBadge status={deviceStatus(device.data)} />
                   {device.data.kind === "INVERTER" && device.data.isMaster && <MasterChip />}
                   <Chip variant="soft" tone="neutral">
-                    {DEVICE_KIND_LABEL[device.data.kind]}
+                    {deviceTypeLabel(device.data)}
                   </Chip>
                 </div>
                 <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
@@ -104,15 +105,17 @@ export function DeviceDetailPage() {
             {device.data.kind === "BATTERY" && <BatteryDetail device={device.data} reading={reading.data?.kind === "BATTERY" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
             {device.data.kind === "PCS" && <PcsDetail device={device.data} reading={reading.data?.kind === "PCS" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
             {device.data.kind === "METER" && <MeterDetail device={device.data} reading={reading.data?.kind === "METER" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
+            {device.data.kind === "EMI" && <EmiDetail device={device.data} reading={reading.data?.kind === "EMI" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
 
             <Suspense
               fallback={
-                <Panel title={`${DEVICE_KIND_LABEL[device.data.kind]} Chart`}>
+                <Panel title={`${deviceTypeLabel(device.data)} Chart`}>
                   <Skeleton className="h-70 w-full" />
                 </Panel>
               }
             >
-              <DeviceChartPanel device={device.data} plant={plant} />
+              {/* key: pilihan parameter kembali ke default saat pindah perangkat (katalog bisa berbeda) */}
+              <DeviceChartPanel key={device.data.id} device={device.data} plant={plant} />
             </Suspense>
           </>
         )}

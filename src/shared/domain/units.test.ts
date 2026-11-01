@@ -16,9 +16,10 @@ describe("units", () => {
     expect(scaleEnergy(2_000_000_000)).toEqual({ value: "2.000,00", unit: "GWh" });
   });
 
-  it("scales rupiah to rb/jt/M/T", () => {
-    expect(scaleIDR(43_396_698_905)).toEqual({ value: "43,40", unit: "M" });
-    expect(scaleIDR(2_400_000)).toEqual({ value: "2,40", unit: "jt" });
+  it("scales rupiah to K/M/B/T", () => {
+    expect(scaleIDR(43_396_698_905)).toEqual({ value: "43,40", unit: "B" });
+    expect(scaleIDR(2_400_000)).toEqual({ value: "2,40", unit: "M" });
+    expect(scaleIDR(753_210)).toEqual({ value: "753,21", unit: "K" });
     expect(scaleIDR(500)).toEqual({ value: "500", unit: "" });
   });
 });

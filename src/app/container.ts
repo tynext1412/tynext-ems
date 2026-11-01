@@ -35,7 +35,7 @@ export interface Repositories {
 export function createRepositories(): Repositories {
   if (env.dataSource === "http") {
     // TODO: adapter HTTP (pakai shared/lib/apiClient) begitu kontrak API backend tersedia.
-    throw new Error("VITE_DATA_SOURCE=http belum didukung; gunakan mock");
+    throw new Error("VITE_DATA_SOURCE=http is not supported yet; use mock");
   }
 
   const performance = new MockPerformanceRepository(plantFixtures);

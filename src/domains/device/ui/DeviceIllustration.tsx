@@ -1,13 +1,16 @@
 import type { DeviceKind } from "../domain/device";
 
 // Ilustrasi vektor per tipe perangkat; dipakai bila foto produk (photoUrl) belum tersedia.
+// Nama tipe dalam bahasa manusia untuk aria-label.
+const KIND_NAME = { INVERTER: "inverter", BATTERY: "battery", PCS: "PCS", METER: "meter", EMI: "weather station" } as const;
 export function DeviceIllustration({ kind, className }: { kind: DeviceKind; className?: string }) {
   return (
-    <svg viewBox="0 0 160 180" className={className} role="img" aria-label={`Ilustrasi ${kind.toLowerCase()}`}>
+    <svg viewBox="0 0 160 180" className={className} role="img" aria-label={`${KIND_NAME[kind]} illustration`}>
       {kind === "INVERTER" && <Inverter />}
       {kind === "BATTERY" && <Battery />}
       {kind === "PCS" && <Pcs />}
       {kind === "METER" && <Meter />}
+      {kind === "EMI" && <WeatherStation />}
     </svg>
   );
 }
@@ -93,6 +96,40 @@ function Meter() {
       {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <rect key={i} x={44 + i * 11} y={132} width={8} height={16} rx={1} fill="var(--color-muted)" />
       ))}
+    </g>
+  );
+}
+
+// Tiang weather station: pyranometer POA (miring) dan horizontal, anemometer, kotak logger.
+function WeatherStation() {
+  return (
+    <g>
+      <rect x={76} y={30} width={8} height={140} rx={2} {...dark} />
+      <rect x={52} y={160} width={56} height={8} rx={3} {...dark} />
+      {/* anemometer */}
+      <line x1={80} y1={30} x2={80} y2={14} stroke="var(--color-border)" strokeWidth={2} />
+      <line x1={62} y1={14} x2={98} y2={14} stroke="var(--color-border)" strokeWidth={2} />
+      <circle cx={62} cy={14} r={5} {...body} />
+      <circle cx={98} cy={14} r={5} {...body} />
+      {/* lengan sensor */}
+      <rect x={34} y={58} width={92} height={5} rx={2} {...dark} />
+      {/* pyranometer horizontal */}
+      <rect x={30} y={50} width={18} height={8} rx={2} {...body} />
+      <ellipse cx={39} cy={49} rx={6} ry={4} fill="#9ec5f4" stroke="var(--color-border)" strokeWidth={1} />
+      {/* pyranometer POA, miring sejajar modul */}
+      <g transform="rotate(-18 121 52)">
+        <rect x={112} y={48} width={18} height={8} rx={2} {...body} />
+        <ellipse cx={121} cy={47} rx={6} ry={4} fill="#9ec5f4" stroke="var(--color-border)" strokeWidth={1} />
+      </g>
+      {/* sensor suhu udara (radiation shield) */}
+      {[0, 1, 2, 3].map((i) => (
+        <ellipse key={i} cx={98} cy={86 + i * 6} rx={12 - i} ry={3} {...body} />
+      ))}
+      <line x1={84} y1={92} x2={86} y2={92} stroke="var(--color-border)" strokeWidth={2} />
+      {/* kotak EMI / logger */}
+      <rect x={44} y={104} width={30} height={34} rx={4} {...body} />
+      <circle cx={52} cy={114} r={2.5} fill="var(--color-ok)" />
+      <rect x={50} y={122} width={18} height={4} rx={1} {...dark} />
     </g>
   );
 }

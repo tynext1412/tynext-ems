@@ -12,18 +12,23 @@ import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
 import { Card, Panel } from "@/shared/ui/Panel";
 import { Skeleton } from "@/shared/ui/Skeleton";
+import { useOverviewReport } from "../application/use-overview-report";
+import { DownloadReportButton } from "./DownloadReportButton";
 import { PeriodControl } from "./PeriodControl";
 
 interface Props {
   plant: Plant;
   period: Period;
   onPeriodChange: (period: Period) => void;
+  children?: ReactNode; // grafik di bawah kartu, memakai filter periode yang sama
 }
 
 // Field mengikuti spesifikasi "Operating Data": 2 baris × 4 kartu, ikon berwarna di tiap label.
-export function OperatingDataPanel({ plant, period, onPeriodChange }: Props) {
+// Grafik ikut di section ini supaya satu filter (tanggal + Day/Month/Year/Lifetime) mengatur keduanya.
+export function OperatingDataPanel({ plant, period, onPeriodChange, children }: Props) {
   const today = toDateKey(new Date(), plant.location.timezone);
   const { data, isPending, isFetching, error, refetch } = useOperatingData({ plantId: plant.id, ...period });
+  const report = useOverviewReport(plant, period);
 
   const pv = data ? scaleEnergy(data.pvProductionKWh) : undefined;
   const load = data ? scaleEnergy(data.loadConsumptionKWh) : undefined;
@@ -34,9 +39,27 @@ export function OperatingDataPanel({ plant, period, onPeriodChange }: Props) {
     <Panel
       icon={<ChartLine />}
       title="Operating Data"
-      actions={<PeriodControl period={period} onChange={onPeriodChange} granularities={GRANULARITIES} minDate={plant.commissionedAt} today={today} />}
+      actions={
+        <>
+          <DownloadReportButton onClick={() => void report.download()} pending={report.pending} title="Download Operating Data and the charts for this period as an Excel file" />
+          <PeriodControl period={period} onChange={onPeriodChange} granularities={GRANULARITIES} minDate={plant.commissionedAt} today={today} />
+        </>
+      }
       cards
     >
+      {report.error && (
+        <Alert
+          tone="danger"
+          action={
+            <Button size="sm" variant="tertiary" onClick={() => void report.download()}>
+              Try again
+            </Button>
+          }
+        >
+          The report couldn't be generated: {report.error.message}.
+        </Alert>
+      )}
+
       {error && (
         <Alert
           tone="danger"
@@ -46,7 +69,7 @@ export function OperatingDataPanel({ plant, period, onPeriodChange }: Props) {
             </Button>
           }
         >
-          Operating data tidak bisa dimuat: {error.message}.
+          Operating data couldn't load: {error.message}.
         </Alert>
       )}
 
@@ -60,6 +83,8 @@ export function OperatingDataPanel({ plant, period, onPeriodChange }: Props) {
         <Tile icon={<Clock className="text-brand" />} label="Hours Operation" value={data && formatNumber(data.hoursOperation, 1)} unit="h" loading={isPending} />
         <Tile icon={<CircleDollarSign className="text-ok" />} label="Revenue" value={revenue && `Rp ${revenue.value}`} unit={revenue?.unit || undefined} loading={isPending} />
       </div>
+
+      {children}
     </Panel>
   );
 }

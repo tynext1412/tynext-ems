@@ -75,7 +75,7 @@ export function Dialog({ open, onClose, title, description, children, actions, c
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            className={cn("relative w-full max-w-md rounded-3xl bg-surface p-6 shadow-overlay outline-none", className)}
+            className={cn("relative w-full max-w-md rounded-3xl bg-surface p-6 shadow-dialog outline-none", className)}
             initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}
@@ -86,7 +86,7 @@ export function Dialog({ open, onClose, title, description, children, actions, c
                 {title}
               </h2>
               {onClose && (
-                <button type="button" onClick={onClose} aria-label="Tutup" className="-mr-2 -mt-2 inline-flex size-8 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-text">
+                <button type="button" onClick={onClose} aria-label="Close" className="-mr-2 -mt-2 inline-flex size-8 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-text">
                   <X className="size-4" aria-hidden />
                 </button>
               )}

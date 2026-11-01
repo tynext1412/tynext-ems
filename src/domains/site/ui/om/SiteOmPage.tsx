@@ -1,10 +1,11 @@
-import { Eye, Plus } from "lucide-react";
+import { CalendarDays, Eye, List, Plus } from "lucide-react";
 import { useCallback, useId, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMaintenance } from "@/domains/maintenance/application/use-maintenance";
 import {
   applyMaintenanceQuery,
   DEFAULT_MAINTENANCE_QUERY,
+  filterMaintenance,
   MAINTENANCE_TYPE_LABEL,
   MAINTENANCE_TYPES,
   maintenanceStatus,
@@ -25,16 +26,20 @@ import { Tabs } from "@/shared/ui/Tabs";
 import { useSiteContext } from "../../application/use-site";
 import { SiteHeaderActions } from "../SiteLayout";
 import { FilterPopover } from "./FilterPopover";
+import { MaintenanceCalendar } from "./MaintenanceCalendar";
 import { MaintenanceDetailDrawer } from "./MaintenanceDetail";
 import { MaintenanceFormDrawer } from "./MaintenanceForm";
 import { formatScheduleDate } from "./om-format";
 
 type StatusFilter = MaintenanceStatus | "ALL";
+type ScheduleView = "list" | "calendar";
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 type TypeFilter = MaintenanceType | "ALL";
 const COLUMNS = 7;
 
 // Jadwal O&M satu plant: tab status, pencarian, filter tipe, tabel dengan paginasi, dan drawer
-// tambah / detail / edit. Panel yang terbuka ada di URL (?new=1, ?activity=id, ?activity=id&edit=1).
+// tambah / detail / edit. Di tab All jadwal bisa dilihat sebagai list atau kalender (?view=calendar).
+// Panel yang terbuka ada di URL (?new=1[&date=], ?activity=id, ?activity=id&edit=1).
 export function SiteOmPage() {
   const { plant } = useSiteContext();
   const [params, setParams] = useSearchParams();
@@ -55,32 +60,50 @@ export function SiteOmPage() {
   const result = useMemo(() => applyMaintenanceQuery(items, { type, status, search, page, pageSize }, today), [items, type, status, search, page, pageSize, today]);
   const allCount = result.counts.DONE + result.counts.PENDING + result.counts.UPCOMING;
 
+  const filtered = useMemo(() => filterMaintenance(items, { type, search }), [items, type, search]);
+  // Kalender hanya untuk tab All; tab status lain selalu list (pilihan tetap diingat di URL).
+  const view: ScheduleView = status === "ALL" && params.get("view") === "calendar" ? "calendar" : "list";
+
   const creating = params.get("new") === "1";
+  const createDate = params.get("date");
   const openId = params.get("activity");
   const editing = openId !== null && params.get("edit") === "1";
   const selected = openId ? items.find((a) => a.id === openId) : undefined;
 
-  const closePanel = useCallback(() => {
+  // Ganti parameter panel tanpa menghapus pilihan tampilan (?view=calendar).
+  const setPanel = useCallback(
+    (panel: Record<string, string>, replace = false) =>
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(panel);
+          const v = prev.get("view");
+          if (v) next.set("view", v);
+          return next;
+        },
+        { replace },
+      ),
+    [setParams],
+  );
+  const closePanel = useCallback(() => setPanel({}, true), [setPanel]);
+  const openCreate = (date?: string) => setPanel(date ? { new: "1", date } : { new: "1" });
+  const openDetail = (id: string) => setPanel({ activity: id });
+  const openEdit = (id: string) => setPanel({ activity: id, edit: "1" });
+  const changeView = (v: ScheduleView) =>
     setParams(
       (prev) => {
-        prev.delete("new");
-        prev.delete("activity");
-        prev.delete("edit");
+        if (v === "calendar") prev.set("view", "calendar");
+        else prev.delete("view");
         return prev;
       },
       { replace: true },
     );
-  }, [setParams]);
-  const openCreate = () => setParams({ new: "1" });
-  const openDetail = (id: string) => setParams({ activity: id });
-  const openEdit = (id: string) => setParams({ activity: id, edit: "1" });
   const onSaved = (a: MaintenanceActivity) => {
     setStatus("ALL");
     setType("ALL");
     setSearch("");
     setSearchDraft("");
     setPage(1);
-    setParams({ activity: a.id }, { replace: true });
+    setPanel({ activity: a.id }, true);
   };
 
   const applySearch = () => {
@@ -114,15 +137,15 @@ export function SiteOmPage() {
         />
       );
     }
-    if (result.rows.length > 0) return null;
+    if (view === "calendar" ? filtered.length > 0 : result.rows.length > 0) return null;
     if (items.length === 0) {
       return (
         <EmptyState
           illustration="maintenance"
           title="No activities yet"
-          description="Jadwalkan pemeliharaan pertama untuk plant ini."
+          description="Schedule the first maintenance activity for this plant."
           action={
-            <Button variant="primary" onClick={openCreate}>
+            <Button variant="primary" onClick={() => openCreate()}>
               <Plus className="size-4" aria-hidden />
               Add Activity
             </Button>
@@ -131,15 +154,15 @@ export function SiteOmPage() {
       );
     }
     if (hasQuery) {
-      return <EmptyState illustration="no-search-results" title="No activities match your search" description="Coba kata kunci lain atau hapus filter." action={<Button onClick={resetAll}>Clear filters</Button>} />;
+      return <EmptyState illustration="no-search-results" title="No activities match your search" description="Try another keyword or clear the filters." action={<Button onClick={resetAll}>Clear filters</Button>} />;
     }
-    return <EmptyState illustration="maintenance" title={`No ${status.toLowerCase()} activities`} description="Tidak ada aktivitas dengan status ini." action={<Button onClick={() => setStatus("ALL")}>Show all</Button>} />;
+    return <EmptyState illustration="maintenance" title={`No ${status.toLowerCase()} activities`} description="There are no activities with this status." action={<Button onClick={() => setStatus("ALL")}>Show all</Button>} />;
   })();
 
   return (
     <>
       <SiteHeaderActions>
-        <Button variant="primary" onClick={openCreate}>
+        <Button variant="primary" onClick={() => openCreate()}>
           <Plus className="size-4" aria-hidden />
           Add Activity
         </Button>
@@ -147,7 +170,7 @@ export function SiteOmPage() {
 
       <div className="space-y-4">
         <Tabs
-          aria-label="Status aktivitas"
+          aria-label="Activity status"
           value={status}
           onChange={(s) => {
             setStatus(s);
@@ -162,12 +185,25 @@ export function SiteOmPage() {
         />
 
         <div className="flex flex-wrap items-center gap-3">
-          <SearchField value={searchDraft} onChange={setSearchDraft} onSubmit={applySearch} placeholder="Search activities description" aria-label="Cari aktivitas" wrapperClassName="w-[280px] max-w-full" />
+          <SearchField value={searchDraft} onChange={setSearchDraft} onSubmit={applySearch} placeholder="Search activities description" aria-label="Search activities" wrapperClassName="w-[280px] max-w-full" />
           <Button variant="primary" onClick={applySearch}>
             Search
           </Button>
           <Button onClick={resetAll}>Reset</Button>
-          <div className="ml-auto">
+          <div className="ml-auto flex flex-wrap items-center gap-3">
+            {status === "ALL" && (
+              <Tabs
+                variant="segmented"
+                activeShadow="toggle"
+                aria-label="Schedule view"
+                value={view}
+                onChange={changeView}
+                items={[
+                  { value: "list", label: "List", icon: <List /> },
+                  { value: "calendar", label: "Calendar", icon: <CalendarDays /> },
+                ]}
+              />
+            )}
             <FilterPopover
               activeCount={type === "ALL" ? 0 : 1}
               onOpen={() => setDraftType(type)}
@@ -197,11 +233,13 @@ export function SiteOmPage() {
 
         {message && !list.isPending ? (
           <div className="rounded-2xl border border-separator bg-surface">{message}</div>
+        ) : view === "calendar" ? (
+          <MaintenanceCalendar items={filtered} today={today} loading={list.isPending} openId={openId} onOpen={openDetail} onCreate={openCreate} />
         ) : (
           <DataTable
             stickyAction
             minWidth="1000px"
-            caption={`Jadwal pemeliharaan ${plant.name}`}
+            caption={`Maintenance schedule for ${plant.name}`}
             busy={list.isPending}
             footer={<Pagination page={result.page} pageSize={pageSize} totalItems={result.total} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} disabled={list.isPending} itemLabel={result.total === 1 ? "result" : "results"} />}
           >
@@ -244,7 +282,7 @@ export function SiteOmPage() {
                             <img key={p.id} src={p.dataUrl} alt="" className="size-8 rounded-md border border-border object-cover" />
                           ))}
                           {a.photos.length > 3 && <span className="font-mono text-xs text-muted">+{a.photos.length - 3}</span>}
-                          <span className="sr-only">{a.photos.length} foto</span>
+                          <span className="sr-only">{a.photos.length} {a.photos.length === 1 ? "photo" : "photos"}</span>
                         </span>
                       )}
                     </Td>
@@ -254,7 +292,7 @@ export function SiteOmPage() {
                       </span>
                     </Td>
                     <Td align="center">
-                      <Button iconOnly size="sm" variant="tertiary" onClick={() => openDetail(a.id)} aria-label={`Buka detail ${a.activity}`} title="Lihat detail aktivitas">
+                      <Button iconOnly size="sm" variant="tertiary" onClick={() => openDetail(a.id)} aria-label={`Open details for ${a.activity}`} title="View activity details">
                         <Eye className="size-4" aria-hidden />
                       </Button>
                     </Td>
@@ -265,7 +303,7 @@ export function SiteOmPage() {
         )}
       </div>
 
-      <MaintenanceFormDrawer open={creating} onClose={closePanel} plant={plant} today={today} onSaved={onSaved} />
+      <MaintenanceFormDrawer open={creating} onClose={closePanel} plant={plant} today={today} initialDate={createDate && DATE_KEY.test(createDate) ? createDate : undefined} onSaved={onSaved} />
       <MaintenanceFormDrawer open={editing && selected !== undefined} onClose={() => openDetail(openId ?? "")} plant={plant} today={today} activity={selected} onSaved={onSaved} />
       <MaintenanceDetailDrawer
         open={!creating && openId !== null && !editing}

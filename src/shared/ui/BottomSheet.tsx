@@ -26,7 +26,7 @@ const SPRING = { type: "spring", stiffness: 320, damping: 34, mass: 0.9 } as con
  * legend; tombol bundar berpanah di tengah atas membuka/menutup, bisa juga digeser.
  * Terbuka = sheet naik sampai di bawah kartu KPI, peta di belakangnya digelapkan.
  */
-export function BottomSheet({ open, onOpenChange, header, topOffset = 176, peekHeight = 84, hintOpen = "Geser atau klik untuk membuka", hintClose = "Geser atau klik untuk menutup", className, children, ...rest }: BottomSheetProps) {
+export function BottomSheet({ open, onOpenChange, header, topOffset = 176, peekHeight = 84, hintOpen = "Swipe or click to open", hintClose = "Swipe or click to close", className, children, ...rest }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const dragControls = useDragControls();
@@ -129,7 +129,7 @@ export function BottomSheet({ open, onOpenChange, header, topOffset = 176, peekH
             onClick={toggle}
             onPointerDown={(e) => dragControls.start(e)}
             aria-expanded={open}
-            aria-label={open ? "Tutup daftar site" : "Buka daftar site"}
+            aria-label={open ? "Close site list" : "Open site list"}
             className="pointer-events-auto grid size-10 cursor-grab touch-none place-items-center rounded-full bg-surface text-text shadow-overlay active:cursor-grabbing"
           >
             {open ? <ChevronsDown className="size-5" aria-hidden /> : <ChevronsUp className="size-5" aria-hidden />}

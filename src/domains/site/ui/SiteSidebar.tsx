@@ -37,7 +37,7 @@ export function SiteSidebar({ activeAlarms, variant }: Props) {
           <>
             <Icon className={cn("size-4 shrink-0", isActive ? "text-on-brand" : "text-muted group-hover:text-text")} aria-hidden />
             {item.label}
-            {item.label === "Alarm" && activeAlarms > 0 && <span className="sr-only">, {activeAlarms} alarm aktif</span>}
+            {item.label === "Alarm" && activeAlarms > 0 && <span className="sr-only">, {activeAlarms} active {activeAlarms === 1 ? "alarm" : "alarms"}</span>}
           </>
         )}
       </NavLink>

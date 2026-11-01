@@ -11,6 +11,6 @@ export function MaintenanceRepositoryProvider({ repository, children }: { reposi
 // eslint-disable-next-line react-refresh/only-export-components
 export function useMaintenanceRepository(): MaintenanceRepository {
   const repo = useContext(MaintenanceRepositoryContext);
-  if (!repo) throw new Error("MaintenanceRepositoryProvider belum dipasang di composition root");
+  if (!repo) throw new Error("MaintenanceRepositoryProvider is not mounted in the composition root");
   return repo;
 }

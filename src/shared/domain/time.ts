@@ -59,7 +59,7 @@ export function daysBetween(fromKey: string, toKey: string): number {
 
 export function formatDateKey(key: string, style: "short" | "long" = "short"): string {
   const d = parseDateKey(key);
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat("en-GB", {
     timeZone: "UTC",
     day: "2-digit",
     month: style === "long" ? "long" : "2-digit",
@@ -68,7 +68,7 @@ export function formatDateKey(key: string, style: "short" | "long" = "short"): s
 }
 
 export function formatDateTime(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat("en-GB", {
     timeZone,
     day: "2-digit",
     month: "2-digit",
@@ -82,12 +82,12 @@ export function formatDateTime(iso: string, timeZone: string): string {
 
 export function formatRelative(iso: string, now: number = Date.now()): string {
   const seconds = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
-  if (seconds < 60) return "baru saja";
+  if (seconds < 60) return "just now";
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes} menit lalu`;
+  if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} jam lalu`;
-  return `${Math.round(hours / 24)} hari lalu`;
+  if (hours < 24) return `${hours} h ago`;
+  return `${Math.round(hours / 24)} d ago`;
 }
 
 // Hash string → seed 32-bit (djb2), untuk data dummy deterministik per tanggal.

@@ -37,7 +37,7 @@ export class MockAlarmRepository implements AlarmRepository {
           deviceId: device.id,
           code: "COMM_LOSS",
           severity: "CRITICAL",
-          message: "Tidak ada data dari device lebih dari 3 interval polling",
+          message: "No data from the device for more than 3 polling intervals",
           raisedAt: new Date(now - (2 + (seed % 20)) * HOUR_MS).toISOString(),
         });
       }
@@ -48,7 +48,7 @@ export class MockAlarmRepository implements AlarmRepository {
           deviceId: device.id,
           code: "INV_OVER_TEMP",
           severity: "WARNING",
-          message: "Suhu internal inverter di atas 65 °C, daya diturunkan otomatis",
+          message: "Inverter internal temperature above 65 °C, output derated automatically",
           raisedAt: new Date(now - (1 + ((seed >>> 3) % 6)) * HOUR_MS).toISOString(),
         });
       }
@@ -67,7 +67,7 @@ export class MockAlarmRepository implements AlarmRepository {
           deviceId: first.id,
           code: "GRID_UNDER_VOLT",
           severity: "WARNING",
-          message: "Tegangan grid di bawah 198 V selama 15 detik",
+          message: "Grid voltage below 198 V for 15 seconds",
           raisedAt: new Date(raised1).toISOString(),
           clearedAt: new Date(raised1 + 25 * 60_000).toISOString(),
         },
@@ -77,7 +77,7 @@ export class MockAlarmRepository implements AlarmRepository {
           deviceId: `${plantId}-LOG-01`,
           code: "LOGGER_RESTART",
           severity: "INFO",
-          message: "Data logger restart setelah pembaruan firmware",
+          message: "Data logger restarted after a firmware update",
           raisedAt: new Date(raised2).toISOString(),
           clearedAt: new Date(raised2 + 4 * 60_000).toISOString(),
         },

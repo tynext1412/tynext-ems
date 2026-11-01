@@ -2,7 +2,7 @@ import type { PlantId } from "@/domains/plant/domain/plant";
 import { plantFixtures, type PlantFixture } from "@/domains/plant/infrastructure/fixtures";
 import { addDays, hashSeed } from "@/shared/domain/time";
 import type { DeviceRepository } from "../application/device-repository";
-import type { BatteryRecord, DeviceRecord, InverterRecord, MeterRecord, PcsRecord } from "../domain/device";
+import { METER_TYPE_LABEL, type BatteryRecord, type DeviceRecord, type EmiRecord, type InverterRecord, type MeterRecord, type PcsRecord } from "../domain/device";
 
 // Record perangkat dummy diturunkan dari device fixture plant supaya status,
 // dan jumlah alarm konsisten dengan status plant di dashboard.
@@ -60,6 +60,7 @@ export function buildDeviceRecords(fixture: PlantFixture): DeviceRecord[] {
       packCount: Math.max(1, Math.round(unitKWh / 5)),
       modulesInSeries: 16,
       parallelConnections: Math.max(1, Math.round(unitKWh / 100)),
+      rackCount: Math.max(1, Math.round(unitKWh / 50)),
     } satisfies BatteryRecord);
   });
 
@@ -87,17 +88,38 @@ export function buildDeviceRecords(fixture: PlantFixture): DeviceRecord[] {
     } satisfies PcsRecord);
   });
 
+  // Meter dinamai menurut jenisnya ("PV Meter 1"); power sensor memakai model sensor 3 fasa.
+  const meters = fixture.devices.filter((d) => d.type === "METER");
+  const perType = new Map<string, number>();
+  meters.forEach((d, i) => {
+    const meterType = d.meterType ?? "STG";
+    const n = (perType.get(meterType) ?? 0) + 1;
+    perType.set(meterType, n);
+    records.push({
+      kind: "METER",
+      meterType,
+      ...base(d.id, `${METER_TYPE_LABEL[meterType]} ${n}`, d.vendor),
+      model: meterType === "POWER_SENSOR" ? `${d.vendor} Power Sensor 3P` : `${d.vendor} 3P4W CT Meter`,
+      address: inverters.length + batteries.length + pcsDevices.length + 1 + i,
+      connected: d.connected,
+      activeAlarms: d.activeAlarms,
+    } satisfies MeterRecord);
+  });
+
+  // EMI: sensor POA dipasang sejajar modul (miring 10°, menghadap khatulistiwa).
   fixture.devices
-    .filter((d) => d.type === "METER")
+    .filter((d) => d.type === "EMI")
     .forEach((d, i) => {
       records.push({
-        kind: "METER",
-        ...base(d.id, `Meter ${i + 1}`, d.vendor),
-        model: `${d.vendor} 3P4W CT`,
-        address: inverters.length + batteries.length + pcsDevices.length + 1 + i,
+        kind: "EMI",
+        ...base(d.id, `Weather Station ${i + 1}`, d.vendor),
+        model: `${d.vendor} EMI`,
+        address: inverters.length + batteries.length + pcsDevices.length + meters.length + 1 + i,
         connected: d.connected,
         activeAlarms: d.activeAlarms,
-      } satisfies MeterRecord);
+        poaTiltDeg: 10,
+        poaAzimuthDeg: fixture.location.point.lat < 0 ? 0 : 180,
+      } satisfies EmiRecord);
     });
 
   return records;

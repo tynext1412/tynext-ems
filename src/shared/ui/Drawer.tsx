@@ -62,7 +62,7 @@ export function Drawer({ open, onClose, title, children, footer, className }: Dr
         <>
           <motion.button
             type="button"
-            aria-label="Tutup panel"
+            aria-label="Close panel"
             className="fixed inset-0 z-40 bg-ink/50"
             onClick={onClose}
             initial={{ opacity: 0 }}
@@ -76,7 +76,7 @@ export function Drawer({ open, onClose, title, children, footer, className }: Dr
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            className={cn("fixed inset-y-3 right-3 z-50 flex w-[calc(100vw-24px)] max-w-[560px] flex-col overflow-hidden rounded-3xl bg-surface shadow-overlay outline-none", className)}
+            className={cn("fixed inset-y-3 right-3 z-50 flex w-[calc(100vw-24px)] max-w-[560px] flex-col overflow-hidden rounded-3xl bg-surface outline-none", className)}
             initial={reducedMotion ? { opacity: 0 } : { x: "calc(100% + 12px)" }}
             animate={reducedMotion ? { opacity: 1 } : { x: 0 }}
             exit={reducedMotion ? { opacity: 0 } : { x: "calc(100% + 12px)" }}
@@ -86,7 +86,7 @@ export function Drawer({ open, onClose, title, children, footer, className }: Dr
               <h2 id={titleId} className="text-base font-semibold">
                 {title}
               </h2>
-              <button type="button" onClick={onClose} aria-label="Tutup" className="inline-flex size-8 items-center justify-center rounded-full bg-surface-3 text-text hover:bg-border">
+              <button type="button" onClick={onClose} aria-label="Close" className="inline-flex size-8 items-center justify-center rounded-full bg-surface-3 text-text hover:bg-border">
                 <X className="size-4" aria-hidden />
               </button>
             </header>

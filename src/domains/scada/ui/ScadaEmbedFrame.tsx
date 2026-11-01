@@ -41,8 +41,8 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
 
   if (!isEmbeddableUrl(url)) {
     return (
-      <Alert tone="danger" title="URL viewer SCADA tidak valid untuk disematkan">
-        <span className="font-mono">{url}</span>. Hanya http(s) yang diizinkan.
+      <Alert tone="danger" title="The SCADA viewer URL is not valid for embedding">
+        <span className="font-mono">{url}</span>. Only http(s) is allowed.
       </Alert>
     );
   }
@@ -56,16 +56,16 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
         <span className="ml-auto flex flex-wrap items-center gap-1">
           <Button variant="ghost" size="sm" onClick={reload}>
             <RotateCw className="size-4" aria-hidden />
-            Muat ulang
+            Reload
           </Button>
           <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-text">
             <ExternalLink className="size-4" aria-hidden />
-            Buka di tab baru
+            Open in new tab
           </a>
           {embed.allowFullscreen && (
             <Button variant="ghost" size="sm" onClick={fullscreen}>
               <Maximize2 className="size-4" aria-hidden />
-              Layar penuh
+              Full screen
             </Button>
           )}
         </span>
@@ -75,14 +75,14 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
         {status === "loading" && (
           <div className="absolute inset-0 z-10 p-3" aria-busy>
             <Skeleton className="h-full w-full rounded-lg" />
-            <span className="sr-only">Memuat viewer SCADA…</span>
+            <span className="sr-only">Loading SCADA viewer…</span>
           </div>
         )}
         {status === "timeout" && (
           <div role="alert" className="absolute inset-0 z-10 grid place-items-center bg-bg/90 p-6 text-center text-sm">
             <div className="max-w-md">
-              <p className="font-medium text-text">Viewer SCADA tidak merespons dalam {LOAD_TIMEOUT_MS / 1000} detik.</p>
-              <p className="mt-1 text-muted">Pastikan server SCADA mengizinkan embed (header X-Frame-Options / CSP) dan dapat dijangkau dari jaringan ini.</p>
+              <p className="font-medium text-text">The SCADA viewer didn't respond within {LOAD_TIMEOUT_MS / 1000} seconds.</p>
+              <p className="mt-1 text-muted">Make sure the SCADA server allows embedding (X-Frame-Options / CSP headers) and is reachable from this network.</p>
               <Button variant="primary" onClick={reload} className="mt-4">
                 Try again
               </Button>

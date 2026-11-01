@@ -17,6 +17,6 @@ export function PerformanceRepositoryProvider({
 // eslint-disable-next-line react-refresh/only-export-components
 export function usePerformanceRepository(): PerformanceRepository {
   const repo = useContext(PerformanceRepositoryContext);
-  if (!repo) throw new Error("PerformanceRepositoryProvider belum dipasang di composition root");
+  if (!repo) throw new Error("PerformanceRepositoryProvider is not mounted in the composition root");
   return repo;
 }

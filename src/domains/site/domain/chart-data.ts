@@ -45,18 +45,46 @@ export function tariffPoints(points: readonly TariffPoint[], timeZone: string): 
   }));
 }
 
+export interface SocTariffPoint {
+  t: number;
+  soc?: number; // kosong di menit yang hanya punya titik tarif
+  purchase?: number;
+  feedIn?: number;
+}
+
+// Satu deret untuk grafik gabungan SOC + tarif: gabungan menit SOC (5 menit) dan menit tarif
+// (per jam). Tarif berlaku sampai titik tarif berikutnya, jadi tiap baris memakai tarif terakhir
+// yang sudah berlaku; menit sebelum titik tarif pertama dibiarkan kosong.
+export function socTariffPoints(daily: readonly DailyPowerPoint[], tariff: readonly TariffChartPoint[]): SocTariffPoint[] {
+  const rows = new Map<number, SocTariffPoint>();
+  for (const p of daily) rows.set(p.t, { t: p.t, soc: p.soc });
+  for (const p of tariff) if (!rows.has(p.t)) rows.set(p.t, { t: p.t });
+  const sorted = [...rows.values()].sort((a, b) => a.t - b.t);
+  const steps = [...tariff].sort((a, b) => a.t - b.t);
+  let j = -1;
+  for (const row of sorted) {
+    while (j + 1 < steps.length && steps[j + 1].t <= row.t) j++;
+    if (j >= 0) {
+      row.purchase = steps[j].purchase;
+      row.feedIn = steps[j].feedIn;
+    }
+  }
+  return sorted;
+}
+
+// Satu kelompok batang chart energi: tiap aliran punya batangnya sendiri (tidak ditumpuk).
 export interface EnergyBarPoint {
   key: string;
   label: string;
-  grid: number;
   pv: number;
+  import: number;
+  export: number;
+  charge: number;
   discharge: number;
-  genset: number;
-  charge: number; // digambar negatif (energi masuk ke baterai)
-  load: number;
+  consumption: number;
 }
 
-const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function bucketLabel(key: string): string {
   if (key.length === 10) return String(Number(key.slice(8, 10))); // hari dalam bulan
@@ -68,12 +96,12 @@ export function energyBarPoints(buckets: readonly EnergyBucket[]): EnergyBarPoin
   return buckets.map((b) => ({
     key: b.key,
     label: bucketLabel(b.key),
-    grid: b.gridSupplyKWh,
     pv: b.pvProductionKWh,
+    import: b.gridSupplyKWh,
+    export: b.gridExportKWh,
+    charge: b.chargeKWh,
     discharge: b.dischargeKWh,
-    genset: b.generatorSupplyKWh,
-    charge: -b.chargeKWh,
-    load: b.loadKWh,
+    consumption: b.loadKWh,
   }));
 }
 

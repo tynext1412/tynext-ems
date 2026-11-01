@@ -20,6 +20,7 @@ describe("deviceTypeFromId", () => {
     expect(deviceTypeFromId("PLT-003-PCS-01")).toBe("PCS");
     expect(deviceTypeFromId("PLT-003-MTR-01")).toBe("METER");
     expect(deviceTypeFromId("plt-003-log-01")).toBe("LOGGER");
+    expect(deviceTypeFromId("PLT-003-EMI-01")).toBe("EMI");
     expect(deviceTypeFromId("1929073577500789")).toBe("UNKNOWN");
   });
 });

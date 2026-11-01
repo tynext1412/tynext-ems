@@ -40,7 +40,7 @@ export function Toast({ tone = "info", children, action, className }: Omit<Alert
   return (
     <div
       role={tone === "danger" || tone === "warning" ? "alert" : "status"}
-      className={cn("pointer-events-auto flex max-w-[calc(100vw-32px)] items-center gap-3 rounded-2xl px-4 py-2.5 text-sm shadow-overlay", TONE[tone].box, className)}
+      className={cn("pointer-events-auto flex max-w-[calc(100vw-32px)] items-center gap-3 rounded-2xl px-4 py-2.5 text-sm shadow-banner", TONE[tone].box, className)}
     >
       <Icon className="size-4 shrink-0" aria-hidden />
       <span className="min-w-0">{children}</span>

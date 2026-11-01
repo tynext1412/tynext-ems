@@ -40,7 +40,7 @@ export function BessPerformanceCard({ bess, loading, error, onRetry, inset, clas
       ) : (
         <>
           <Card className="flex h-[88px] items-center gap-3 py-3.5 pl-4 pr-3">
-            <svg width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`} role="img" aria-label={`Round-trip ${formatNumber(ratio * 100, 0)} persen`} className="shrink-0">
+            <svg width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`} role="img" aria-label={`Round-trip ${formatNumber(ratio * 100, 0)} percent`} className="shrink-0">
               <circle cx={RING / 2} cy={RING / 2} r={R} fill="none" stroke="#e9ecef" strokeWidth={STROKE} />
               {bess && <circle cx={RING / 2} cy={RING / 2} r={R} fill="none" stroke="var(--color-ok)" strokeWidth={STROKE} strokeLinecap="round" strokeDasharray={LEN} strokeDashoffset={LEN * (1 - ratio)} transform={`rotate(-90 ${RING / 2} ${RING / 2})`} />}
               <text x="50%" y="50%" dy="0.35em" textAnchor="middle" className="fill-text font-mono" fontSize="16" fontWeight="600">

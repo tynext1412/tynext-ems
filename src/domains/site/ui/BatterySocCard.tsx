@@ -35,10 +35,10 @@ export function BatterySocCard({ snapshot, batteryKWh }: Props) {
         <>
           <Card>
             <div className="flex items-center gap-3">
-              <div className="flex flex-1 items-center" role="img" aria-label={`State of charge ${snapshot.socPercent} persen`}>
+              <div className="flex flex-1 items-center" role="img" aria-label={`State of charge ${snapshot.socPercent} percent`}>
                 <div className="flex flex-1 gap-1 rounded-lg bg-bg p-2">
                   {Array.from({ length: SEGMENTS }, (_, i) => (
-                    <span key={i} className={cn("h-7 flex-1 rounded", i < filled ? "bg-ok" : "bg-border")} />
+                    <span key={i} className={cn("h-7 flex-1 rounded", i < filled ? "bg-ok shadow-cell" : "bg-border")} />
                   ))}
                 </div>
                 <span className="h-6 w-1 rounded-r-lg bg-border" aria-hidden />

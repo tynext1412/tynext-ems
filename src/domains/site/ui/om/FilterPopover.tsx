@@ -51,7 +51,7 @@ export function FilterPopover({ activeCount = 0, onApply, onReset, onOpen, child
         <div id={id} role="dialog" aria-label="Filter" className="absolute right-0 top-full z-30 mt-2 w-[312px] rounded-xl border border-border bg-surface shadow-overlay">
           <div className="flex items-center justify-between border-b border-separator px-4 py-3">
             <h3 className="text-base font-semibold">Filter</h3>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Tutup filter" className="inline-grid size-7 place-items-center rounded-md bg-bg text-text hover:bg-surface-3">
+            <button type="button" onClick={() => setOpen(false)} aria-label="Close filter" className="inline-grid size-7 place-items-center rounded-md bg-bg text-text hover:bg-surface-3">
               <X className="size-3.5" aria-hidden />
             </button>
           </div>
