@@ -1,14 +1,17 @@
-import { cn } from "@/shared/lib/cn";
+import { Chip, type ChipSize, type ChipTone, type ChipVariant } from "@/shared/ui/Chip";
 import { MAINTENANCE_STATUS_LABEL, type MaintenanceStatus } from "../domain/maintenance";
 
-const TEXT: Record<MaintenanceStatus, string> = { DONE: "text-ok", PENDING: "text-warn", UPCOMING: "text-accent" };
-const DOT: Record<MaintenanceStatus, string> = { DONE: "bg-ok", PENDING: "bg-warn", UPCOMING: "bg-accent" };
+// Upcoming = abu-abu lembut, Pending = oranye, Done = hijau (Chip di desain O&M).
+const STYLE: Record<MaintenanceStatus, { tone: ChipTone; variant: ChipVariant }> = {
+  UPCOMING: { tone: "neutral", variant: "soft" },
+  PENDING: { tone: "warn", variant: "solid" },
+  DONE: { tone: "ok", variant: "solid" },
+};
 
-export function MaintenanceStatusBadge({ status, className }: { status: MaintenanceStatus; className?: string }) {
+export function MaintenanceStatusBadge({ status, size = "md", className }: { status: MaintenanceStatus; size?: ChipSize; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2 text-sm font-medium", TEXT[status], className)}>
-      <span className={cn("size-2 rounded-full", DOT[status])} aria-hidden />
+    <Chip tone={STYLE[status].tone} variant={STYLE[status].variant} size={size} className={className}>
       {MAINTENANCE_STATUS_LABEL[status]}
-    </span>
+    </Chip>
   );
 }

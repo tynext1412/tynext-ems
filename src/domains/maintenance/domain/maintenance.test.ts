@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyMaintenanceQuery, applyPatch, maintenanceStatus, validateDraft, type MaintenanceActivity } from "./maintenance";
+import { applyMaintenanceQuery, applyPatch, maintenanceStatus, matchesMaintenanceSearch, validateDraft, type MaintenanceActivity } from "./maintenance";
 
 const item = (id: string, date: string, extra: Partial<MaintenanceActivity> = {}): MaintenanceActivity => ({
   id,
@@ -49,6 +49,27 @@ describe("applyPatch", () => {
     expect(next.activity).toBe(base.activity);
     expect(applyPatch(next, { completedAt: null }, "z").completedAt).toBeNull();
   });
+
+  it("edits schedule, type and activity, ignoring invalid or empty values", () => {
+    const base = item("A", "2026-10-20");
+    const edited = applyPatch(base, { date: "2026-11-03", type: "CORRECTIVE", activity: "  Ganti kipas  " }, "t");
+    expect(edited.date).toBe("2026-11-03");
+    expect(edited.type).toBe("CORRECTIVE");
+    expect(edited.activity).toBe("Ganti kipas");
+    const unchanged = applyPatch(base, { date: "bukan-tanggal", activity: "   " }, "t");
+    expect(unchanged.date).toBe("2026-10-20");
+    expect(unchanged.activity).toBe(base.activity);
+  });
+});
+
+describe("matchesMaintenanceSearch", () => {
+  it("matches activity text or notes, case-insensitively", () => {
+    const a = { activity: "Pembersihan modul PV", notes: "Blok A selesai" };
+    expect(matchesMaintenanceSearch(a, "")).toBe(true);
+    expect(matchesMaintenanceSearch(a, "modul pv")).toBe(true);
+    expect(matchesMaintenanceSearch(a, "blok a")).toBe(true);
+    expect(matchesMaintenanceSearch(a, "inverter")).toBe(false);
+  });
 });
 
 describe("applyMaintenanceQuery", () => {
@@ -66,6 +87,12 @@ describe("applyMaintenanceQuery", () => {
     expect(all.rows.map((r) => r.id)).toEqual(["upcoming2", "upcoming", "pending", "done"]);
     const corrective = applyMaintenanceQuery(items, { type: "CORRECTIVE", status: "ALL", page: 1, pageSize: 10 }, today);
     expect(corrective.counts).toEqual({ DONE: 0, PENDING: 0, UPCOMING: 1 });
+  });
+
+  it("applies the search to counts and rows", () => {
+    const r = applyMaintenanceQuery(items, { type: "ALL", status: "ALL", search: "upcoming2", page: 1, pageSize: 10 }, today);
+    expect(r.counts).toEqual({ DONE: 0, PENDING: 0, UPCOMING: 1 });
+    expect(r.rows.map((x) => x.id)).toEqual(["upcoming2"]);
   });
 
   it("filters by status and clamps the page", () => {

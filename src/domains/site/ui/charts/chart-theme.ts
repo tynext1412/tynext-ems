@@ -24,10 +24,10 @@ export const SERIES_LABEL: Record<SeriesKey, string> = {
 };
 
 // Chrome chart memakai token tema (var CSS diterima atribut presentasi SVG) supaya ikut
-// berubah saat tema diganti: grid hairline = surface-2, sumbu = border, tinta = muted.
+// berubah saat tema diganti: grid hairline = separator, sumbu = border, tinta = muted.
 export const CHART_CHROME = {
   surface: "var(--color-surface)",
-  grid: "var(--color-surface-2)",
+  grid: "var(--color-separator)",
   axis: "var(--color-border)",
   ink: "var(--color-muted)",
   marker: "var(--color-muted)",

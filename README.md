@@ -39,114 +39,87 @@ framer-motion · lucide-react · vitest.
 
 ## Tampilan
 
-Peta memenuhi seluruh layar; halaman tidak di-scroll. Site list ada di **bottom sheet**
-(`src/shared/ui/BottomSheet.tsx`) yang ditarik ke atas seperti panel komentar Reels:
-geser atau klik bar bawah untuk membuka; geser ke bawah, klik backdrop, tombol tutup,
-atau Escape untuk menutup. Sheet terbuka tercermin di URL (`#plant-list`) sehingga bisa
-dibagikan dan tombol Back menutupnya. Pengguna dengan `prefers-reduced-motion` mendapat
-perpindahan tanpa animasi.
+Tampilan mengikuti desain Figma **"Tynext"** (kit HeroUI v3 + layar EMS buatan desainer; lihat
+`docs/prd/home-dashboard.md` untuk PRD Home). Token tema ada di `src/styles/index.css`
+(Tailwind v4 `@theme`), font **Inter** untuk semua teks (angka memakai figur tabular lewat kelas `font-mono`).
 
-Tema **grafit + warna merek Tynext** (token di `src/styles/index.css`): dasar grafit netral,
-warna merek diambil langsung dari gradien logo (`src/assets/tynext-mark.png`):
+| Peran | Token | Nilai |
+|---|---|---|
+| Latar halaman / panel / kartu | `--color-bg` / `--color-surface-2` / `--color-surface` | `#f5f5f5` / `#efeff0` / `#ffffff` |
+| Aksi utama (tombol, menu aktif) | `--color-brand` | `#087fb2` |
+| Tautan | `--color-accent` | `#0485f7` |
+| Status Online / Alarm / Offline (isian) | `--color-ok` / `--color-warn` / `--color-danger` | `#17c964` / `#f5a524` / `#ff383c` |
+| Status sebagai teks (WCAG AA) | `--color-ok-text` / `--color-warn-text` / `--color-danger-text` | `#2b7a30` / `#b45309` / `#c20e4d` |
 
-| Peran | Token | Nilai | Dipakai untuk |
-|---|---|---|---|
-| Primer (biru Tynext) | `--color-primary` / `--color-accent` | `#1788a6` / tint `#4cb3d4` | tombol, link, fokus, tab & menu aktif |
-| Sekunder (teal) | `--color-secondary` | `#3fb995` | ujung gradien angka fokus, cincin & nilai charge BESS |
-| Tersier (lime) | `--color-tertiary` | `#8ec747` | hanya di gradien merek (garis tepi sheet), bukan teks/titik |
-| Navy | `--color-navy` | `#184c7f` | awal gradien merek |
+Tema gelap (palet gelap HeroUI) dipilih dari menu profil dan disimpan di `localStorage` (`tynext-ems.theme`).
 
-Tint `#4cb3d4` dipakai untuk teks karena biru logo asli (`#1788a6`) hanya 4,1:1 di atas grafit;
-semua pasangan teks/latar diuji ≥ 4,5:1. Lime sengaja tidak dipakai untuk teks atau titik supaya
-tidak tertukar dengan hijau status Online. Hijau / kuning / merah tetap khusus status plant.
-Logo resmi (mark bergradien + wordmark putih) dipakai di header, sidebar site, dan favicon.
-Font IBM Plex Sans untuk antarmuka dan IBM Plex Mono (angka tabular) untuk semua readout.
-Citra satelit peta diberi filter ke arah grafit supaya marker status menjadi satu-satunya
-warna jenuh di peta.
+Aset dari Figma ada di `src/assets/figma/`: `icons/` (ikon custom), `illustrations/` (empty/error state),
+`weather/`, `artwork/` (ilustrasi 3D kartu KPI), `lib-icons/` (ikon kit HeroUI yang dipakai), `logo/`.
+Primitif UI di `src/shared/ui/`: `Button`, `Chip`/`CountBadge`, `Tabs` (underline & segmented), `Input`/`Select`/
+`Textarea`/`Checkbox`/`SearchField`/`Field`, `DataTable` (kolom Action menempel di kanan), `Pagination`, `Panel`/`Card`,
+`Drawer` (kartu mengambang kanan), `Dialog`, `Alert`/`Toast`, `EmptyState` (ilustrasi Figma), `BottomSheet`, `AppHeader`.
+
+### Home
+
+Peta memenuhi layar; di atasnya header global, lima kartu KPI (Total Sites, PV, BESS, Energy Generation, Revenue),
+panel Environmental Benefits (kiri bawah) dan BESS Performance (kanan bawah). **Site List** ada di bottom sheet:
+tertutup = bar dengan judul, jumlah site, dan legend status; tombol panah di tengah (atau geser) membukanya sampai
+di bawah kartu KPI. Isinya tab All/Online/Alarm/Offline, pencarian nama plant atau owner, toggle "Show capacity and
+energy columns", tabel dengan kolom Action yang menempel di kanan, dan paginasi. Sheet terbuka tercermin di URL
+(`#site-list`). Hover marker peta menampilkan kartu ringkas site dengan tombol View Details.
+
+State mengikuti PRD: skeleton hanya saat load pertama; refresh (tombol di pill **Last Updated**) menampilkan
+"Updating data" + garis progres dan tetap menampilkan data lama; refresh gagal → alert "Couldn't refresh data";
+offline → pill "Offline · Last Updated …" + alert "You're offline"; tiap KPI/panel gagal sendiri-sendiri dengan
+tombol retry; peta gagal → fallback "Reload map"; tabel punya empty state per tab, hasil pencarian kosong, dan
+galat dengan ilustrasi.
+
+### Komponen global
+
+Header: logo, pill Last Updated + refresh, menu profil (nama, email, tema, Sign out dengan dialog konfirmasi).
+Sesi yang habis → dialog "Sign in again" (kembali ke halaman semula setelah login). Halaman 404 dan 500
+(dengan kode referensi yang bisa disalin) memakai ilustrasi dari Figma.
+
+### Login
+
+`/login` memakai video latar: `public/day.mp4` pukul 06.00–18.00 waktu lokal perangkat, `public/night.mp4`
+pukul 18.00–06.00 (aturannya di `src/domains/auth/domain/daypart.ts`, dicek ulang tiap menit). Video tanpa suara,
+terus berulang tanpa jeda lewat Media Source Extensions (berkas fragmented MP4 ditempelkan terus ke satu buffer; frame terakhir yang sama dengan frame pertama ditimpa), browser tanpa MSE memakai `loop` biasa, tanpa kontrol; `prefers-reduced-motion` menampilkan frame diam, dan bila video gagal dimuat latar
+gradien yang tampil. Kartu form, pil logo, dan tombol tema tembus pandang 65 % dengan blur. **Mock Identity &
+Access**: email valid apa pun + kata sandi ≥ 6 karakter diterima, sesi di `localStorage` (`tynext-ems.session.v1`).
+
+Bila video latar diganti, simpan sebagai **fragmented MP4 tanpa audio** supaya pengulangan tanpa jeda tetap bekerja
+(berkas MP4 biasa jatuh ke `loop` bawaan yang menyisakan jeda 1–2 frame). Frame terakhir klip sebaiknya sama dengan
+frame pertama; frame duplikat itu ditimpa otomatis. Konversi tanpa mengodekan ulang:
+
+```bash
+ffmpeg -i sumber.mp4 -an -c:v copy -movflags +frag_keyframe+empty_moov+default_base_moof+negative_cts_offsets -f mp4 public/day.mp4
+```
 
 ## Halaman site
 
-Klik marker atau tombol Operation membuka `/plants/:plantId`: sidebar menu **Overview, SCADA,
-Info, Device, Alarm, O&M schedule** dengan header status plant dan waktu data terakhir. Nama site di
-header adalah pemilih site: klik untuk membuka daftar, cari berdasarkan nama/alamat/ID, pilih dengan
-mouse atau keyboard (panah, Enter, Escape); menu yang sedang dibuka dipertahankan di site tujuan.
+Klik marker, tombol View Details di kartu hover, atau ikon mata di Site List membuka `/plants/:plantId`:
+header global yang sama, menu kiri **Overview, SCADA, Information, Device, Alarm, O&M Schedule**, dan kartu
+putih berisi judul plant (pemilih site: klik nama untuk mencari dan berpindah site, menu yang sedang dibuka
+dipertahankan) dengan chip status, lokasi, ID, dan owner. Setiap halaman tersusun dari panel abu-abu berjudul
+(ikon + nama) yang berisi kartu putih, mengikuti frame Details-* di Figma.
 
-- **Tema terang (bawaan) dan gelap**, diganti lewat tombol matahari/bulan di header dashboard, header site,
-  dan halaman login; pilihan tersimpan di `localStorage` (`tynext-ems.theme`) dan diterapkan sebelum render.
-  Tema gelap = override token di `:root[data-theme="dark"]`; chrome grafik, adegan 3D, peta, dan ilustrasi
-  login membaca token/palet per tema. Tema terang: abu-abu terang + warna merek Tynext. Aksen biru merek digelapkan untuk teks/link
-  (`#0d6f8b`, 5,7:1 di putih), biru logo asli (`accent-soft`) dipakai untuk blok isian dengan tinta
-  gelap (7,6:1); status Online/Alarm/Offline ≥ 4,5:1 di putih dan surface-2; palet grafik lolos
-  validator dataviz di permukaan putih tanpa perubahan. Wordmark navy dipotong dari logo asli.
-- **Login** (`/login`): ilustrasi vektor (SVG inline, tanpa three.js) berisi array PV, inverter berlayar,
-  bank baterai, meter berjarum, tiang grid, tiga teknisi yang bekerja, dan kabel dengan partikel listrik;
-  gerak kecilnya lewat CSS/SMIL dan berhenti saat reduced motion. Kartu form bertepi lengkung di kanan
-  dan dua kabel bergaris menyeberang ke dalam kartu supaya menyatu. Form: email,
-  kata sandi (tampil/sembunyi), lupa kata sandi (belum tersedia), tombol Masuk, Google/Microsoft demo.
-  Semua rute lain dijaga `RequireAuth` (tanpa sesi → `/login`, tujuan semula disimpan). **Mock Identity &
-  Access**: email valid apa pun + kata sandi ≥ 6 karakter diterima, sesi di `localStorage`
-  (`tynext-ems.session.v1`); menu pengguna di header menampilkan nama/peran dan tombol keluar.
-- **Aliran energi 3D (three.js)**: panel "Aliran energi saat ini" di Overview memakai adegan 3D
-  sesuai **jenis site** (`plantType`): **Resort / Hotel** (bangunan hotel, kolam, kelapa, PV kanopi),
-  **Mining** (teras tambang, stockpile, excavator, haul truck, silo, PV lapangan), **Plantation**
-  (pabrik, tangki air, barisan tanaman, PV lapangan). PV, bank baterai, genset, tiang grid, dan
-  switchgear (bus AC) ada di semua adegan; kabel dari tiap node ke bus membawa **partikel yang
-  bergerak searah aliran**, jumlah dan kecepatannya mengikuti besar daya (warna kategori sama dengan
-  grafik) di atas lantai grid halus (sel 0,5 m). Kamera bisa diputar (seret) dan di-zoom (scroll, jarak 6–40 unit). Sakelar **3D/2D** tersimpan di `localStorage`; versi 2D (SVG)
-  dipakai otomatis bila WebGL tidak ada, adegan gagal dirender, atau `prefers-reduced-motion`
-  menghentikan partikel. three.js dimuat lazy sebagai chunk terpisah (±330 KB gzip).
-- **Overview** (field mengikuti spreadsheet spesifikasi): diagram aliran energi satu garis
-  (PV, Genset, Grid di atas bus AC; Load dan Battery di bawah) dari snapshot daya yang
-  di-refresh tiap 5 detik dengan status baterai (charge +, discharge −); tile Daily Energy
-  Generation, Lifetime Energy Production, Total Revenue; Operating Data (PV Production, BESS
-  Charge/Discharge, Diesel Generator, Load Consumption, Day/Hours Operation, Revenue) per
-  periode Day/Month/Year/Lifetime; grafik yang mengikuti periode yang sama: daya per 5 menit
-  (Grid, PV, Battery, Generator, Load), SOC baterai, tarif beli/jual per jam, atau energi per
-  hari/bulan/tahun (batang bertumpuk sumber + garis beban); Battery SoC; Plant Information;
-  Weather Information (cuaca hari ini, prakiraan 5 hari, suhu, sunrise/sunset, angin,
-  kelembapan); Environmental Benefits per site.
-- **Grafik** memakai recharts (dimuat terpisah) dan punya filter periodenya sendiri (Day /
-  Month / Year, terpisah dari Operating Data). Mode Day (data per 5 menit) bisa di-zoom tanpa tombol: **scroll** di
-  atas grafik memperbesar di sekitar kursor, seret memilih rentang, klik dua kali (atau tombol
-  keyboard 0) mereset, + / − untuk keyboard; ketiga grafik harian
-  berbagi rentang yang sama dan tick waktu menyesuaikan (3 jam → 1 jam → 30 → 15 → 5 menit).
-  Warna seri tetap per entitas dan lolos validator CVD skill dataviz di surface grafit; setiap
-  grafik punya legenda yang bisa dimatikan per seri, crosshair + tooltip, dan kembaran tabel
-  ("Lihat sebagai tabel"). Tidak ada sumbu ganda: SOC dan tarif digambar sebagai dua grafik yang
-  berbagi sumbu waktu.
-- **Info**: Basic Information (nama, tipe plant, kapasitas PV, jumlah & kapasitas modul, baterai,
-  zona waktu, tanggal koneksi platform/grid, waktu pembuatan, alamat + koordinat GPS dengan tautan
-  Google Maps, organisasi yang ditugaskan, owner, installer) dan Tariff Management (Purchase /
-  Feed-in Tariff). Foto plant belum ada, jadi kolom kanan menampilkan citra satelit di koordinat GPS.
-- **Device**: empat tipe perangkat, **Inverter, Battery, PCS, Meter**. Daftar per tipe (tab tipe tersimpan di
-  URL `?type=`, sub-tab Total/Online/Alarm/Offline, pencarian nama/SN, kolom khusus tipe, paginasi).
-  Tombol Operation membuka `/plants/:plantId/device/:deviceId`: kartu foto (foto produk bila `photoUrl`
-  tersedia, kalau tidak ilustrasi per tipe) dengan SN yang bisa disalin, informasi perangkat, data real-time
-  (inverter: daya, daily yield, full load hours, suhu, tabel string DC & fasa AC; baterai: SOC,
-  status, tegangan/arus/daya, sel, Battery Level today/month/year; meter: daya aktif, impor/ekspor
-  harian, fasa, power factor; PCS: status charge/discharge, daya AC, efisiensi, bus DC, fasa AC, energi
-  charge/discharge harian & total), dan **chart parameter**: checklist parameter per kelompok, periode
-  Day (deret 5 menit) atau Month/Year/Lifetime (batang energi), satu chart per satuan. Di kiri detail
-  ada **daftar perangkat sejenis** (semua inverter, atau semua baterai, atau semua meter; perangkat
-  tidak saling terhubung, jadi tanpa hierarki) dengan pencarian nama/SN dan chip Master, untuk pindah
-  perangkat tanpa kembali ke daftar; di ponsel daftar dilipat di balik tombol "<Tipe> lain". Mock
-  menyediakan ±1 unit baterai per 100 kWh dan satu PCS per 2 unit baterai.
-- **O&M schedule**: tabel aktivitas pemeliharaan (Date, Type Regular/Corrective, O&M Activities,
-  Status, Photo Documentation, Notes) dengan tab status, filter tipe, dan paginasi. Tombol
-  **Tambah aktivitas** membuka form (tanggal, tipe, aktivitas, catatan). Klik baris membuka panel
-  detail: **tandai Done** (atau batalkan), **unggah foto** (diperkecil ke 1280 px di browser), dan
-  **catatan**. Status tidak disimpan: Done bila ditandai selesai, Upcoming bila tanggal masih di
-  depan, Pending bila sudah tiba. Mock menyimpan create/update di `localStorage`
-  (`tynext-ems.maintenance.v1`) sebagai lapisan di atas seed, jadi bertahan saat refresh.
-- **Alarm** (aktif/riwayat, jumlah aktif tampil di sidebar) diisi dari data yang ada.
-- **SCADA** tidak menggambar diagram sendiri: ia menyematkan **viewer SCADA pihak ketiga** per
-  plant (iframe ber-sandbox) dengan kontrol muat ulang, buka di tab baru, dan layar penuh, serta
-  status memuat / tidak merespons / belum dikonfigurasi. URL viewer datang dari repository per plant
-  atau `VITE_SCADA_URL_TEMPLATE` (mendukung `{plantId}`); server SCADA harus mengizinkan embed
-  (X-Frame-Options / CSP `frame-ancestors`). Di mode dummy hanya PLT-001 yang menunjuk ke
-  `public/scada-placeholder.html` (jelas berlabel placeholder, bukan SCADA).
-- **O&M schedule** belum punya spesifikasi; halamannya ada dan diberi label jelas "belum dirancang"
-  agar menu tidak buntu.
+- **Overview**: Live Energy Flow (adegan 3D per jenis site dengan sakelar 3D/2D; versi 2D SVG bila WebGL tidak ada),
+  tiga kartu Daily Energy Generation / Lifetime Energy Production / Total Revenue dengan artwork, Operating Data
+  (pemilih tanggal + Day/Month/Year/Lifetime), Charts (Daily Power, Battery State of Charge, Tariff dengan zoom
+  bersama dan "View as table"), serta kolom kanan Battery, Plant Information, Weather, Environmental Benefits.
+- **SCADA**: viewer pihak ketiga yang disematkan (iframe ber-sandbox, `VITE_SCADA_URL_TEMPLATE` mendukung
+  `{plantId}`); tanpa konfigurasi tampil empty state "SCADA isn't connected yet".
+- **Information**: Basic Information, System Capacity, Key Dates (timeline), Tariff Management (bar jam puncak
+  WBP 17:00–22:00), Location (citra satelit + Open Maps), Organization & Contact.
+- **Device**: tab Inverter/Battery/PCS/Meter, pencarian nama/SN, filter status, tabel dengan kolom Action menempel,
+  paginasi; detail perangkat dengan daftar perangkat sejenis di kiri, informasi, data real-time, dan chart parameter.
+- **Alarm**: tab Active/Recovered, pencarian, filter tipe perangkat dan level, tabel (Level, Status, Device Type, SN,
+  Alarm Content, Alarm Time, Recovery Time, Duration) dengan empty state berilustrasi.
+- **O&M Schedule**: tombol Add Activity di baris judul, tab All/Pending/Upcoming/Done, pencarian, filter tipe, tabel;
+  drawer Add Activity, Activity Details (foto dokumentasi, catatan, Mark as Done), dan Edit Activity. Status
+  diturunkan (Done bila ditandai selesai; Upcoming bila tanggal masih di depan; Pending bila sudah tiba). Mock
+  menyimpan perubahan di `localStorage` (`tynext-ems.maintenance.v1`).
 
 ## Struktur kode
 
@@ -159,7 +132,7 @@ src/
     performance/  energi & revenue per plant, operating data per periode
     telemetry/    snapshot daya real-time + logika aliran energi (bus AC)
     alarm/        alarm aktif & riwayat per plant
-    auth/         sesi & kredensial, port AuthRepository (mock: localStorage), halaman login + adegan 3D, penjaga rute
+    auth/         sesi & kredensial, port AuthRepository (mock: localStorage), halaman login dengan video latar siang/malam, penjaga rute
     device/       perangkat (inverter/baterai/PCS/meter), katalog parameter, pembacaan & deret per perangkat
     scada/        konfigurasi & bingkai embed viewer SCADA pihak ketiga
     impact/       rumus Environmental Benefits

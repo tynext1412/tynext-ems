@@ -1,166 +1,125 @@
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { Eye } from "lucide-react";
 import type { ReactNode } from "react";
 import { inverterAvailability } from "@/domains/plant/domain/status-policy";
 import { PlantStatusBadge } from "@/domains/plant/ui/PlantStatusBadge";
 import { WeatherIcon } from "@/domains/plant/ui/WeatherIcon";
-import { formatIDR, formatNumber } from "@/shared/domain/units";
+import { formatNumber } from "@/shared/domain/units";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/Button";
-import { Skeleton } from "@/shared/ui/Skeleton";
+import { CopyButton } from "@/shared/ui/CopyButton";
+import { DataTable, SkeletonRows, TableMessage, TBody, Td, Th, THead, Tr } from "@/shared/ui/DataTable";
 import type { PlantRow, SortKey, SortOrder } from "../domain/plant-list";
 
 interface Props {
   rows: PlantRow[];
-  expanded: boolean;
-  loading?: boolean;
+  expanded: boolean; // kolom kapasitas & energi
+  loading?: boolean; // load pertama: 10 baris skeleton
+  searching?: boolean; // setelah klik Search: 5 baris skeleton
   sortBy: SortKey;
   order: SortOrder;
   onSort: (key: SortKey) => void;
-  onOperation: (plantId: string) => void;
-  onClearFilters: () => void;
+  onOpen: (plantId: string) => void;
+  footer?: ReactNode;
+  message?: ReactNode; // empty state / galat, menggantikan baris
 }
 
-const SKELETON_ROWS = 5;
+const BASE_COLUMNS = 8;
+const EXTRA_COLUMNS = 8;
 
-export function PlantTable({ rows, expanded, loading, sortBy, order, onSort, onOperation, onClearFilters }: Props) {
+// Tabel Site List: kolom Action menempel di kanan, teks panjang dipotong satu baris dengan tooltip.
+export function PlantTable({ rows, expanded, loading, searching, sortBy, order, onSort, onOpen, footer, message }: Props) {
   const sortProps = { sortBy, order, onSort };
-  const columnCount = expanded ? 16 : 8;
+  const columnCount = expanded ? BASE_COLUMNS + EXTRA_COLUMNS : BASE_COLUMNS;
 
   return (
-    <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full min-w-240 text-left text-sm">
-        <thead className="bg-bg text-xs text-muted">
-          <tr>
-            <Th sortKey="status" {...sortProps}>Plant Status</Th>
-            <Th sortKey="name" {...sortProps}>Plant Name</Th>
-            <Th>Weather</Th>
-            <Th>Owner</Th>
-            <Th>Owner's Contact</Th>
-            <Th className="text-center">Inverter Online/Total</Th>
-            <Th>Installer</Th>
-            {expanded && (
-              <>
-                <Th sortKey="pvCapacity" {...sortProps} className="text-right">PV (kWp)</Th>
-                <Th className="text-right">Inverter (kW)</Th>
-                <Th className="text-right">Battery (kWh)</Th>
-                <Th sortKey="generation" {...sortProps} className="text-right">Generation (kWh)</Th>
-                <Th className="text-right">Charge (kWh)</Th>
-                <Th className="text-right">Discharge (kWh)</Th>
-                <Th className="text-right">Tariff (Rp/kWh)</Th>
-                <Th sortKey="revenue" {...sortProps} className="text-right">Revenue (Rp)</Th>
-              </>
-            )}
-            <Th>Operation</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {loading && (
+    <DataTable stickyAction minWidth={expanded ? "2320px" : "1384px"} caption="Daftar site" footer={footer} busy={loading || searching}>
+      <THead>
+        <tr>
+          <Th sortKey="status" width={129} {...sortProps}>Plant Status</Th>
+          <Th sortKey="name" width={346} {...sortProps}>Plant Name</Th>
+          <Th width={93}>Weather</Th>
+          <Th width={213}>Owner</Th>
+          <Th width={253}>Owner's Contact</Th>
+          <Th width={153}>Inverter Online/Total</Th>
+          <Th width={121}>Installer</Th>
+          {expanded && (
             <>
-              <tr className="sr-only">
-                <td colSpan={columnCount}>Memuat daftar site…</td>
-              </tr>
-              {Array.from({ length: SKELETON_ROWS }, (_, i) => (
-                <tr key={i} aria-hidden>
-                  <td colSpan={columnCount} className="px-3 py-3">
-                    <Skeleton className="h-5 w-full" />
-                  </td>
-                </tr>
-              ))}
+              <Th align="right">PV (kWp)</Th>
+              <Th align="right">Inverter (kW)</Th>
+              <Th align="right">Battery (kWh)</Th>
+              <Th align="right">Generation (kWh)</Th>
+              <Th align="right">Charge (kWh)</Th>
+              <Th align="right">Discharge (kWh)</Th>
+              <Th align="right">Tariff (Rp/kWh)</Th>
+              <Th align="right">Revenue (Rp)</Th>
             </>
           )}
-
-          {!loading && rows.length === 0 && (
-            <tr>
-              <td colSpan={columnCount} className="px-3 py-10 text-center text-muted">
-                Tidak ada plant yang cocok dengan pencarian atau tab status ini.{" "}
-                <button type="button" onClick={onClearFilters} className="text-accent underline-offset-2 hover:underline">
-                  Tampilkan semua plant
-                </button>
-              </td>
-            </tr>
-          )}
-
-          {!loading &&
-            rows.map(({ plant, performance }) => {
-              const inverter = inverterAvailability(plant.devices);
-              const inverterTone = inverter.online === inverter.total ? "text-ok" : "text-warn";
-
-              return (
-                <tr key={plant.id} className="hover:bg-surface-2/70">
-                  <Td><PlantStatusBadge status={plant.status} /></Td>
-                  <Td>
-                    <div className="font-medium">{plant.name}</div>
-                    <div className="text-xs text-muted">{plant.location.address}</div>
-                  </Td>
-                  <Td><WeatherIcon weather={plant.weather} /></Td>
-                  <Td>{plant.owner.name}</Td>
-                  <Td>
-                    <a href={`mailto:${plant.owner.contactEmail}`} className="text-accent underline-offset-2 hover:underline">
+          <Th width={76} className="text-center">Action</Th>
+        </tr>
+      </THead>
+      <TBody>
+        {loading && <SkeletonRows rows={10} cols={columnCount} />}
+        {!loading && searching && <SkeletonRows rows={5} cols={columnCount} />}
+        {!loading && !searching && message && <TableMessage cols={columnCount}>{message}</TableMessage>}
+        {!loading &&
+          !searching &&
+          !message &&
+          rows.map(({ plant, performance }) => {
+            const inverter = inverterAvailability(plant.devices);
+            return (
+              <Tr key={plant.id} className="hover:bg-bg/60">
+                <Td>
+                  <PlantStatusBadge status={plant.status} />
+                </Td>
+                <Td>
+                  <div className="max-w-[220px] truncate font-medium text-text" title={plant.name}>
+                    {plant.name}
+                  </div>
+                  <div className="max-w-[220px] truncate text-xs text-muted" title={plant.location.address}>
+                    {plant.location.address}
+                  </div>
+                </Td>
+                <Td>
+                  <WeatherIcon weather={plant.weather} />
+                </Td>
+                <Td>
+                  <span className="block max-w-[200px] truncate" title={plant.owner.name}>
+                    {plant.owner.name}
+                  </span>
+                </Td>
+                <Td>
+                  <span className="flex items-center gap-1">
+                    <a href={`mailto:${plant.owner.contactEmail}`} className="max-w-[200px] truncate text-accent hover:underline" title={plant.owner.contactEmail}>
                       {plant.owner.contactEmail}
                     </a>
-                  </Td>
-                  <Td className={cn("text-center font-mono", inverterTone)}>
-                    {inverter.online}/{inverter.total}
-                  </Td>
-                  <Td>{plant.installer}</Td>
-                  {expanded && (
-                    <>
-                      <Td mono>{formatNumber(plant.capacity.pvKWp)}</Td>
-                      <Td mono>{formatNumber(plant.capacity.inverterKW)}</Td>
-                      <Td mono>{formatNumber(plant.capacity.batteryKWh)}</Td>
-                      <Td mono>{formatNumber(performance.generationKWh)}</Td>
-                      <Td mono>{formatNumber(performance.chargeKWh)}</Td>
-                      <Td mono>{formatNumber(performance.dischargeKWh)}</Td>
-                      <Td mono>{formatNumber(performance.tariffIDRPerKWh)}</Td>
-                      <Td mono>{formatIDR(performance.revenueIDR)}</Td>
-                    </>
-                  )}
-                  <Td>
-                    <Button onClick={() => onOperation(plant.id)} className="h-9">
-                      Operation
-                    </Button>
-                  </Td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </table>
-    </div>
+                    <CopyButton value={plant.owner.contactEmail} label="email" />
+                  </span>
+                </Td>
+                <Td className={cn("font-mono", inverter.online < inverter.total && "text-warn-text")}>
+                  {inverter.online}/{inverter.total}
+                </Td>
+                <Td>{plant.installer}</Td>
+                {expanded && (
+                  <>
+                    <Td align="right" className="font-mono">{formatNumber(plant.capacity.pvKWp, 2)}</Td>
+                    <Td align="right" className="font-mono">{formatNumber(plant.capacity.inverterKW, 2)}</Td>
+                    <Td align="right" className="font-mono">{formatNumber(plant.capacity.batteryKWh, 2)}</Td>
+                    <Td align="right" className="font-mono">{formatNumber(performance.generationKWh, 2)}</Td>
+                    <Td align="right" className="font-mono">{formatNumber(performance.chargeKWh, 2)}</Td>
+                    <Td align="right" className="font-mono">{formatNumber(performance.dischargeKWh, 2)}</Td>
+                    <Td align="right" className="font-mono">{formatNumber(performance.tariffIDRPerKWh, 2)}</Td>
+                    <Td align="right" className="font-mono">{formatNumber(performance.revenueIDR, 2)}</Td>
+                  </>
+                )}
+                <Td align="center">
+                  <Button iconOnly size="sm" variant="tertiary" onClick={() => onOpen(plant.id)} aria-label={`Buka detail ${plant.name}`} title="Lihat detail site">
+                    <Eye className="size-4" aria-hidden />
+                  </Button>
+                </Td>
+              </Tr>
+            );
+          })}
+      </TBody>
+    </DataTable>
   );
-}
-
-function Th({
-  children,
-  className,
-  sortKey,
-  sortBy,
-  order,
-  onSort,
-}: {
-  children: ReactNode;
-  className?: string;
-  sortKey?: SortKey;
-  sortBy?: SortKey;
-  order?: SortOrder;
-  onSort?: (key: SortKey) => void;
-}) {
-  if (!sortKey || !onSort) {
-    return <th className={cn("whitespace-nowrap px-3 py-2.5 font-medium", className)}>{children}</th>;
-  }
-
-  const active = sortBy === sortKey;
-  const Icon = !active ? ArrowUpDown : order === "asc" ? ArrowUp : ArrowDown;
-
-  return (
-    <th className={cn("whitespace-nowrap px-3 py-2.5 font-medium", className)} aria-sort={active ? (order === "asc" ? "ascending" : "descending") : "none"}>
-      <button type="button" onClick={() => onSort(sortKey)} className={cn("inline-flex h-8 items-center gap-1 hover:text-text", active && "text-accent")}>
-        {children}
-        <Icon className="size-3.5" aria-hidden />
-      </button>
-    </th>
-  );
-}
-
-function Td({ children, className, mono }: { children: ReactNode; className?: string; mono?: boolean }) {
-  return <td className={cn("whitespace-nowrap px-3 py-2.5 align-middle", mono && "text-right font-mono", className)}>{children}</td>;
 }

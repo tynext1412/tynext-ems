@@ -2,63 +2,92 @@
 @import "leaflet/dist/leaflet.css";
 
 /*
- * Tema terang + warna merek Tynext.
- * Dasar abu-abu terang netral; warna merek diambil dari gradien logo Tynext
- * (src/assets/tynext-mark.png): navy #184c7f → biru #1788a6 → teal #3fb995, goresan lime #8ec747.
- *   accent        = biru merek yang digelapkan: teks/link/fokus/state aktif (5,7:1 di putih, 4,8:1 di surface-2)
- *   accent-soft   = biru terang logo: isian blok (hover menu, sakelar, gradien tombol) dengan tinta gelap (7,6:1)
- *   secondary     = teal yang digelapkan untuk teks penekanan (5,3:1); secondary-soft = teal logo untuk isian
- *   tertiary      = lime: hanya di gradien merek, tidak untuk teks/titik agar tidak tertukar dengan status Online
- * Hijau/kuning/merah tetap khusus status (semantik), dipilih ≥ 4,5:1 sebagai teks di putih dan surface-2.
+ * Token tema mengikuti desain Figma "Tynext" (kit HeroUI v3, halaman Foundations)
+ * dan warna merek yang dipakai di layar: biru #087fb2 untuk aksi utama, navy #03244a.
+ * Latar halaman #f5f5f5, panel #efeff0, kartu putih; status Online/Alarm/Offline memakai
+ * isian hijau/oranye/merah dengan varian teks yang lebih gelap supaya lolos WCAG AA.
  */
 @theme {
-  --color-bg: #f3f4f6;
+  --color-bg: #f5f5f5;
   --color-surface: #ffffff;
-  --color-surface-2: #e9ecef;
-  --color-border: #d5d9de;
-  --color-text: #1b1d1f;
-  --color-muted: #5b6168;
-  --color-ink: #141516; /* tinta di atas isian merek/aksen */
+  --color-surface-2: #efeff0;
+  --color-surface-3: #ebebec;
+  --color-border: #dedee0;
+  --color-separator: #e4e4e7;
+  --color-separator-3: #cdcdce;
+  --color-text: #18181b;
+  --color-muted: #71717a;
+  --color-ink: #18181b; /* dasar backdrop/overlay */
+  --color-on-brand: #ffffff;
 
-  --color-navy: #184c7f;
-  --color-primary: #1788a6;
-  --color-accent: #0d6f8b;
-  --color-accent-soft: #4cb3d4;
-  --color-secondary: #157a5e;
-  --color-secondary-soft: #3fb995;
+  --color-brand: #087fb2;
+  --color-brand-hover: #076f9c;
+  --color-brand-soft: #e0f2fe;
+  --color-navy: #03244a;
+  --color-accent: #0485f7;
+  --color-accent-strong: #1d63ae;
+  --color-accent-soft: #e0f2fe;
+
+  --color-ok: #17c964;
+  --color-ok-text: #2b7a30;
+  --color-ok-soft: #e6f8ed;
+  --color-warn: #f5a524;
+  --color-warn-text: #b45309;
+  --color-warn-soft: #fdf1dc;
+  --color-danger: #ff383c;
+  --color-danger-text: #c20e4d;
+  --color-danger-soft: #ffe5e6;
+
+  /* Alias lama supaya komponen yang belum ditata ulang tetap berwarna. */
+  --color-primary: #087fb2;
+  --color-secondary: #2b7a30;
+  --color-secondary-soft: #17c964;
   --color-tertiary: #8ec747;
 
-  --color-ok: #2b7a30;
-  --color-warn: #8f5b00;
-  --color-danger: #c62828;
+  /* Semua teks memakai Inter; angka memakai figur tabular lewat kelas .font-mono. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  /* IBM Plex: huruf teknis; Plex Mono punya angka tabular untuk readout meter. */
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  /* Efek dari Figma (Effect Styles HeroUI): shadow-surface = "shadow-field" untuk kolom isian,
+     shadow-overlay untuk panel/kartu mengambang, shadow-control untuk kontrol zoom peta. */
+  --shadow-surface: 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-overlay: 0 14px 28px rgba(0, 0, 0, 0.08), 0 -6px 12px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-control: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-sticky: -10px 0 14px -10px rgba(0, 0, 0, 0.18);
+  --inset-highlight: inset 0 3px 2px rgba(255, 255, 255, 0.2);
 }
 
 :root {
   color-scheme: light;
 }
 
-/* Tema gelap (grafit): dipilih lewat tombol, disimpan di localStorage, diterapkan sebelum render. */
+/* Tema gelap memakai palet gelap HeroUI; dipilih dari menu profil, disimpan di localStorage. */
 :root[data-theme="dark"] {
-  --color-bg: #141516;
-  --color-surface: #1b1d1f;
-  --color-surface-2: #25282b;
-  --color-border: #35393d;
-  --color-text: #ebe7e1;
-  --color-muted: #a19c95;
-  --color-ink: #141516;
+  --color-bg: #060607;
+  --color-surface: #18181b;
+  --color-surface-2: #232325;
+  --color-surface-3: #262728;
+  --color-border: #28282c;
+  --color-separator: #1a1a1d;
+  --color-separator-3: #3c3c3f;
+  --color-text: #fcfcfc;
+  --color-muted: #a1a1aa;
+  --color-ink: #000000;
 
-  --color-accent: #4cb3d4; /* 7,0:1 di grafit */
-  --color-accent-soft: #4cb3d4;
-  --color-secondary: #3fb995;
-  --color-secondary-soft: #3fb995;
+  --color-brand: #2a8be0;
+  --color-brand-hover: #3d99e8;
+  --color-brand-soft: #0d2a3f;
+  --color-accent: #61a8fc;
+  --color-accent-strong: #8ec0ff;
+  --color-accent-soft: #0d2a3f;
 
-  --color-ok: #79c36b;
-  --color-warn: #e0b240;
-  --color-danger: #e4573f;
+  --color-ok-text: #74d88f;
+  --color-ok-soft: #10301b;
+  --color-warn-text: #f9cb87;
+  --color-warn-soft: #3a2a10;
+  --color-danger-text: #eb7872;
+  --color-danger-soft: #3a1416;
+  --color-secondary: #74d88f;
   color-scheme: dark;
 }
 
@@ -73,57 +102,72 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden; /* halaman tidak scroll; daftar plant ada di bottom sheet */
+  overflow: hidden; /* halaman tidak scroll; konten scroll di area masing-masing */
 }
 
 .font-mono {
   font-variant-numeric: tabular-nums;
 }
 
-/* Fokus keyboard: cincin biru merek, bukan outline default browser. */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
 
-/* ── Motif identitas: panel grafit "brushed" + gradien logo Tynext ─────────── */
-/* Di @layer components supaya utility Tailwind (fixed, rounded-*, dll.) tetap menang. */
 @layer components {
-  /* Panel: gradien vertikal tipis memberi kesan pelat logam, bukan kartu datar. */
+  /* Alias lama: tampil sebagai kartu putih / tombol merek supaya komponen lama tidak rusak. */
   .panel-metal {
-    background: linear-gradient(180deg, var(--color-surface-2) 0%, var(--color-surface) 100%);
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
   }
-
-  /* Garis tepi atas sheet (affordance tarik) memakai gradien batang logo:
-     navy → biru → teal → lime. Elemen pemakainya harus positioned. */
-  .brand-edge::before {
-    content: "";
-    position: absolute;
-    inset: 0 8% auto 8%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--color-navy) 15%, var(--color-primary) 45%, var(--color-secondary) 75%, var(--color-tertiary) 92%, transparent);
-    pointer-events: none;
-  }
-
-  /* SATU angka fokus per layar: gradien biru → teal (varian gelap, ≥ 5:1 di putih). */
-  .brand-text {
-    background: linear-gradient(90deg, var(--color-accent), var(--color-secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  /* Tombol utama: biru terang → teal logo dengan tinta gelap (kontras 7,6:1 / 7,5:1). */
   .brand-fill {
-    background: linear-gradient(135deg, var(--color-accent-soft) 0%, var(--color-secondary-soft) 100%);
-    color: var(--color-ink);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
   }
   .brand-fill:hover {
-    background: linear-gradient(135deg, #3ea6c8 0%, #35ab88 100%);
+    background: var(--color-brand-hover);
+  }
+  .brand-text {
+    color: var(--color-brand);
   }
 
-  /* Diagram aliran energi: garis putus-putus bergerak searah aliran daya,
-     hanya pada konektor yang aktif. Dimatikan bila pengguna meminta reduced motion. */
+  /* Tombol refresh di pill Last Updated: kotak biru bergradien seperti di desain. */
+  .refresh-button {
+    background: linear-gradient(180deg, #3c9ec8 0%, #087fb2 100%);
+    border: 1px solid #087fb2;
+    color: #ffffff;
+    box-shadow: var(--inset-highlight);
+  }
+
+  /* Garis progres tipis di bawah header saat data dimuat ulang. */
+  .progress-indeterminate {
+    background: linear-gradient(90deg, transparent, var(--color-brand), transparent);
+    background-size: 40% 100%;
+    animation: progress-slide 1.2s linear infinite;
+  }
+  @keyframes progress-slide {
+    from {
+      background-position: -40% 0;
+    }
+    to {
+      background-position: 140% 0;
+    }
+  }
+
+  /* Kolom Action yang menempel di kanan tabel; bayangan muncul hanya bila masih ada
+     kolom yang tersembunyi di bawahnya (kelas is-overflowing dipasang oleh DataTable). */
+  .table-sticky-action th:last-child,
+  .table-sticky-action td:last-child {
+    position: sticky;
+    right: 0;
+    background: inherit;
+  }
+  .table-sticky-action.is-overflowing th:last-child,
+  .table-sticky-action.is-overflowing td:last-child {
+    box-shadow: var(--shadow-sticky);
+  }
+
+  /* Diagram aliran energi 2D: garis putus-putus bergerak searah aliran daya. */
   .flow-line {
     stroke-dasharray: 4 10;
     animation: flow 0.9s linear infinite;
@@ -140,198 +184,26 @@ body {
     .flow-line {
       animation: none;
     }
-  }
-
-  /* Ilustrasi login (SVG): gerak kecil yang berulang; semuanya mati saat reduced motion.
-     Elemen yang dianimasikan dibungkus <g> tersendiri agar transform CSS tidak menimpa
-     atribut transform pemosisian. */
-  .login-art .sun-rays {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: login-spin 80s linear infinite;
-  }
-  .login-art .cloud {
-    animation: login-drift 36s ease-in-out infinite alternate;
-  }
-  .login-art .cloud.slow {
-    animation-duration: 52s;
-    animation-direction: alternate-reverse;
-  }
-  .login-art .arm-sweep {
-    animation: login-sweep 1.3s ease-in-out infinite alternate;
-  }
-  .login-art .bob {
-    animation: login-bob 2.6s ease-in-out infinite;
-  }
-  .login-art .led {
-    animation: login-blink 1.4s steps(1, end) infinite;
-  }
-  .login-art .needle {
-    animation: login-needle 3.2s ease-in-out infinite alternate;
-  }
-  .login-art .charge {
-    transform-box: fill-box;
-    transform-origin: 0 50%;
-    animation: login-charge 5s ease-in-out infinite alternate;
-  }
-  .login-art .spark {
-    animation: login-spark 2.4s ease-out infinite;
-  }
-  .login-art .walk {
-    animation: login-walk 16s linear infinite;
-  }
-  .login-art .bolt {
-    animation: login-pulse 1.8s ease-in-out infinite;
-  }
-  @keyframes login-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  @keyframes login-drift {
-    from {
-      transform: translateX(-40px);
-    }
-    to {
-      transform: translateX(40px);
-    }
-  }
-  @keyframes login-sweep {
-    from {
-      transform: rotate(-38deg);
-    }
-    to {
-      transform: rotate(22deg);
-    }
-  }
-  @keyframes login-bob {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-4px);
-    }
-  }
-  @keyframes login-blink {
-    0%,
-    60% {
-      opacity: 1;
-    }
-    61%,
-    100% {
-      opacity: 0.25;
-    }
-  }
-  @keyframes login-needle {
-    from {
-      transform: rotate(-40deg);
-    }
-    to {
-      transform: rotate(35deg);
-    }
-  }
-  @keyframes login-charge {
-    from {
-      transform: scaleX(0.35);
-    }
-    to {
-      transform: scaleX(1);
-    }
-  }
-  @keyframes login-spark {
-    0% {
-      transform: translateY(0);
-      opacity: 0;
-    }
-    15% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(-70px);
-      opacity: 0;
-    }
-  }
-  @keyframes login-walk {
-    0% {
-      transform: translateX(-140px);
-      opacity: 0;
-    }
-    6% {
-      opacity: 1;
-    }
-    94% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateX(360px);
-      opacity: 0;
-    }
-  }
-  @keyframes login-pulse {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 0.8;
-    }
-    50% {
-      transform: scale(1.25);
-      opacity: 1;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .login-art * {
-      animation: none !important;
+    .progress-indeterminate {
+      animation: none;
+      background: var(--color-brand);
     }
   }
 
-  /* Vignette di atas peta: terang di atas (header) dan bawah (peek bar) agar
-     teks overlay gelap tetap terbaca di atas citra satelit. */
+  /* Dua lapis gradien putih di atas peta persis seperti Figma (Frame 114/113, 1440×320):
+     putih 60% di tepi atas memudar sampai 320 px, dan memudar masuk lagi 320 px dari bawah. */
   .map-vignette {
-    background: linear-gradient(
-      180deg,
-      rgba(243, 244, 246, 0.92) 0%,
-      rgba(243, 244, 246, 0.45) 22%,
-      rgba(243, 244, 246, 0) 45%,
-      rgba(243, 244, 246, 0) 70%,
-      rgba(243, 244, 246, 0.9) 100%
-    );
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0, rgba(255, 255, 255, 0) 320px, rgba(255, 255, 255, 0) calc(100% - 320px), rgba(255, 255, 255, 0.6) 100%);
   }
   :root[data-theme="dark"] .map-vignette {
-    background: linear-gradient(
-      180deg,
-      rgba(20, 21, 22, 0.88) 0%,
-      rgba(20, 21, 22, 0.35) 22%,
-      rgba(20, 21, 22, 0) 45%,
-      rgba(20, 21, 22, 0) 70%,
-      rgba(20, 21, 22, 0.85) 100%
-    );
+    background: linear-gradient(180deg, rgba(6, 6, 7, 0.6) 0, rgba(6, 6, 7, 0) 320px, rgba(6, 6, 7, 0) calc(100% - 320px), rgba(6, 6, 7, 0.6) 100%);
   }
 
-  /* Langit halaman login dan warna lanskap ilustrasi per tema. */
   .login-sky {
     background: linear-gradient(180deg, #e9f1f7 0%, var(--color-bg) 55%);
   }
   :root[data-theme="dark"] .login-sky {
     background: linear-gradient(180deg, #10202c 0%, var(--color-bg) 55%);
-  }
-  .login-art .cloud-fill {
-    fill: #ffffff;
-  }
-  .login-art .hill-far {
-    fill: #dfe6df;
-  }
-  .login-art .hill-near {
-    fill: #e6eaee;
-  }
-  :root[data-theme="dark"] .login-art .cloud-fill {
-    fill: #2a3138;
-  }
-  :root[data-theme="dark"] .login-art .hill-far {
-    fill: #22302a;
-  }
-  :root[data-theme="dark"] .login-art .hill-near {
-    fill: #25282b;
   }
 }
 
@@ -342,37 +214,10 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Citra satelit sedikit diredam supaya marker status jadi warna paling jenuh di peta;
-   di tema gelap dibawa ke arah grafit supaya satu palet dengan UI. */
-.leaflet-tile-pane {
-  filter: grayscale(0.3) saturate(0.85) brightness(1.04);
-}
+/* Citra satelit tampil dengan warna asli seperti di desain; marker status tetap paling jenuh
+   karena diberi tepi putih. Tema gelap sedikit diredupkan. */
 :root[data-theme="dark"] .leaflet-tile-pane {
-  filter: grayscale(0.6) brightness(0.72) contrast(1.08) sepia(0.12);
-}
-/* Peta lokasi plant: citra adalah informasinya, jadi warna asli. */
-.map-natural .leaflet-tile-pane {
-  filter: none;
-}
-
-/* Kontrol zoom turun di bawah header overlay (desktop: 1 baris; ponsel: 2 baris). */
-.leaflet-top.leaflet-right .leaflet-control-zoom {
-  margin-top: 104px;
-  margin-right: 16px;
-}
-@media (max-width: 767px) {
-  .leaflet-top.leaflet-right .leaflet-control-zoom {
-    margin-top: 172px;
-  }
-}
-
-.leaflet-control-zoom a {
-  background: var(--color-surface) !important;
-  color: var(--color-text) !important;
-  border-color: var(--color-border) !important;
-}
-.leaflet-control-zoom a:hover {
-  background: var(--color-surface-2) !important;
+  filter: brightness(0.8) saturate(0.9);
 }
 
 .leaflet-control-attribution {
@@ -384,14 +229,21 @@ body {
   color: var(--color-accent) !important;
 }
 
-.leaflet-tooltip.plant-tooltip {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  border-radius: 6px;
-  padding: 8px 10px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+/* Kartu ringkas site saat hover marker: popup tanpa bingkai bawaan Leaflet. */
+.leaflet-popup.plant-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
 }
-.leaflet-tooltip.plant-tooltip::before {
-  border-top-color: var(--color-border);
+.leaflet-popup.plant-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+  line-height: inherit;
+}
+.leaflet-popup.plant-popup .leaflet-popup-tip-container {
+  display: none;
+}
+.leaflet-popup.plant-popup .leaflet-popup-close-button {
+  display: none;
 }

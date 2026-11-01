@@ -19,6 +19,7 @@ interface Props {
 }
 
 const STATUS_LABEL = { CHARGING: "Charging (AC → DC)", DISCHARGING: "Discharging (DC → AC)", IDLE: "Standby" } as const;
+const STATUS_CLASS = { CHARGING: "text-ok-text", DISCHARGING: "text-warn-text", IDLE: "text-muted" } as const;
 
 // Detail PCS: spesifikasi konverter, pembacaan real-time DC/AC, dan energi charge/discharge.
 export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
@@ -31,9 +32,9 @@ export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
         {photo}
-        <Panel title="Informasi perangkat">
+        <Panel title="Device Information">
           <InfoGrid>
             <Field label="Model">{device.model}</Field>
             <Field label="Series" mono>{device.series}</Field>
@@ -46,8 +47,8 @@ export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
             <Field label="Coupling">{device.coupling}-coupled</Field>
             <Field label="AC Voltage" mono>{device.acVoltage}</Field>
             <Field label="DC Voltage Range" mono>{device.dcVoltageMinV}–{device.dcVoltageMaxV} V</Field>
-            <Field label="Coupled Batteries" mono>{device.coupledBatteryIds.length > 0 ? device.coupledBatteryIds.join(", ") : "—"}</Field>
-            <Field label="Warranty Status">{warrantyStatus(device.warrantyExpiresAt, today) === "IN_WARRANTY" ? "In Warranty" : "Expired"}</Field>
+            <Field label="Coupled Batteries" mono>{device.coupledBatteryIds.length > 0 ? device.coupledBatteryIds.join(", ") : "–"}</Field>
+            <Field label="Warranty Status">{warrantyStatus(device.warrantyExpiresAt, today) === "IN_WARRANTY" ? <span className="text-ok-text">In Warranty</span> : <span className="text-warn-text">Expired</span>}</Field>
             <Field label="Warranty Expiry Date" mono>{formatDateKey(device.warrantyExpiresAt)}</Field>
             <Field label="Address" mono>{device.address}</Field>
             <Field label="Firmware Version" mono>{device.firmwareVersion}</Field>
@@ -56,36 +57,28 @@ export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
         </Panel>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Panel title="Real-time Information">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      <div className="grid gap-3 xl:grid-cols-2">
+        <Panel title="Real-time Information" cards>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl bg-surface p-4 sm:grid-cols-3">
             <div>
               <div className="text-xs text-muted">Operating Status</div>
-              {loading || !reading ? (
-                <Skeleton className="mt-1 h-5 w-24" />
-              ) : (
-                <div className={cn("mt-0.5 text-base font-semibold", reading.operatingStatus === "CHARGING" ? "text-secondary" : reading.operatingStatus === "DISCHARGING" ? "text-warn" : "text-muted")}>
-                  {STATUS_LABEL[reading.operatingStatus]}
-                </div>
-              )}
+              {loading || !reading ? <Skeleton className="mt-1 h-6 w-24" /> : <div className={cn("mt-0.5 text-lg font-semibold leading-7", STATUS_CLASS[reading.operatingStatus])}>{STATUS_LABEL[reading.operatingStatus]}</div>}
             </div>
             <Stat label="AC Power" value={reading && formatNumber(Math.abs(reading.powerKW), 1)} unit="kW" loading={loading} />
-            <Stat label="Efficiency" value={reading && (reading.efficiencyPercent > 0 ? formatNumber(reading.efficiencyPercent, 1) : "—")} unit={reading && reading.efficiencyPercent > 0 ? "%" : undefined} loading={loading} />
+            <Stat label="Efficiency" value={reading && (reading.efficiencyPercent > 0 ? formatNumber(reading.efficiencyPercent, 1) : "–")} unit={reading && reading.efficiencyPercent > 0 ? "%" : undefined} loading={loading} />
             <Stat label="DC Bus Voltage" value={reading && formatNumber(reading.dcVoltageV, 1)} unit="V" loading={loading} />
             <Stat label="DC Current" value={reading && formatNumber(reading.dcCurrentA, 1)} unit="A" loading={loading} />
             <Stat label="Internal Temperature" value={reading && formatNumber(reading.internalTempC, 1)} unit="°C" loading={loading} />
           </div>
-          <div className="mt-4">
-            <MeasureTable
-              caption="Fasa AC"
-              columns={["AC", "Voltage (V)", "Current (A)", "Frequency (Hz)"]}
-              loading={loading}
-              rows={(reading?.phases ?? []).map((p) => [p.name, formatNumber(p.voltageV, 1), formatNumber(p.currentA, 1), formatNumber(p.frequencyHz, 2)])}
-            />
-          </div>
+          <MeasureTable
+            caption="Fasa AC"
+            columns={["AC", "Voltage (V)", "Current (A)", "Frequency (Hz)"]}
+            loading={loading}
+            rows={(reading?.phases ?? []).map((p) => [p.name, formatNumber(p.voltageV, 1), formatNumber(p.currentA, 1), formatNumber(p.frequencyHz, 2)])}
+          />
         </Panel>
 
-        <Panel title="Energy Throughput">
+        <Panel title="Energy Throughput" cards>
           <MeasureTable
             caption="Charge dan discharge melalui PCS"
             columns={["", "Today", "Total"]}
@@ -95,7 +88,7 @@ export function PcsDetail({ device, reading, loading, plant, photo }: Props) {
               ["Discharge (DC → AC)", e(reading?.dailyDischargeKWh), e(reading?.totalDischargeKWh)],
             ]}
           />
-          <p className="mt-2 text-xs text-muted">Catatan: angka per unit PCS (mock membagi rata energi baterai plant ke semua PCS).</p>
+          <p className="px-2 pb-1 text-xs text-muted">Angka per unit PCS (mock membagi rata energi baterai plant ke semua PCS).</p>
         </Panel>
       </div>
     </>

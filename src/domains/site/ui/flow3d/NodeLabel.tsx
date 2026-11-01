@@ -14,7 +14,7 @@ interface Props {
 export function NodeLabel({ ref, label, value, caption, color, active }: Props) {
   return (
     <div ref={ref} className="absolute left-0 top-0 w-max will-change-transform" style={{ transform: "translate(-50%, -50%)" }}>
-      <div className="rounded-md border bg-surface/95 px-2 py-1 text-center" style={{ borderColor: active ? color : "var(--color-border)" }}>
+      <div className="rounded-lg border bg-surface/95 px-2 py-1 text-center shadow-surface" style={{ borderColor: active ? color : "var(--color-border)" }}>
         <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight text-muted">
           <span className="size-1.5 rounded-full" style={{ background: color }} aria-hidden />
           {label}

@@ -9,9 +9,11 @@ const STORAGE_KEY = "tynext-ems.maintenance.v1";
 
 // Perubahan pengguna disimpan sebagai lapisan di atas seed: seed dibangun ulang relatif
 // terhadap hari ini (supaya demo selalu punya Pending/Upcoming), lapisan menempel lewat id.
+type PatchedFields = Pick<MaintenanceActivity, "completedAt" | "date" | "type" | "activity" | "notes" | "photos" | "updatedAt">;
+
 interface Overlay {
   created: MaintenanceActivity[];
-  patched: Record<string, Pick<MaintenanceActivity, "completedAt" | "notes" | "photos" | "updatedAt">>;
+  patched: Record<string, Partial<PatchedFields>>;
 }
 
 const REGULAR_TASKS = [
@@ -107,7 +109,7 @@ export class MockMaintenanceRepository implements MaintenanceRepository {
 
     const createdIndex = this.overlay.created.findIndex((a) => a.id === id);
     if (createdIndex >= 0) this.overlay.created[createdIndex] = next;
-    else this.overlay.patched[id] = { completedAt: next.completedAt, notes: next.notes, photos: next.photos, updatedAt: next.updatedAt };
+    else this.overlay.patched[id] = { completedAt: next.completedAt, date: next.date, type: next.type, activity: next.activity, notes: next.notes, photos: next.photos, updatedAt: next.updatedAt };
     this.save();
     return { ...next };
   }

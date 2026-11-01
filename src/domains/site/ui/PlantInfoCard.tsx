@@ -1,51 +1,61 @@
-import { ChevronRight, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Factory } from "lucide-react";
+import noPhotoIllustration from "@/assets/figma/illustrations/illustration-no-plant-photo.png";
+import type { ReactNode } from "react";
 import type { Plant } from "@/domains/plant/domain/plant";
-import { PLANT_STATUS_LABEL } from "@/domains/plant/domain/plant";
 import { formatKWp } from "@/shared/domain/units";
-import { Panel } from "@/shared/ui/Panel";
+import { CopyButton } from "@/shared/ui/CopyButton";
+import { Card, Panel } from "@/shared/ui/Panel";
 
+// Panel Plant Information: tempat foto (belum ada) + ringkasan identitas; panah ke halaman Information.
 export function PlantInfoCard({ plant }: { plant: Plant }) {
   const { lat, lng } = plant.location.point;
   const coords = `${lat < 0 ? "S" : "N"}${Math.abs(lat).toFixed(6)}, ${lng < 0 ? "W" : "E"}${Math.abs(lng).toFixed(6)}`;
+  const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
 
   return (
     <Panel
+      icon={<Factory />}
       title="Plant Information"
-      actions={
-        <Link to="info" className="flex h-9 items-center gap-1 text-sm text-muted hover:text-text" aria-label="Buka halaman Info">
-          <ChevronRight className="size-4" aria-hidden />
-        </Link>
-      }
+      cards
     >
-      {/* Foto plant belum ada; tidak diisi gambar stok. Koordinat GPS menumpang di pojok foto. */}
-      <div className="relative mb-3 grid h-36 place-items-center rounded-md border border-dashed border-border bg-bg text-xs text-muted">
-        Foto plant belum tersedia
-        <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 font-mono text-[11px] text-text">
-          <MapPin className="size-3.5 text-accent" aria-hidden />
-          {coords}
-        </span>
-      </div>
-
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-border bg-bg p-3 text-sm">
-        <Item label="Plant Name" value={plant.name} />
-        <Item label="Owner" value={plant.owner.name} />
-        <Item label="Status" value={PLANT_STATUS_LABEL[plant.status]} />
-        <Item label="PV Capacity" value={formatKWp(plant.capacity.pvKWp, 1)} mono />
-        <div className="col-span-2">
-          <dt className="text-xs text-muted">Plant Address</dt>
-          <dd className="mt-0.5">{plant.location.address}</dd>
+      {/* Foto plant belum ada (Figma: kartu 184 px, ilustrasi 150×96 di atas 16 px, teks di 124 px). */}
+      <Card className="relative h-[184px] p-0 text-center">
+        <img src={noPhotoIllustration} alt="" className="absolute left-1/2 top-4 h-24 w-[150px] -translate-x-1/2" />
+        <div className="absolute inset-x-4 top-[124px]">
+          <div className="text-sm font-medium leading-6 text-text">No plant photo yet</div>
+          <div className="text-xs leading-5 text-muted">Site photo will show here once it is uploaded</div>
         </div>
-      </dl>
+      </Card>
+
+      <Card className="py-1.5">
+        <dl className="divide-y divide-border">
+          <Row label="Plant Name">{plant.name}</Row>
+          <Row label="Owner">{plant.owner.name}</Row>
+          <Row label="PV Capacity">
+            <span className="font-mono">{formatKWp(plant.capacity.pvKWp, 1)}</span>
+          </Row>
+          <Row label="Address">{plant.location.address}</Row>
+          <Row label="Coordinates">
+            <span className="flex items-center gap-1">
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-brand hover:underline" title="Buka di Google Maps">
+                {coords}
+              </a>
+              <CopyButton value={coords} label="koordinat" className="size-5" />
+            </span>
+          </Row>
+        </dl>
+      </Card>
     </Panel>
   );
 }
 
-function Item({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div>
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className={mono ? "mt-0.5 font-mono" : "mt-0.5"}>{value}</dd>
+    <div className="flex items-center justify-between gap-3 py-2.5 text-xs">
+      <dt className="shrink-0 text-muted">{label}</dt>
+      <dd className="min-w-0 truncate text-right font-medium text-text" title={typeof children === "string" ? children : undefined}>
+        {children}
+      </dd>
     </div>
   );
 }

@@ -1,14 +1,13 @@
-import { cn } from "@/shared/lib/cn";
+import { Chip, type ChipSize, type ChipTone } from "@/shared/ui/Chip";
 import { DEVICE_STATUS_LABEL, type DeviceStatus } from "../domain/device";
 
-const TEXT: Record<DeviceStatus, string> = { ONLINE: "text-ok", ALARM: "text-warn", OFFLINE: "text-danger" };
-const DOT: Record<DeviceStatus, string> = { ONLINE: "bg-ok", ALARM: "bg-warn", OFFLINE: "bg-danger" };
+const TONE: Record<DeviceStatus, ChipTone> = { ONLINE: "ok", ALARM: "warn", OFFLINE: "danger" };
 
-export function DeviceStatusBadge({ status, className }: { status: DeviceStatus; className?: string }) {
+// Pill status perangkat: hijau Online, oranye Alarm, merah Offline (sama dengan status plant).
+export function DeviceStatusBadge({ status, size = "md", className }: { status: DeviceStatus; size?: ChipSize; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2 text-sm font-medium", TEXT[status], className)}>
-      <span className={cn("size-2 rounded-full", DOT[status])} aria-hidden />
+    <Chip tone={TONE[status]} size={size} className={className}>
       {DEVICE_STATUS_LABEL[status]}
-    </span>
+    </Chip>
   );
 }

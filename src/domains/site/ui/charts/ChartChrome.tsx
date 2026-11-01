@@ -1,11 +1,14 @@
-import type { ReactNode } from "react";
+import { Info, Table2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui/Button";
+import { Card } from "@/shared/ui/Panel";
 import { SERIES_COLOR, SERIES_LABEL, type SeriesKey } from "./chart-theme";
 
 // Legenda yang bisa dimatikan per seri. Warna tetap mengikuti entitas saat seri lain disembunyikan.
 export function ChartLegend({ series, hidden, onToggle }: { series: readonly SeriesKey[]; hidden: ReadonlySet<SeriesKey>; onToggle: (key: SeriesKey) => void }) {
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1" role="group" aria-label="Seri chart">
+    <div className="flex flex-wrap gap-x-3 gap-y-1" role="group" aria-label="Seri chart">
       {series.map((key) => {
         const off = hidden.has(key);
         return (
@@ -14,7 +17,7 @@ export function ChartLegend({ series, hidden, onToggle }: { series: readonly Ser
             type="button"
             aria-pressed={!off}
             onClick={() => onToggle(key)}
-            className={cn("flex h-8 items-center gap-2 rounded-md px-1.5 text-xs text-muted hover:text-text", off && "opacity-50")}
+            className={cn("flex h-7 items-center gap-1.5 rounded-full px-1.5 text-xs text-muted hover:bg-surface-2 hover:text-text", off && "opacity-50")}
           >
             <span className="h-0.5 w-4 rounded-full" style={{ background: SERIES_COLOR[key] }} aria-hidden />
             <span className={off ? "line-through" : undefined}>{SERIES_LABEL[key]}</span>
@@ -33,10 +36,10 @@ export interface TooltipRow {
   color?: string;
 }
 
-// Tooltip gelap: judul (waktu/periode) + baris per seri dengan swatch; teks memakai token teks, bukan warna seri.
+// Tooltip: judul (waktu/periode) + baris per seri dengan swatch; teks memakai token teks, bukan warna seri.
 export function ChartTooltipBox({ title, rows }: { title: string; rows: TooltipRow[] }) {
   return (
-    <div className="rounded-md border border-border bg-surface px-3 py-2 text-xs shadow-[0_10px_24px_rgba(27,29,31,0.18)]">
+    <div className="rounded-xl border border-border bg-surface px-3 py-2 text-xs shadow-overlay">
       <div className="mb-1 font-mono text-muted">{title}</div>
       <dl className="space-y-0.5">
         {rows.map((r, i) => (
@@ -56,46 +59,93 @@ export function ChartTooltipBox({ title, rows }: { title: string; rows: TooltipR
 // Kembaran tabel untuk setiap chart: nilai tidak pernah hanya bisa dibaca lewat hover.
 export function ChartTable({ caption, columns, rows }: { caption: string; columns: string[]; rows: (string | number)[][] }) {
   return (
-    <details className="mt-2 text-xs">
-      <summary className="cursor-pointer select-none text-muted hover:text-text">Lihat sebagai tabel</summary>
-      <div className="mt-2 max-h-64 overflow-auto rounded-md border border-border">
-        <table className="w-full text-left">
-          <caption className="sr-only">{caption}</caption>
-          <thead className="sticky top-0 bg-bg text-muted">
-            <tr>
-              {columns.map((c) => (
-                <th key={c} className="whitespace-nowrap px-2 py-1.5 font-medium">
-                  {c}
-                </th>
+    <div className="max-h-64 overflow-auto rounded-xl border border-separator text-xs">
+      <table className="w-full text-left">
+        <caption className="sr-only">{caption}</caption>
+        <thead className="sticky top-0 bg-bg text-muted">
+          <tr>
+            {columns.map((c) => (
+              <th key={c} className="whitespace-nowrap px-3 py-2 font-medium">
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-separator font-mono">
+          {rows.map((r, i) => (
+            <tr key={i}>
+              {r.map((cell, j) => (
+                <td key={j} className="whitespace-nowrap px-3 py-1.5">
+                  {cell}
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody className="divide-y divide-border font-mono">
-            {rows.map((r, i) => (
-              <tr key={i}>
-                {r.map((cell, j) => (
-                  <td key={j} className="whitespace-nowrap px-2 py-1">
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-export function ChartFrame({ title, legend, children, table }: { title: string; legend?: ReactNode; children: ReactNode; table?: ReactNode }) {
+// Petunjuk kecil berbentuk pill ("Scroll to zoom", "Drag to rotate").
+export function HintChip({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <section aria-label={title}>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {legend}
-      </div>
+    <span className={cn("inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full bg-surface-3 px-2.5 text-xs text-text", className)}>
+      <Info className="size-3.5 shrink-0 text-muted" aria-hidden />
       {children}
-      {table}
-    </section>
+    </span>
+  );
+}
+
+interface ZoomControls {
+  zoomed: boolean;
+  onReset: () => void;
+  rangeLabel?: string; // rentang yang sedang terlihat bila di-zoom
+}
+
+interface ChartFrameProps {
+  title: string;
+  unit?: string; // "(kW)", ditampilkan redup di samping judul
+  legend?: ReactNode;
+  children: ReactNode;
+  table?: ReactNode; // kembaran tabel, ditampilkan lewat tombol "View as table"
+  zoom?: ZoomControls;
+}
+
+// Kartu satu chart: judul + legenda, chart, lalu baris aksi (View as table · Reset · petunjuk zoom).
+export function ChartFrame({ title, unit, legend, children, table, zoom }: ChartFrameProps) {
+  const [showTable, setShowTable] = useState(false);
+  return (
+    <Card>
+      <section aria-label={title}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-medium text-text">
+            {title}
+            {unit && <span className="ml-1 font-normal text-muted">{unit}</span>}
+          </h3>
+          {legend}
+        </div>
+        {children}
+        {showTable && table && <div className="mt-3">{table}</div>}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          {table ? (
+            <Button variant="secondary" onClick={() => setShowTable((s) => !s)} aria-expanded={showTable} className="text-brand">
+              <Table2 className="size-4" aria-hidden />
+              {showTable ? "Hide table" : "View as table"}
+            </Button>
+          ) : (
+            <span />
+          )}
+          {zoom && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={zoom.onReset} disabled={!zoom.zoomed} className="text-text">
+                Reset
+              </Button>
+              <HintChip>{zoom.zoomed && zoom.rangeLabel ? `${zoom.rangeLabel} · Double-click to reset` : "Scroll to zoom"}</HintChip>
+            </div>
+          )}
+        </div>
+      </section>
+    </Card>
   );
 }

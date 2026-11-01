@@ -1,22 +1,15 @@
 import { lazy, Suspense } from "react";
 import { useParams } from "react-router-dom";
-import {
-  useDevice,
-  useDeviceReading,
-} from "@/domains/device/application/use-devices";
-import {
-  DEVICE_KIND_LABEL,
-  deviceStatus,
-} from "@/domains/device/domain/device";
+import { useDevice, useDeviceReading } from "@/domains/device/application/use-devices";
+import { DEVICE_KIND_LABEL, deviceStatus } from "@/domains/device/domain/device";
 import { DeviceStatusBadge } from "@/domains/device/ui/DeviceStatusBadge";
 import { MasterChip } from "@/domains/device/ui/MasterChip";
-import {
-  formatDateTime,
-  formatRelative,
-  timezoneAbbrev,
-} from "@/shared/domain/time";
+import { formatDateTime, formatRelative, timezoneAbbrev } from "@/shared/domain/time";
 import { useNow } from "@/shared/lib/useNow";
 import { Button } from "@/shared/ui/Button";
+import { Chip } from "@/shared/ui/Chip";
+import { CopyButton } from "@/shared/ui/CopyButton";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { Panel } from "@/shared/ui/Panel";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { useSiteContext } from "../../application/use-site";
@@ -40,17 +33,15 @@ export function DeviceDetailPage() {
   if (!plant) return null;
 
   const tz = plant.location.timezone;
-  const backTo = device.data
-    ? `../device?type=${device.data.kind.toLowerCase()}`
-    : "../device";
+  const backTo = device.data ? `../device?type=${device.data.kind.toLowerCase()}` : "../device";
 
   return (
-    <div className="grid items-start gap-4 md:grid-cols-[16rem_minmax(0,1fr)]">
+    <div className="grid items-start gap-3 md:grid-cols-[260px_minmax(0,1fr)]">
       <DeviceSwitcher plant={plant} kind={device.data?.kind} backTo={backTo} />
 
-      <div className="@container grid min-w-0 gap-4">
+      <div className="@container grid min-w-0 gap-3">
         {device.isPending && (
-          <Panel>
+          <Panel aria-label="Memuat perangkat">
             <Skeleton className="mb-3 h-6 w-64" />
             <Skeleton className="h-4 w-40" />
             <span className="sr-only">Memuat perangkat…</span>
@@ -58,104 +49,61 @@ export function DeviceDetailPage() {
         )}
         {device.error && (
           <Panel>
-            <p role="alert" className="mb-3 text-sm">
-              Perangkat tidak bisa dimuat: {device.error.message}.
-            </p>
-            <Button onClick={() => void device.refetch()}>
-              Coba muat ulang
-            </Button>
+            <EmptyState
+              illustration="server-error"
+              title="Perangkat tidak bisa dimuat"
+              description={device.error.message}
+              action={
+                <Button variant="primary" onClick={() => void device.refetch()}>
+                  Try again
+                </Button>
+              }
+            />
           </Panel>
         )}
         {!device.isPending && !device.error && device.data === null && (
           <Panel>
-            <p className="text-sm">
-              Perangkat <span className="font-mono">{deviceId}</span> tidak ada
-              di plant ini.
-            </p>
+            <EmptyState illustration="not-found" title="Perangkat tidak ditemukan" description={`Perangkat ${deviceId} tidak ada di plant ini.`} />
           </Panel>
         )}
 
         {device.data && (
           <>
-            <header className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
+            <header className="flex flex-wrap items-start justify-between gap-3 px-1">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-semibold leading-7">{device.data.name}</h2>
                   <DeviceStatusBadge status={deviceStatus(device.data)} />
-                  <h2 className="text-xl font-semibold">{device.data.name}</h2>
-                  {device.data.kind === "INVERTER" && device.data.isMaster && (
-                    <MasterChip />
-                  )}
-                  <span className="rounded-sm border border-border px-1.5 py-0.5 text-xs text-muted">
+                  {device.data.kind === "INVERTER" && device.data.isMaster && <MasterChip />}
+                  <Chip variant="soft" tone="neutral">
                     {DEVICE_KIND_LABEL[device.data.kind]}
-                  </span>
+                  </Chip>
                 </div>
-                <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted">
-                  <span>
-                    SN{" "}
-                    <span className="font-mono text-text">
-                      {device.data.serialNumber}
-                    </span>
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+                  <span className="inline-flex items-center gap-1">
+                    SN <span className="font-mono font-medium text-text">{device.data.serialNumber}</span>
+                    <CopyButton value={device.data.serialNumber} label="serial number" />
                   </span>
+                  <span aria-hidden>•</span>
                   <span>
-                    Plant ID <span className="font-mono">{plant.id}</span>
+                    Plant ID <span className="font-mono text-text">{plant.id}</span>
                   </span>
                   {reading.data && (
-                    <span>
-                      <span className="font-mono">
-                        {formatDateTime(reading.data.at, tz)}
-                      </span>{" "}
-                      {timezoneAbbrev(tz)} ·{" "}
-                      {formatRelative(reading.data.at, now)}
-                    </span>
+                    <>
+                      <span aria-hidden>•</span>
+                      <span>
+                        <span className="font-mono">{formatDateTime(reading.data.at, tz)}</span> {timezoneAbbrev(tz)} · {formatRelative(reading.data.at, now)}
+                      </span>
+                    </>
                   )}
                 </p>
               </div>
             </header>
 
-            {device.data.kind === "INVERTER" && (
-              <InverterDetail
-                device={device.data}
-                reading={
-                  reading.data?.kind === "INVERTER" ? reading.data : undefined
-                }
-                loading={reading.isPending}
-                plant={plant}
-                photo={<DevicePhotoCard device={device.data} />}
-              />
-            )}
-            {device.data.kind === "BATTERY" && (
-              <BatteryDetail
-                device={device.data}
-                reading={
-                  reading.data?.kind === "BATTERY" ? reading.data : undefined
-                }
-                loading={reading.isPending}
-                plant={plant}
-                photo={<DevicePhotoCard device={device.data} />}
-              />
-            )}
-            {device.data.kind === "PCS" && (
-              <PcsDetail
-                device={device.data}
-                reading={
-                  reading.data?.kind === "PCS" ? reading.data : undefined
-                }
-                loading={reading.isPending}
-                plant={plant}
-                photo={<DevicePhotoCard device={device.data} />}
-              />
-            )}
-            {device.data.kind === "METER" && (
-              <MeterDetail
-                device={device.data}
-                reading={
-                  reading.data?.kind === "METER" ? reading.data : undefined
-                }
-                loading={reading.isPending}
-                plant={plant}
-                photo={<DevicePhotoCard device={device.data} />}
-              />
-            )}
+            {device.data.kind === "INVERTER" && <InverterDetail device={device.data} reading={reading.data?.kind === "INVERTER" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
+            {device.data.kind === "BATTERY" && <BatteryDetail device={device.data} reading={reading.data?.kind === "BATTERY" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
+            {device.data.kind === "PCS" && <PcsDetail device={device.data} reading={reading.data?.kind === "PCS" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
+            {device.data.kind === "METER" && <MeterDetail device={device.data} reading={reading.data?.kind === "METER" ? reading.data : undefined} loading={reading.isPending} plant={plant} photo={<DevicePhotoCard device={device.data} />} />}
 
             <Suspense
               fallback={

@@ -22,15 +22,15 @@ export function MeterDetail({ device, reading, loading, plant, photo }: Props) {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
         {photo}
-        <Panel title="Informasi perangkat">
+        <Panel title="Device Information">
           <InfoGrid>
             <Field label="Plant"><PlantLink plantId={plant.id} name={plant.name} /></Field>
             <Field label="Associated Datalogger" mono>{device.dataloggerId}</Field>
             <Field label="Address" mono>{String(device.address).padStart(2, "0")}</Field>
             <Field label="Model">{device.model}</Field>
-            <Field label="Device Original SN" mono>{device.originalSerialNumber ?? <span className="text-muted">n/a</span>}</Field>
+            <Field label="Device Original SN" mono>{device.originalSerialNumber ?? <span className="text-muted">–</span>}</Field>
             <Field label="Commissioning Date" mono>{formatDateKey(device.commissionedAt)}</Field>
             <Field label="Firmware Version" mono>{device.firmwareVersion}</Field>
             <Field label="Vendor">{device.vendor}</Field>
@@ -38,8 +38,8 @@ export function MeterDetail({ device, reading, loading, plant, photo }: Props) {
         </Panel>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Panel title="Real-time data">
+      <div className="grid gap-3 xl:grid-cols-2">
+        <Panel title="Real-time Data">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <Stat label="Active Power" value={reading && formatNumber(Math.abs(reading.activePowerKW), 1)} unit={direction ? `kW · ${direction}` : "kW"} loading={loading} />
             <Stat label="Daily Import" value={imp?.value} unit={imp?.unit} loading={loading} />
@@ -47,7 +47,7 @@ export function MeterDetail({ device, reading, loading, plant, photo }: Props) {
             <Stat label="Power Factor" value={reading && formatNumber(reading.powerFactor, 2)} loading={loading} />
           </div>
         </Panel>
-        <Panel title="Pengukuran per fasa">
+        <Panel title="Per-phase Measurements" cards>
           <MeasureTable
             caption="Fasa"
             columns={["Fasa", "Voltage (V)", "Current (A)", "Frequency (Hz)"]}

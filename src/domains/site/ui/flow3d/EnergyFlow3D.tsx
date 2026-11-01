@@ -44,7 +44,7 @@ export default function EnergyFlow3D({ snapshot, hasBattery, batteryUnits, plant
   const targets = useMemo<Record<string, Vec3>>(() => ({ ...layout.labels, bus: [layout.bus[0] + 1.1, layout.bus[1] + 0.55, layout.bus[2]] }), [layout]);
 
   return (
-    <div className="relative h-80 w-full overflow-hidden rounded-md border border-border bg-bg md:h-[26rem]" role="img" aria-label={snapshot ? describeFlow(snapshot, hasBattery) : "Menunggu data daya"}>
+    <div className="relative h-full w-full overflow-hidden bg-bg" role="img" aria-label={snapshot ? describeFlow(snapshot, hasBattery) : "Menunggu data daya"}>
       <Canvas
         key={plantType}
         shadows="percentage"
@@ -98,7 +98,6 @@ export default function EnergyFlow3D({ snapshot, hasBattery, batteryUnits, plant
         </div>
       </div>
       {overlay && <div className="absolute right-4 top-1/2 z-20 grid w-48 -translate-y-1/2 gap-2">{overlay}</div>}
-      <p className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-muted">Seret untuk memutar · scroll untuk zoom</p>
     </div>
   );
 }

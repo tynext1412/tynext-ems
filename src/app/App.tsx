@@ -10,7 +10,9 @@ import { SiteLayout } from "@/domains/site/ui/SiteLayout";
 import { SiteOverviewPage } from "@/domains/site/ui/SiteOverviewPage";
 import { SiteScadaPage } from "@/domains/site/ui/SiteScadaPage";
 import { SiteOmPage } from "@/domains/site/ui/om/SiteOmPage";
+import { AppErrorBoundary } from "./AppErrorBoundary";
 import { createRepositories } from "./container";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { AppProviders } from "./providers";
 
 const repositories = createRepositories();
@@ -19,21 +21,24 @@ export function App() {
   return (
     <AppProviders repositories={repositories}>
       <BrowserRouter>
-        <Routes>
-          <Route path="login" element={<LoginPage />} />
-          <Route element={<RequireAuth />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="plants/:plantId" element={<SiteLayout />}>
-            <Route index element={<SiteOverviewPage />} />
-            <Route path="scada" element={<SiteScadaPage />} />
-            <Route path="info" element={<SiteInfoPage />} />
-            <Route path="device" element={<SiteDevicePage />} />
-            <Route path="device/:deviceId" element={<DeviceDetailPage />} />
-            <Route path="alarm" element={<SiteAlarmPage />} />
-            <Route path="om-schedule" element={<SiteOmPage />} />
-          </Route>
-          </Route>
-        </Routes>
+        <AppErrorBoundary>
+          <Routes>
+            <Route path="login" element={<LoginPage />} />
+            <Route element={<RequireAuth />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="plants/:plantId" element={<SiteLayout />}>
+                <Route index element={<SiteOverviewPage />} />
+                <Route path="scada" element={<SiteScadaPage />} />
+                <Route path="info" element={<SiteInfoPage />} />
+                <Route path="device" element={<SiteDevicePage />} />
+                <Route path="device/:deviceId" element={<DeviceDetailPage />} />
+                <Route path="alarm" element={<SiteAlarmPage />} />
+                <Route path="om-schedule" element={<SiteOmPage />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </AppErrorBoundary>
       </BrowserRouter>
     </AppProviders>
   );

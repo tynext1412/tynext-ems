@@ -1,31 +1,88 @@
-import { Camera, Check, RotateCcw, Trash2 } from "lucide-react";
+import { Bell, Check, Clock, Pencil, RotateCcw, Trash2, Upload } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import type { MaintenanceUpdate } from "@/domains/maintenance/application/maintenance-repository";
 import { useUpdateMaintenance } from "@/domains/maintenance/application/use-maintenance";
-import { MAINTENANCE_TYPE_LABEL, maintenanceStatus, NOTES_MAX_LENGTH, type MaintenanceActivity, type MaintenancePhotoInput } from "@/domains/maintenance/domain/maintenance";
+import { maintenanceStatus, NOTES_MAX_LENGTH, type MaintenanceActivity, type MaintenancePhotoInput } from "@/domains/maintenance/domain/maintenance";
 import { MaintenanceStatusBadge } from "@/domains/maintenance/ui/MaintenanceStatusBadge";
+import { MaintenanceTypeTag } from "@/domains/maintenance/ui/MaintenanceTypeTag";
 import type { Plant } from "@/domains/plant/domain/plant";
-import { formatDateKey, formatDateTime, timezoneAbbrev } from "@/shared/domain/time";
 import { cn } from "@/shared/lib/cn";
 import { compressImage } from "@/shared/lib/image";
+import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
+import { Drawer } from "@/shared/ui/Drawer";
+import { Skeleton } from "@/shared/ui/Skeleton";
 import { Textarea } from "@/shared/ui/Input";
+import { formatCreatedAt, formatScheduleDate } from "./om-format";
 
 interface Props {
-  activity: MaintenanceActivity;
+  open: boolean;
+  onClose: () => void;
+  onEdit: () => void;
+  activity?: MaintenanceActivity; // undefined selama daftar dimuat / id tidak ditemukan
+  activityId: string | null;
+  loading: boolean;
   plant: Plant;
   today: string;
 }
 
-// Panel detail satu aktivitas: tandai selesai / batalkan, unggah & hapus foto, ubah catatan.
-// Pasang `key={activity.id}` dari pemanggil supaya draft catatan ikut berganti.
-export function MaintenanceDetail({ activity, plant, today }: Props) {
+// Drawer "Activity Details": judul, status + tipe, tanggal jadwal/dibuat, dokumentasi foto, catatan,
+// dan aksi (Edit, Mark as Done / Reopen). Foto bisa diunggah dan dihapus; catatan diubah di tempat.
+export function MaintenanceDetailDrawer({ open, onClose, onEdit, activity, activityId, loading, plant, today }: Props) {
+  const update = useUpdateMaintenance(plant.id);
+  const status = activity ? maintenanceStatus(activity, today) : undefined;
+
+  const setDone = (done: boolean) => {
+    if (!activity) return;
+    update.mutate({ id: activity.id, patch: { completedAt: done ? new Date().toISOString() : null } });
+  };
+
+  const footer = activity ? (
+    status === "DONE" ? (
+      <Button onClick={() => setDone(false)} loading={update.isPending}>
+        <RotateCcw className="size-4" aria-hidden />
+        Reopen Activity
+      </Button>
+    ) : (
+      <>
+        <Button onClick={onEdit} disabled={update.isPending}>
+          <Pencil className="size-4" aria-hidden />
+          Edit
+        </Button>
+        <Button variant="primary" onClick={() => setDone(true)} loading={update.isPending}>
+          <Check className="size-4" aria-hidden />
+          Mark as Done
+        </Button>
+      </>
+    )
+  ) : undefined;
+
+  return (
+    <Drawer open={open} onClose={onClose} title="Activity Details" footer={footer} className="[&>div:nth-child(2)]:p-0">
+      {activity ? (
+        <MaintenanceDetail key={activity.id} activity={activity} plant={plant} status={status ?? "UPCOMING"} updateError={update.error} />
+      ) : loading ? (
+        <div className="grid gap-3 p-5" aria-busy>
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ) : (
+        <p className="p-5 text-sm text-muted">
+          Aktivitas <span className="font-mono">{activityId}</span> tidak ada di plant ini.
+        </p>
+      )}
+    </Drawer>
+  );
+}
+
+function MaintenanceDetail({ activity, plant, status, updateError }: { activity: MaintenanceActivity; plant: Plant; status: ReturnType<typeof maintenanceStatus>; updateError: Error | null }) {
   const update = useUpdateMaintenance(plant.id);
   const tz = plant.location.timezone;
-  const status = maintenanceStatus(activity, today);
   const notesId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [notes, setNotes] = useState(activity.notes);
+  const [editingNotes, setEditingNotes] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -48,76 +105,51 @@ export function MaintenanceDetail({ activity, plant, today }: Props) {
     }
   };
 
-  const notesDirty = notes !== activity.notes;
+  const saveNotes = async () => {
+    await patch({ notes });
+    setEditingNotes(false);
+  };
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="flex min-h-full flex-col">
+      <section className="border-b border-separator p-5">
+        <h3 className="text-lg font-semibold leading-7">{activity.activity}</h3>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <MaintenanceStatusBadge status={status} />
-          <span className="rounded-sm border border-border px-1.5 py-0.5 text-xs text-muted">{MAINTENANCE_TYPE_LABEL[activity.type]}</span>
+          <span className="h-5 w-px bg-border" aria-hidden />
+          <MaintenanceTypeTag type={activity.type} />
         </div>
-        <p className="mt-2 text-base font-semibold">{activity.activity}</p>
-        <dl className="mt-2 grid gap-x-6 gap-y-1 text-xs text-muted sm:grid-cols-2">
-          <div className="flex gap-2">
-            <dt>Date</dt>
-            <dd className="font-mono text-text">{formatDateKey(activity.date, "long")}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt>Dibuat</dt>
-            <dd className="font-mono text-text">{formatDateTime(activity.createdAt, tz)}</dd>
-          </div>
-          {activity.completedAt && (
-            <div className="flex gap-2">
-              <dt>Selesai</dt>
-              <dd className="font-mono text-text">
-                {formatDateTime(activity.completedAt, tz)} {timezoneAbbrev(tz)}
-              </dd>
-            </div>
-          )}
-        </dl>
-      </div>
-
-      <section aria-labelledby={`${notesId}-status`} className="grid gap-2">
-        <h3 id={`${notesId}-status`} className="text-xs font-medium uppercase tracking-wide text-muted">
-          Status
-        </h3>
-        {status === "DONE" ? (
-          <Button onClick={() => void patch({ completedAt: null })} disabled={update.isPending} className="w-fit">
-            <RotateCcw className="size-4" aria-hidden />
-            Batalkan tanda selesai
-          </Button>
-        ) : (
-          <Button variant="primary" onClick={() => void patch({ completedAt: new Date().toISOString() })} disabled={update.isPending} className="w-fit">
-            <Check className="size-4" aria-hidden />
-            Tandai selesai (Done)
-          </Button>
-        )}
-        {status === "UPCOMING" && <p className="text-xs text-muted">Jadwal masih di depan; status berubah ke Pending otomatis saat tanggalnya tiba.</p>}
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <DateTile icon={<Bell className="size-4 text-accent" aria-hidden />} label="Scheduled Date" value={formatScheduleDate(activity.date, "long")} />
+          <DateTile icon={<Clock className="size-4 text-accent" aria-hidden />} label="Created Date" value={formatCreatedAt(activity.createdAt, tz)} />
+        </div>
       </section>
 
-      <section aria-labelledby={`${notesId}-photos`} className="grid gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <h3 id={`${notesId}-photos`} className="text-xs font-medium uppercase tracking-wide text-muted">
-            Photo Documentation <span className="font-mono">({activity.photos.length})</span>
-          </h3>
-          <label className={cn("inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-2 px-3 text-sm hover:border-muted", uploading && "pointer-events-none opacity-50")}>
-            <Camera className="size-4" aria-hidden />
-            {uploading ? "Mengunggah…" : "Unggah foto"}
-            <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => void onFiles(e.target.files)} disabled={uploading} />
-          </label>
+      <section className="border-b border-separator p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold">Photo Documentation ({activity.photos.length})</h4>
+            <p className="mt-0.5 text-xs text-muted">Upload photo from the field as proof of work</p>
+          </div>
+          <Button size="sm" onClick={() => fileRef.current?.click()} loading={uploading} disabled={update.isPending && !uploading}>
+            <Upload className="size-4" aria-hidden />
+            Upload Photos
+          </Button>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png" multiple className="sr-only" onChange={(e) => void onFiles(e.target.files)} disabled={uploading} aria-label="Pilih foto" />
         </div>
         {uploadError && (
-          <p role="alert" className="text-xs text-danger">
+          <p role="alert" className="mt-2 text-xs text-danger-text">
             {uploadError}
           </p>
         )}
         {activity.photos.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted">Belum ada foto. Foto diperkecil ke 1280 px sebelum disimpan.</p>
+          <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="mt-4 grid h-24 w-full place-items-center rounded-xl border border-dashed border-border text-sm text-muted hover:border-muted hover:text-text disabled:opacity-50">
+            No photos yet
+          </button>
         ) : (
-          <ul className="grid grid-cols-3 gap-2">
+          <ul className="mt-4 grid grid-cols-5 gap-2">
             {activity.photos.map((p) => (
-              <li key={p.id} className={cn("group relative overflow-hidden rounded-md border border-border", expanded === p.id && "col-span-3")}>
+              <li key={p.id} className={cn("group relative overflow-hidden rounded-xl border border-border", expanded === p.id && "col-span-5")}>
                 <button type="button" className="block w-full" onClick={() => setExpanded(expanded === p.id ? null : p.id)} aria-label={`${expanded === p.id ? "Perkecil" : "Perbesar"} ${p.name}`}>
                   <img src={p.dataUrl} alt={p.name} className={cn("w-full object-cover", expanded === p.id ? "max-h-96 object-contain" : "aspect-square")} />
                 </button>
@@ -126,41 +158,85 @@ export function MaintenanceDetail({ activity, plant, today }: Props) {
                   onClick={() => void patch({ removePhotoIds: [p.id] })}
                   disabled={update.isPending}
                   aria-label={`Hapus foto ${p.name}`}
-                  className="absolute right-1 top-1 inline-flex size-8 items-center justify-center rounded-md bg-bg/80 text-muted hover:text-danger focus:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                  className="absolute right-1 top-1 inline-flex size-7 items-center justify-center rounded-lg bg-surface/90 text-muted shadow-surface hover:text-danger-text focus:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                 >
-                  <Trash2 className="size-4" aria-hidden />
+                  <Trash2 className="size-3.5" aria-hidden />
                 </button>
               </li>
             ))}
           </ul>
         )}
+        <p className="mt-2 text-xs text-muted">Only support .jpg and .png files</p>
       </section>
 
-      <section className="grid gap-2">
-        <div className="flex items-baseline justify-between">
-          <label htmlFor={notesId} className="text-xs font-medium uppercase tracking-wide text-muted">
+      <section className="p-5">
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor={notesId} className="text-sm font-semibold">
             Notes
           </label>
-          <span className="font-mono text-[11px] text-muted">
-            {notes.length}/{NOTES_MAX_LENGTH}
-          </span>
+          {editingNotes ? (
+            <span className="font-mono text-xs text-muted">
+              {notes.length}/{NOTES_MAX_LENGTH}
+            </span>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setEditingNotes(true)} disabled={update.isPending}>
+              <Pencil className="size-3.5" aria-hidden />
+              {activity.notes ? "Edit notes" : "Add notes"}
+            </Button>
+          )}
         </div>
-        <Textarea id={notesId} value={notes} maxLength={NOTES_MAX_LENGTH} onChange={(e) => setNotes(e.target.value)} placeholder="Temuan di lapangan, part yang diganti, tindak lanjut" />
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setNotes(activity.notes)} disabled={!notesDirty || update.isPending}>
-            Urungkan
-          </Button>
-          <Button onClick={() => void patch({ notes })} disabled={!notesDirty || update.isPending}>
-            Simpan catatan
-          </Button>
-        </div>
+        {editingNotes ? (
+          <div className="mt-2 grid gap-2">
+            <Textarea id={notesId} value={notes} maxLength={NOTES_MAX_LENGTH} onChange={(e) => setNotes(e.target.value)} placeholder="Temuan di lapangan, part yang diganti, tindak lanjut" />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setNotes(activity.notes);
+                  setEditingNotes(false);
+                }}
+                disabled={update.isPending}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" size="sm" onClick={() => void saveNotes()} loading={update.isPending} disabled={notes === activity.notes}>
+                Save notes
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p id={notesId} className={cn("mt-2 whitespace-pre-wrap text-sm", activity.notes ? "text-text" : "text-muted")}>
+            {activity.notes || "No notes"}
+          </p>
+        )}
       </section>
 
-      {update.error && (
-        <p role="alert" className="text-sm text-danger">
-          Perubahan gagal disimpan: {update.error.message}
-        </p>
+      {(update.error || updateError) && (
+        <div className="px-5 pb-5">
+          <Alert tone="danger" title="Perubahan gagal disimpan">
+            {(update.error ?? updateError)?.message}
+          </Alert>
+        </div>
       )}
+
+      {status === "UPCOMING" && (
+        <div className="mt-auto px-5 pb-5">
+          <Alert tone="info">This activity is still scheduled. Its status changes to Pending automatically when the date arrives.</Alert>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DateTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-bg px-4 py-3">
+      <div className="flex items-center gap-1.5 text-xs text-muted">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-text">{value}</div>
     </div>
   );
 }

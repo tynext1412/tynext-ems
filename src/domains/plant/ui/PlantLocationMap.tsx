@@ -9,8 +9,7 @@ interface Props {
   className?: string;
 }
 
-// Citra satelit lokasi plant dari koordinat GPS; warna asli (tanpa filter grafit)
-// karena di sini citranya adalah informasi, bukan latar.
+// Citra satelit lokasi plant dari koordinat GPS (statis: tanpa zoom/geser), warna asli.
 export function PlantLocationMap({ plant, className }: Props) {
   const { lat, lng } = plant.location.point;
   return (
@@ -23,7 +22,8 @@ export function PlantLocationMap({ plant, className }: Props) {
       doubleClickZoom={false}
       touchZoom={false}
       keyboard={false}
-      className={cn("map-natural h-56 w-full rounded-md", className)}
+      attributionControl={false}
+      className={cn("h-40 w-full rounded-2xl", className)}
     >
       <TileLayer url={IMAGERY_URL} attribution={IMAGERY_ATTRIBUTION} />
       <CircleMarker center={[lat, lng]} radius={8} pathOptions={{ color: "#ffffff", weight: 2, fillColor: STATUS_COLOR[plant.status], fillOpacity: 1 }} />

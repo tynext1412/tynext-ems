@@ -1,45 +1,31 @@
-import { Search } from "lucide-react";
+import { Eye } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  usePlantDeviceReadings,
-  usePlantDevices,
-} from "@/domains/device/application/use-devices";
-import {
-  countDeviceStatus,
-  DEVICE_KIND_LABEL,
-  DEVICE_KINDS,
-  deviceStatus,
-  type DeviceKind,
-  type DeviceRecord,
-} from "@/domains/device/domain/device";
-import {
-  applyDeviceListQuery,
-  DEFAULT_DEVICE_LIST_QUERY,
-  type DeviceStatusFilter,
-} from "@/domains/device/domain/device-list";
+import { usePlantDeviceReadings, usePlantDevices } from "@/domains/device/application/use-devices";
+import { countDeviceStatus, DEVICE_KIND_LABEL, DEVICE_KINDS, deviceStatus, type DeviceKind, type DeviceRecord } from "@/domains/device/domain/device";
+import { applyDeviceListQuery, DEFAULT_DEVICE_LIST_QUERY, type DeviceStatusFilter } from "@/domains/device/domain/device-list";
 import type { DeviceReading } from "@/domains/device/domain/reading";
 import { DeviceStatusBadge } from "@/domains/device/ui/DeviceStatusBadge";
 import { MasterChip } from "@/domains/device/ui/MasterChip";
 import type { Plant } from "@/domains/plant/domain/plant";
-import { formatDateKey } from "@/shared/domain/time";
 import { formatNumber, scaleEnergy } from "@/shared/domain/units";
-import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
+import { CopyButton } from "@/shared/ui/CopyButton";
+import { DataTable, SkeletonRows, TableMessage, TBody, Td, Th, THead, Tr } from "@/shared/ui/DataTable";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { SearchField } from "@/shared/ui/Input";
 import { Pagination } from "@/shared/ui/Pagination";
-import { Panel } from "@/shared/ui/Panel";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { Tabs } from "@/shared/ui/Tabs";
 
 function parseKind(raw: string | null): DeviceKind {
   const upper = (raw ?? "").toUpperCase();
-  return (DEVICE_KINDS as readonly string[]).includes(upper)
-    ? (upper as DeviceKind)
-    : "INVERTER";
+  return (DEVICE_KINDS as readonly string[]).includes(upper) ? (upper as DeviceKind) : "INVERTER";
 }
 
-// Daftar perangkat satu plant: tab tipe (di URL ?type=), sub-tab status, pencarian, tabel per tipe.
+const STATUS_LABEL: Record<DeviceStatusFilter, string> = { ALL: "All", ONLINE: "Online", ALARM: "Alarm", OFFLINE: "Offline" };
+
+// Daftar perangkat satu plant: tab tipe (di URL ?type=), pencarian, filter status, tabel per tipe.
 export function DeviceListPanel({ plant }: { plant: Plant }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -47,6 +33,7 @@ export function DeviceListPanel({ plant }: { plant: Plant }) {
   const [status, setStatus] = useState<DeviceStatusFilter>("ALL");
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
+  const [searching, setSearching] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_DEVICE_LIST_QUERY.pageSize);
 
@@ -56,15 +43,10 @@ export function DeviceListPanel({ plant }: { plant: Plant }) {
   const all = useMemo(() => devices.data ?? [], [devices.data]);
   const ofKind = useMemo(() => all.filter((d) => d.kind === kind), [all, kind]);
   const statusCount = useMemo(() => countDeviceStatus(ofKind), [ofKind]);
-  const result = useMemo(
-    () => applyDeviceListQuery(all, { kind, status, search, page, pageSize }),
-    [all, kind, status, search, page, pageSize],
-  );
+  const result = useMemo(() => applyDeviceListQuery(all, { kind, status, search, page, pageSize }), [all, kind, status, search, page, pageSize]);
 
   const changeKind = (next: DeviceKind) => {
-    setParams(next === "INVERTER" ? {} : { type: next.toLowerCase() }, {
-      replace: true,
-    });
+    setParams(next === "INVERTER" ? {} : { type: next.toLowerCase() }, { replace: true });
     setStatus("ALL");
     setSearch("");
     setSearchDraft("");
@@ -76,104 +58,103 @@ export function DeviceListPanel({ plant }: { plant: Plant }) {
     setSearchDraft("");
     setPage(1);
   };
+  // Pencarian memuat ulang daftar dari server supaya hasilnya segar; selama itu tabel menampilkan skeleton.
+  const applySearch = async () => {
+    setSearch(searchDraft);
+    setPage(1);
+    setSearching(true);
+    try {
+      await devices.refetch();
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const kindLabel = DEVICE_KIND_LABEL[kind];
+  const message = (() => {
+    if (devices.error) {
+      return (
+        <EmptyState
+          illustration="server-error"
+          title="Device list couldn't load"
+          description={devices.error.message}
+          action={
+            <Button variant="primary" onClick={() => void devices.refetch()}>
+              Retry
+            </Button>
+          }
+        />
+      );
+    }
+    if (result.totalItems > 0) return null;
+    if (search.trim()) {
+      return <EmptyState illustration="no-search-results" title={`No devices match “${search.trim()}”`} description="Periksa ejaan, atau coba nama atau serial number yang lain." action={<Button onClick={reset}>Clear search</Button>} />;
+    }
+    if (ofKind.length === 0) {
+      return <EmptyState illustration="empty-sites" title={`No ${kindLabel.toLowerCase()} on this plant`} description={`Belum ada ${kindLabel.toLowerCase()} yang terdaftar untuk ${plant.name}.`} />;
+    }
+    const again = <Button onClick={() => void devices.refetch()}>Check again</Button>;
+    if (status === "ALARM") return <EmptyState illustration="no-active-alarms" title={`No ${kindLabel.toLowerCase()} with active alarms`} action={again} />;
+    if (status === "OFFLINE") return <EmptyState illustration="all-sites-online" title={`No offline ${kindLabel.toLowerCase()}`} description={`Semua ${kindLabel.toLowerCase()} sedang terhubung.`} action={again} />;
+    return <EmptyState illustration="empty-sites" title={<span className="text-warn-text">No ${kindLabel.toLowerCase()} are online right now</span>} action={again} />;
+  })();
 
   return (
-    <Panel title="Device">
+    <div className="space-y-4">
       <Tabs
-        className="mb-3"
         value={kind}
         onChange={changeKind}
-        items={DEVICE_KINDS.map((k) => ({
-          value: k,
-          label: DEVICE_KIND_LABEL[k],
-          count: all.filter((d) => d.kind === k).length,
-        }))}
-      />
-      <Tabs
-        className="mb-4 border-b-0"
-        value={status}
-        onChange={(s) => {
-          setStatus(s);
-          setPage(1);
-        }}
-        items={[
-          { value: "ALL", label: "Total", count: ofKind.length },
-          { value: "ONLINE", label: "Online", count: statusCount.ONLINE },
-          { value: "ALARM", label: "Alarm", count: statusCount.ALARM },
-          { value: "OFFLINE", label: "Offline", count: statusCount.OFFLINE },
-        ]}
+        aria-label="Tipe perangkat"
+        items={DEVICE_KINDS.map((k) => ({ value: k, label: DEVICE_KIND_LABEL[k], count: all.filter((d) => d.kind === k).length }))}
       />
 
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-muted">
-          Search
-          <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted"
-              aria-hidden
-            />
-            <Input
-              className="w-72 max-w-full pl-8"
-              placeholder="Nama atau serial number"
-              value={searchDraft}
-              onChange={(e) => setSearchDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setSearch(searchDraft);
-                  setPage(1);
-                }
-              }}
-            />
-          </div>
-        </label>
-        <Button
-          variant="primary"
-          onClick={() => {
-            setSearch(searchDraft);
-            setPage(1);
-          }}
-        >
-          Search
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchField value={searchDraft} onChange={setSearchDraft} onSubmit={() => void applySearch()} placeholder="Search name or serial number" aria-label="Cari perangkat" wrapperClassName="w-[280px] max-w-full" />
+        <Button variant="primary" onClick={() => void applySearch()} loading={searching}>
+          {searching ? "Searching" : "Search"}
         </Button>
         <Button onClick={reset}>Reset</Button>
+        <Tabs
+          variant="segmented"
+          className="ml-auto"
+          aria-label="Filter status perangkat"
+          value={status}
+          onChange={(s) => {
+            setStatus(s);
+            setPage(1);
+          }}
+          items={(["ALL", "ONLINE", "ALARM", "OFFLINE"] as const).map((s) => ({
+            value: s,
+            label: STATUS_LABEL[s],
+            count: s === "ALL" ? ofKind.length : statusCount[s],
+          }))}
+        />
       </div>
-
-      {devices.error && (
-        <div
-          role="alert"
-          className="mb-3 flex flex-wrap items-center gap-3 text-sm"
-        >
-          <span>
-            Daftar perangkat tidak bisa dimuat: {devices.error.message}.
-          </span>
-          <Button onClick={() => void devices.refetch()} className="h-9">
-            Coba muat ulang
-          </Button>
-        </div>
-      )}
 
       <DeviceTable
         kind={kind}
         rows={result.items}
         readings={readings.data ?? {}}
         loading={devices.isPending}
+        searching={searching}
         readingsLoading={readings.isPending}
-        onOperation={(id) => navigate(`/plants/${plant.id}/device/${id}`)}
-        onClear={reset}
+        onOpen={(id) => navigate(`/plants/${plant.id}/device/${id}`)}
+        message={message}
+        footer={
+          <Pagination
+            page={result.page}
+            pageSize={pageSize}
+            totalItems={result.totalItems}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+            disabled={devices.isPending || searching}
+          />
+        }
       />
-
-      <Pagination
-        className="mt-4"
-        page={result.page}
-        pageSize={pageSize}
-        totalItems={result.totalItems}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => {
-          setPageSize(s);
-          setPage(1);
-        }}
-      />
-    </Panel>
+    </div>
   );
 }
 
@@ -182,246 +163,111 @@ interface TableProps {
   rows: DeviceRecord[];
   readings: Record<string, DeviceReading>;
   loading: boolean;
+  searching: boolean;
   readingsLoading: boolean;
-  onOperation: (id: string) => void;
-  onClear: () => void;
+  onOpen: (id: string) => void;
+  footer: ReactNode;
+  message: ReactNode;
 }
 
 const COLUMNS: Record<DeviceKind, string[]> = {
-  INVERTER: [
-    "Status",
-    "Name",
-    "Inverter SN",
-    "Rated Power",
-    "Power",
-    "Daily Yield",
-    "Total Yield",
-    "Warranty Expiry",
-    "Operation",
-  ],
-  BATTERY: [
-    "Status",
-    "Name",
-    "Battery SN",
-    "Type",
-    "Model",
-    "SOC",
-    "Daily Charge",
-    "Daily Discharge",
-    "Operation",
-  ],
-  PCS: ["Status", "Name", "PCS SN", "Rated Power", "Power", "Daily Charge", "Daily Discharge", "Coupled Batteries", "Operation"],
-  METER: [
-    "Status",
-    "Name",
-    "Meter SN",
-    "Device Original SN",
-    "Power",
-    "Daily Export",
-    "Daily Import",
-    "Associated Datalogger",
-    "Operation",
-  ],
+  INVERTER: ["Status", "Name", "Inverter SN", "Rated Power", "Power", "Daily Yield", "Total Yield", "Action"],
+  BATTERY: ["Status", "Name", "Battery SN", "Type", "Model", "SOC", "Daily Charge", "Daily Discharge", "Action"],
+  PCS: ["Status", "Name", "PCS SN", "Rated Power", "Power", "Daily Charge", "Daily Discharge", "Coupled Batteries", "Action"],
+  METER: ["Status", "Name", "Meter SN", "Device Original SN", "Power", "Daily Export", "Daily Import", "Associated Datalogger", "Action"],
 };
 
-function DeviceTable({
-  kind,
-  rows,
-  readings,
-  loading,
-  readingsLoading,
-  onOperation,
-  onClear,
-}: TableProps) {
+function DeviceTable({ kind, rows, readings, loading, searching, readingsLoading, onOpen, footer, message }: TableProps) {
   const columns = COLUMNS[kind];
   const live = (deviceId: string, render: (r: DeviceReading) => ReactNode) => {
     const r = readings[deviceId];
     if (r) return render(r);
-    return readingsLoading ? (
-      <Skeleton className="h-4 w-16" />
-    ) : (
-      <span className="text-muted">n/a</span>
-    );
+    return readingsLoading ? <Skeleton className="h-4 w-16" /> : <span className="text-muted">–</span>;
   };
 
   return (
-    <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full min-w-240 text-left text-sm">
-        <thead className="bg-bg text-xs text-muted">
-          <tr>
-            {columns.map((c) => (
-              <th key={c} className="whitespace-nowrap px-3 py-2.5 font-medium">
-                {c}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {loading &&
-            Array.from({ length: 4 }, (_, i) => (
-              <tr key={i} aria-hidden>
-                <td colSpan={columns.length} className="px-3 py-3">
-                  <Skeleton className="h-5 w-full" />
-                </td>
-              </tr>
-            ))}
-          {!loading && rows.length === 0 && (
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="px-3 py-10 text-center text-muted"
-              >
-                Tidak ada {DEVICE_KIND_LABEL[kind].toLowerCase()} yang cocok
-                dengan filter.{" "}
-                <button
-                  type="button"
-                  onClick={onClear}
-                  className="text-accent underline-offset-2 hover:underline"
-                >
-                  Tampilkan semua
-                </button>
-              </td>
-            </tr>
-          )}
-          {!loading &&
-            rows.map((d) => (
-              <tr key={d.id} className="hover:bg-surface-2/70">
-                <Td>
-                  <DeviceStatusBadge status={deviceStatus(d)} />
-                </Td>
-                <Td>
-                  <span className="inline-flex items-center gap-2">
-                    {d.name}
-                    {d.kind === "INVERTER" && d.isMaster && <MasterChip />}
-                  </span>
-                </Td>
-                <Td mono>{d.serialNumber}</Td>
-                {d.kind === "INVERTER" && (
-                  <>
-                    <Td mono>{formatNumber(d.ratedPowerKW, 0)} kW</Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) =>
-                          r.kind === "INVERTER" &&
-                          `${formatNumber(r.powerKW, 1)} kW`,
-                      )}
-                    </Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) => r.kind === "INVERTER" && energy(r.dailyYieldKWh),
-                      )}
-                    </Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) => r.kind === "INVERTER" && energy(r.totalYieldKWh),
-                      )}
-                    </Td>
-                    <Td mono>{formatDateKey(d.warrantyExpiresAt)}</Td>
-                  </>
-                )}
-                {d.kind === "BATTERY" && (
-                  <>
-                    <Td>{d.batteryType}</Td>
-                    <Td>{d.model}</Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) => r.kind === "BATTERY" && `${r.socPercent}%`,
-                      )}
-                    </Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) => r.kind === "BATTERY" && energy(r.dailyChargeKWh),
-                      )}
-                    </Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) =>
-                          r.kind === "BATTERY" && energy(r.dailyDischargeKWh),
-                      )}
-                    </Td>
-                  </>
-                )}
-                {d.kind === "PCS" && (
-                  <>
-                    <Td mono>{formatNumber(d.ratedPowerKW, 0)} kW</Td>
-                    <Td mono>{live(d.id, (r) => r.kind === "PCS" && `${formatNumber(r.powerKW, 1)} kW`)}</Td>
-                    <Td mono>{live(d.id, (r) => r.kind === "PCS" && energy(r.dailyChargeKWh))}</Td>
-                    <Td mono>{live(d.id, (r) => r.kind === "PCS" && energy(r.dailyDischargeKWh))}</Td>
-                    <Td mono>{d.coupledBatteryIds.length > 0 ? d.coupledBatteryIds.map((id) => id.split("-").slice(-2).join("-")).join(", ") : "—"}</Td>
-                  </>
-                )}
-                {d.kind === "METER" && (
-                  <>
-                    <Td mono>
-                      {d.originalSerialNumber ?? (
-                        <span className="text-muted">n/a</span>
-                      )}
-                    </Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) =>
-                          r.kind === "METER" &&
-                          `${formatNumber(r.activePowerKW, 1)} kW`,
-                      )}
-                    </Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) => r.kind === "METER" && energy(r.dailyExportKWh),
-                      )}
-                    </Td>
-                    <Td mono>
-                      {live(
-                        d.id,
-                        (r) => r.kind === "METER" && energy(r.dailyImportKWh),
-                      )}
-                    </Td>
-                    <Td mono>{d.dataloggerId}</Td>
-                  </>
-                )}
-                <Td>
-                  <Button onClick={() => onOperation(d.id)} className="h-9">
-                    Operation
-                  </Button>
-                </Td>
-              </tr>
-            ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable stickyAction minWidth="1120px" caption={`Daftar ${DEVICE_KIND_LABEL[kind].toLowerCase()}`} footer={footer} busy={loading || searching}>
+      <THead>
+        <tr>
+          {columns.map((c, i) => (
+            <Th key={c} className={i === columns.length - 1 ? "w-20 text-center" : undefined}>
+              {c}
+            </Th>
+          ))}
+        </tr>
+      </THead>
+      <TBody>
+        {loading && <SkeletonRows rows={10} cols={columns.length} />}
+        {!loading && searching && <SkeletonRows rows={5} cols={columns.length} />}
+        {!loading && !searching && message && <TableMessage cols={columns.length}>{message}</TableMessage>}
+        {!loading &&
+          !searching &&
+          !message &&
+          rows.map((d) => (
+            <Tr key={d.id} className="hover:bg-bg/60">
+              <Td>
+                <DeviceStatusBadge status={deviceStatus(d)} />
+              </Td>
+              <Td>
+                <span className="inline-flex items-center gap-2 font-medium text-text">
+                  {d.name}
+                  {d.kind === "INVERTER" && d.isMaster && <MasterChip />}
+                </span>
+              </Td>
+              <Td>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="font-mono font-medium text-text">{d.serialNumber}</span>
+                  <CopyButton value={d.serialNumber} label="serial number" />
+                </span>
+              </Td>
+              {d.kind === "INVERTER" && (
+                <>
+                  <Td className="font-mono">{formatNumber(d.ratedPowerKW, 0)} kW</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && `${formatNumber(r.powerKW, 1)} kW`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && energy(r.dailyYieldKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "INVERTER" && energy(r.totalYieldKWh))}</Td>
+                </>
+              )}
+              {d.kind === "BATTERY" && (
+                <>
+                  <Td>{d.batteryType}</Td>
+                  <Td>{d.model}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && `${r.socPercent}%`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && energy(r.dailyChargeKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "BATTERY" && energy(r.dailyDischargeKWh))}</Td>
+                </>
+              )}
+              {d.kind === "PCS" && (
+                <>
+                  <Td className="font-mono">{formatNumber(d.ratedPowerKW, 0)} kW</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "PCS" && `${formatNumber(r.powerKW, 1)} kW`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "PCS" && energy(r.dailyChargeKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "PCS" && energy(r.dailyDischargeKWh))}</Td>
+                  <Td className="font-mono">{d.coupledBatteryIds.length > 0 ? d.coupledBatteryIds.map((id) => id.split("-").slice(-2).join("-")).join(", ") : "–"}</Td>
+                </>
+              )}
+              {d.kind === "METER" && (
+                <>
+                  <Td className="font-mono">{d.originalSerialNumber ?? <span className="text-muted">–</span>}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && `${formatNumber(r.activePowerKW, 1)} kW`)}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && energy(r.dailyExportKWh))}</Td>
+                  <Td className="font-mono">{live(d.id, (r) => r.kind === "METER" && energy(r.dailyImportKWh))}</Td>
+                  <Td className="font-mono">{d.dataloggerId}</Td>
+                </>
+              )}
+              <Td align="center">
+                <Button iconOnly size="sm" variant="tertiary" onClick={() => onOpen(d.id)} aria-label={`Buka detail ${d.name}`} title="Lihat detail perangkat">
+                  <Eye className="size-4" aria-hidden />
+                </Button>
+              </Td>
+            </Tr>
+          ))}
+      </TBody>
+    </DataTable>
   );
 }
 
 function energy(kWh: number): string {
   const s = scaleEnergy(kWh);
   return `${s.value} ${s.unit}`;
-}
-
-function Td({
-  children,
-  mono,
-  className,
-}: {
-  children: ReactNode;
-  mono?: boolean;
-  className?: string;
-}) {
-  return (
-    <td
-      className={cn(
-        "whitespace-nowrap px-3 py-2.5 align-middle",
-        mono && "font-mono",
-        className,
-      )}
-    >
-      {children}
-    </td>
-  );
 }

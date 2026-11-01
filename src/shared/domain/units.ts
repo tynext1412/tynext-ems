@@ -52,11 +52,11 @@ export interface ScaledEnergy {
 }
 
 // Kartu summary butuh angka ringkas: 35.093.936 kWh → 35,09 GWh.
-export function scaleEnergy(value: KWh): ScaledEnergy {
+export function scaleEnergy(value: KWh, fractionDigits = 2): ScaledEnergy {
   const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return { value: formatNumber(value / 1_000_000, 2), unit: "GWh" };
-  if (abs >= 1_000_000) return { value: formatNumber(value / 1_000, 2), unit: "MWh" };
-  return { value: formatNumber(value, 2), unit: "kWh" };
+  if (abs >= 1_000_000_000) return { value: formatNumber(value / 1_000_000, fractionDigits), unit: "GWh" };
+  if (abs >= 1_000_000) return { value: formatNumber(value / 1_000, fractionDigits), unit: "MWh" };
+  return { value: formatNumber(value, fractionDigits), unit: "kWh" };
 }
 
 export interface ScaledIDR {
@@ -65,11 +65,11 @@ export interface ScaledIDR {
 }
 
 // Rp 43.396.698.905 → 43,40 M (miliar).
-export function scaleIDR(value: IDR): ScaledIDR {
+export function scaleIDR(value: IDR, fractionDigits = 2): ScaledIDR {
   const abs = Math.abs(value);
-  if (abs >= 1e12) return { value: formatNumber(value / 1e12, 2), unit: "T" };
-  if (abs >= 1e9) return { value: formatNumber(value / 1e9, 2), unit: "M" };
-  if (abs >= 1e6) return { value: formatNumber(value / 1e6, 2), unit: "jt" };
-  if (abs >= 1e3) return { value: formatNumber(value / 1e3, 2), unit: "rb" };
+  if (abs >= 1e12) return { value: formatNumber(value / 1e12, fractionDigits), unit: "T" };
+  if (abs >= 1e9) return { value: formatNumber(value / 1e9, fractionDigits), unit: "M" };
+  if (abs >= 1e6) return { value: formatNumber(value / 1e6, fractionDigits), unit: "jt" };
+  if (abs >= 1e3) return { value: formatNumber(value / 1e3, fractionDigits), unit: "rb" };
   return { value: formatNumber(value, 0), unit: "" };
 }

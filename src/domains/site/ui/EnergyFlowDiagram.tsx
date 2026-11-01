@@ -62,7 +62,7 @@ export function EnergyFlowDiagram({ snapshot, hasBattery, className }: Props) {
         return (
           <g key={node.id}>
             <path d={path} stroke="var(--color-border)" strokeWidth={2} fill="none" />
-            {active && <path d={path} className={cn("flow-line", reverse && "is-reverse")} stroke="var(--color-accent)" strokeWidth={3} fill="none" />}
+            {active && <path d={path} className={cn("flow-line", reverse && "is-reverse")} stroke="var(--color-brand)" strokeWidth={3} fill="none" />}
 
             {conn && conn.kw > EPSILON && (
               <text x={node.x + 8} y={labelY + 4} fontSize="11" className="fill-text font-mono">
@@ -76,8 +76,8 @@ export function EnergyFlowDiagram({ snapshot, hasBattery, className }: Props) {
               width={NODE_W}
               height={NODE_H}
               rx={6}
-              fill="var(--color-surface-2)"
-              stroke={active ? "var(--color-accent)" : "var(--color-border)"}
+              fill="var(--color-bg)"
+              stroke={active ? "var(--color-brand)" : "var(--color-border)"}
               strokeWidth={1.5}
             />
             <text x={node.x} y={node.y - 10} textAnchor="middle" fontSize="11" className="fill-muted">

@@ -1,13 +1,15 @@
+import { ChartColumn } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useEnergySeries, useTariffSeries } from "@/domains/performance/application/use-performances";
 import type { EnergySeriesGranularity, Granularity, Period } from "@/domains/performance/domain/performance";
 import type { Plant } from "@/domains/plant/domain/plant";
 import { useDailyPowerSeries } from "@/domains/telemetry/application/use-power-snapshot";
 import { timezoneAbbrev, toDateKey } from "@/shared/domain/time";
+import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
 import { Panel } from "@/shared/ui/Panel";
-import { dailyPowerPoints, energyBarPoints, formatMinutes, minutesOfDay, tariffPoints } from "../../domain/chart-data";
-import { clampWindow, FULL_DAY, isFullDay, type TimeWindow } from "../../domain/period";
+import { dailyPowerPoints, energyBarPoints, minutesOfDay, tariffPoints } from "../../domain/chart-data";
+import { clampWindow, FULL_DAY, type TimeWindow } from "../../domain/period";
 import { PeriodControl } from "../PeriodControl";
 import { DailyPowerChart } from "./DailyPowerChart";
 import { EnergyChart } from "./EnergyChart";
@@ -58,41 +60,30 @@ export default function OverviewCharts({ plant }: { plant: Plant }) {
 
   return (
     <Panel
-      title="Grafik"
+      icon={<ChartColumn />}
+      title="Charts"
       actions={<PeriodControl period={period} onChange={changePeriod} granularities={CHART_GRANULARITIES} minDate={plant.commissionedAt} today={today} />}
+      cards
     >
       {error && (
-        <div role="alert" className="mb-3 flex flex-wrap items-center gap-3 text-sm">
-          <span>Data grafik tidak bisa dimuat: {error.message}.</span>
-          <Button onClick={retry} className="h-9">
-            Coba muat ulang
-          </Button>
-        </div>
+        <Alert
+          tone="danger"
+          action={
+            <Button size="sm" variant="tertiary" onClick={retry}>
+              Try again
+            </Button>
+          }
+        >
+          Data grafik tidak bisa dimuat: {error.message}.
+        </Alert>
       )}
 
       {isDay ? (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span>
-              Rentang <span className="font-mono text-text">{formatMinutes(window[0])}–{formatMinutes(window[1])}</span>
-            </span>
-            <span className="ml-auto">
-              {isFullDay(window) ? (
-                "Scroll di grafik untuk zoom · seret untuk memilih rentang"
-              ) : (
-                <>
-                  Scroll untuk zoom · klik dua kali atau{" "}
-                  <button type="button" onClick={onReset} className="text-accent underline-offset-2 hover:underline">
-                    reset
-                  </button>
-                </>
-              )}
-            </span>
-          </div>
+        <>
           <DailyPowerChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} />
           <SocChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} hasBattery={hasBattery} window={window} onZoom={onZoom} onReset={onReset} />
           <TariffChart points={tariffData} loading={tariff.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} />
-        </div>
+        </>
       ) : (
         <EnergyChart points={energyPoints} loading={energy.isPending} granularity={energyGranularity} />
       )}

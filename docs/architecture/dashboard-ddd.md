@@ -127,8 +127,10 @@ src/
 │   ├── domain/            # shared kernel: units (KWh, IDR, formatter id-ID), geo
 │   ├── config/env.ts
 │   ├── lib/               # cn, queryClient, apiClient
-│   └── ui/                # BottomSheet (framer-motion), Panel, Button, Input, Tabs,
-│                          # Pagination, Brand, UserMenu, Skeleton
+│   └── ui/                # primitif mengikuti kit HeroUI di Figma: Button, Chip, Tabs,
+│                          # Input/SearchField/Field, DataTable, Pagination, Panel/Card, Drawer,
+│                          # Dialog, Alert/Toast, EmptyState (ilustrasi Figma), BottomSheet,
+│                          # AppHeader (Last Updated + refresh + menu profil), Brand, Skeleton
 ├── domains/
 │   ├── plant/
 │   │   ├── domain/        # plant.ts, status-policy.ts (+test), weather.ts
@@ -145,11 +147,11 @@ src/
 │   └── dashboard/
 │       ├── domain/        # overview.ts (buildOverview), plant-list.ts (query tabel) (+test)
 │       ├── application/   # use-dashboard-overview.ts, use-plant-list.ts
-│       └── ui/            # DashboardPage, SummaryStrip, BessPerformanceCard,
+│       └── ui/            # DashboardPage, KpiCards, BessPerformanceCard,
 │                          # PlantListPanel, PlantTable
-└── styles/index.css       # token tema grafit + warna merek Tynext (Tailwind v4 @theme):
-                           # primary/accent biru, secondary teal, tertiary lime, navy;
-                           # motif panel-metal/brand-edge (@layer components), override Leaflet
+└── styles/index.css       # token tema dari Figma (Tailwind v4 @theme): latar/panel/kartu,
+                           # brand #087fb2, accent #0485f7, status ok/warn/danger + varian teks,
+                           # tema gelap, override Leaflet (popup kartu hover site)
 ```
 
 ---
@@ -202,8 +204,10 @@ di komponen:
 
 ### 4.4 `dashboard`
 
-- `buildOverview(plants, performances)` → `summary` (total/active sites, PV kWp, BESS kWh,
-  generation, revenue), `bess` (charge/discharge), `statusCount`.
+- `buildPlantSummary(plants)` → total/active sites, PV kWp, BESS kWh, `statusCount`;
+  `buildPerformanceSummary(performances)` → generation, revenue, `bess` (charge/discharge);
+  `roundTripEfficiency(bess)`. `buildOverview` menggabungkan keduanya. Dipisah supaya tiap kartu KPI
+  memuat dan gagal sendiri-sendiri (PRD Home).
 - `applyPlantListQuery(rows, query)` → filter status + search (nama/alamat/ID), sort
   (`name | status | generation | revenue | pvCapacity`), paginasi dengan page di-clamp.
 
@@ -239,8 +243,11 @@ Angka ditampilkan dengan locale `id-ID` (`1.250,40 kWp`, `Rp 260.482.000`) lewat
   dashboard dan Plant List berbagi cache yang sama sehingga data hanya diambil sekali.
 - **UI state**: lokal di hook/komponen (`usePlantList` menyimpan query tabel; `expanded`
   dan draft pencarian di `PlantListPanel`). Belum perlu store global.
-- **URL state**: sheet Plant List terbuka = hash `#plant-list`, supaya bisa dibagikan dan
+- **URL state**: sheet Site List terbuka = hash `#site-list`, supaya bisa dibagikan dan
   tombol Back menutupnya.
+- **Refresh global**: `shared/lib/refresh.ts` membaca cache TanStack Query untuk "Last Updated"
+  (dataUpdatedAt terbesar dari query aktif), memuat ulang semua query aktif saat tombol refresh ditekan,
+  dan memantau status online browser; data lama tetap tampil selama refresh.
 - **Derivasi**: semua agregasi dilakukan di `useMemo` memanggil fungsi domain murni.
 
 ### Layout: peta penuh + bottom sheet

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowLeftRight, BatteryCharging, ChevronDown, Gauge, Search, Zap } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, BatteryCharging, ChevronDown, Gauge, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { usePlantDevices } from "@/domains/device/application/use-devices";
@@ -8,7 +8,7 @@ import { MasterChip } from "@/domains/device/ui/MasterChip";
 import type { Plant } from "@/domains/plant/domain/plant";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
+import { SearchField } from "@/shared/ui/Input";
 import { Skeleton } from "@/shared/ui/Skeleton";
 
 interface Props {
@@ -22,7 +22,7 @@ const DOT: Record<DeviceStatus, string> = { ONLINE: "bg-ok", ALARM: "bg-warn", O
 
 // Daftar perangkat sejenis di samping detail (semua inverter, atau semua baterai, atau semua
 // meter) supaya pindah perangkat tidak perlu kembali ke daftar. Perangkat tidak saling
-// terhubung, jadi tidak ada hierarki. Keadaan aktif/hover sama dengan menu site.
+// terhubung, jadi tidak ada hierarki. Gaya item sama dengan menu site (aktif = biru merek).
 export function DeviceSwitcher({ plant, kind, backTo }: Props) {
   const devices = usePlantDevices(plant.id);
   const [search, setSearch] = useState("");
@@ -33,16 +33,16 @@ export function DeviceSwitcher({ plant, kind, backTo }: Props) {
   const loading = devices.isPending || !kind;
 
   return (
-    <aside className="panel-metal rounded-lg md:sticky md:top-0 md:max-h-[calc(100dvh-6rem)] md:overflow-y-auto" aria-label="Perangkat sejenis">
-      <div className="flex items-center justify-between gap-2 px-3 pt-2">
+    <aside className="rounded-[20px] bg-surface-2 p-1.5 md:sticky md:top-0 md:max-h-[calc(100dvh-10rem)] md:overflow-y-auto" aria-label="Perangkat sejenis">
+      <div className="flex items-center justify-between gap-2 px-2 py-1">
         {/* Relatif terhadap rute: dari device/:deviceId, ".." = /plants/:plantId */}
         <Link to={backTo} className="inline-flex h-9 items-center gap-2 text-sm font-medium text-muted hover:text-text">
           <ArrowLeft className="size-4" aria-hidden />
-          Device Details
+          Device List
         </Link>
         <button
           type="button"
-          className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-xs text-muted hover:bg-surface-2 hover:text-text md:hidden"
+          className="inline-flex h-9 items-center gap-1 rounded-xl px-2 text-xs text-muted hover:bg-surface-3 hover:text-text md:hidden"
           aria-expanded={mobileOpen}
           aria-controls="device-switcher-body"
           onClick={() => setMobileOpen((o) => !o)}
@@ -53,26 +53,18 @@ export function DeviceSwitcher({ plant, kind, backTo }: Props) {
         </button>
       </div>
 
-      <div id="device-switcher-body" className={cn("px-3 pb-3", mobileOpen ? "block" : "hidden md:block")}>
-        <label className="mt-2 block">
-          <span className="sr-only">Search Name</span>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
-            <Input className="h-9 w-full pl-8 text-sm" placeholder="Search Name…" value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
-        </label>
+      <div id="device-switcher-body" className={cn("rounded-2xl bg-surface p-2", mobileOpen ? "block" : "hidden md:block")}>
+        <SearchField value={search} onChange={setSearch} placeholder="Search name or SN" aria-label="Cari perangkat sejenis" className="h-9" />
 
         {kind && !devices.isPending && (
-          <p className="mt-3 flex items-baseline justify-between px-1 text-xs text-muted">
+          <p className="mt-3 flex items-baseline justify-between px-2 text-xs text-muted">
             <span className="font-medium uppercase tracking-wide">{DEVICE_KIND_LABEL[kind]}</span>
-            <span className="font-mono">
-              {search.trim() ? `${items.length}/${total}` : total} unit
-            </span>
+            <span className="font-mono">{search.trim() ? `${items.length}/${total}` : total} unit</span>
           </p>
         )}
 
         {loading && !devices.error && (
-          <div className="mt-3 grid gap-2" aria-busy>
+          <div className="mt-2 grid gap-1.5" aria-busy>
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-3/4" />
@@ -80,18 +72,18 @@ export function DeviceSwitcher({ plant, kind, backTo }: Props) {
           </div>
         )}
         {devices.error && (
-          <div className="mt-3">
-            <p role="alert" className="mb-2 text-xs">
+          <div className="mt-3 px-2">
+            <p role="alert" className="mb-2 text-xs text-danger-text">
               Daftar perangkat tidak bisa dimuat.
             </p>
-            <Button className="h-9" onClick={() => void devices.refetch()}>
-              Coba muat ulang
+            <Button size="sm" onClick={() => void devices.refetch()}>
+              Retry
             </Button>
           </div>
         )}
-        {!loading && items.length === 0 && <p className="mt-3 text-xs text-muted">Tidak ada perangkat yang cocok dengan “{search.trim()}”.</p>}
+        {!loading && items.length === 0 && <p className="mt-3 px-2 text-xs text-muted">Tidak ada perangkat yang cocok dengan “{search.trim()}”.</p>}
         {!loading && items.length > 0 && (
-          <ul className="mt-1 grid gap-0.5 text-sm">
+          <ul className="mt-1.5 grid gap-1 text-sm">
             {items.map((d) => {
               const Icon = ICON[d.kind];
               const status = deviceStatus(d);
@@ -101,19 +93,16 @@ export function DeviceSwitcher({ plant, kind, backTo }: Props) {
                     to={`/plants/${plant.id}/device/${d.id}`}
                     end
                     title={d.serialNumber}
-                    className={({ isActive }) =>
-                      cn(
-                        "group relative flex h-10 min-w-0 items-center gap-2 rounded-md px-2.5 transition-colors duration-150 hover:bg-accent-soft hover:text-ink hover:font-semibold focus-visible:bg-accent-soft focus-visible:text-ink",
-                        isActive
-                          ? "bg-accent/10 font-semibold text-accent before:absolute before:inset-y-2 before:left-0 before:w-0.75 before:rounded-full before:bg-accent"
-                          : "text-text",
-                      )
-                    }
+                    className={({ isActive }) => cn("group flex h-9 min-w-0 items-center gap-2 rounded-xl px-3 font-medium transition-colors", isActive ? "bg-brand text-on-brand" : "text-text hover:bg-surface-3")}
                   >
-                    <Icon className="size-4 shrink-0 text-muted group-hover:text-ink" aria-hidden />
-                    <span className="truncate">{d.name}</span>
-                    {d.kind === "INVERTER" && d.isMaster && <MasterChip className="group-hover:bg-ink/15 group-hover:text-ink" />}
-                    <span className={cn("ml-auto size-2 shrink-0 rounded-full group-hover:ring-2 group-hover:ring-ink/30", DOT[status])} role="img" aria-label={`Status ${status.toLowerCase()}`} />
+                    {({ isActive }) => (
+                      <>
+                        <Icon className={cn("size-4 shrink-0", isActive ? "text-on-brand" : "text-muted group-hover:text-text")} aria-hidden />
+                        <span className="truncate">{d.name}</span>
+                        {d.kind === "INVERTER" && d.isMaster && <MasterChip className={isActive ? "bg-white/20 text-on-brand" : undefined} />}
+                        <span className={cn("ml-auto size-2 shrink-0 rounded-full ring-2 ring-surface", DOT[status])} role="img" aria-label={`Status ${status.toLowerCase()}`} />
+                      </>
+                    )}
                   </NavLink>
                 </li>
               );

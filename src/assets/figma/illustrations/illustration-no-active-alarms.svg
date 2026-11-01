@@ -1,0 +1,22 @@
+<svg width="220" height="170" viewBox="0 0 220 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M110 170C156.392 170 194 132.392 194 86C194 39.6081 156.392 2 110 2C63.6081 2 26 39.6081 26 86C26 132.392 63.6081 170 110 170Z" fill="url(#paint0_radial_12236_26423)"/>
+<path d="M110 158C139.823 158 164 154.418 164 150C164 145.582 139.823 142 110 142C80.1766 142 56 145.582 56 150C56 154.418 80.1766 158 110 158Z" fill="#C9DDF0"/>
+<path d="M110 39C113.866 39 117 35.866 117 32C117 28.134 113.866 25 110 25C106.134 25 103 28.134 103 32C103 35.866 106.134 39 110 39Z" fill="#A8CBEA"/>
+<path d="M110 130C117.18 130 123 124.18 123 117C123 109.82 117.18 104 110 104C102.82 104 97 109.82 97 117C97 124.18 102.82 130 110 130Z" fill="#A8CBEA"/>
+<path d="M110 34C86 34 70 52 70 76V98L60 114H160L150 98V76C150 52 134 34 110 34Z" fill="url(#paint1_linear_12236_26423)"/>
+<path d="M84 68C86 56 96 47 108 45" stroke-width="5" stroke-linecap="round" stroke="white" stroke-opacity="0.5"/>
+<path d="M158 143C169.598 143 179 133.598 179 122C179 110.402 169.598 101 158 101C146.402 101 137 110.402 137 122C137 133.598 146.402 143 158 143Z" fill="white"/>
+<path d="M158 136C165.732 136 172 129.732 172 122C172 114.268 165.732 108 158 108C150.268 108 144 114.268 144 122C144 129.732 150.268 136 158 136Z" fill="#17C964"/>
+<path d="M151 122L156 127L165 117" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+<defs>
+<radialGradient id="paint0_radial_12236_26423" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(110 86) scale(84)">
+<stop stop-color="#D6E7F7"/>
+<stop offset="1" stop-color="#D6E7F7" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="paint1_linear_12236_26423" x1="60" y1="34" x2="138.049" y2="131.561" gradientUnits="userSpaceOnUse">
+<stop stop-color="#6FC0F5"/>
+<stop offset="0.55" stop-color="#2F8FD8"/>
+<stop offset="1" stop-color="#1A64A8"/>
+</linearGradient>
+</defs>
+</svg>

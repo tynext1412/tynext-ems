@@ -43,6 +43,20 @@ describe("mock maintenance repository", () => {
     expect(patched.photos[0].name).toBe("a.jpg");
   });
 
+  it("persists edits to schedule, type and activity of seeded items", async () => {
+    const storage = new MemoryStorage();
+    const repo = new MockMaintenanceRepository(plantFixtures, now, storage);
+    const seeded = (await repo.findByPlant("PLT-001"))[0];
+    await repo.update(seeded.id, { date: "2026-12-24", type: "CORRECTIVE", activity: "Penggantian fuse string PV2" });
+
+    const again = new MockMaintenanceRepository(plantFixtures, now, storage);
+    const edited = (await again.findByPlant("PLT-001")).find((a) => a.id === seeded.id)!;
+    expect(edited.date).toBe("2026-12-24");
+    expect(edited.type).toBe("CORRECTIVE");
+    expect(edited.activity).toBe("Penggantian fuse string PV2");
+    expect(edited.photos).toEqual([]);
+  });
+
   it("rejects unknown plants and ids", async () => {
     const repo = new MockMaintenanceRepository(plantFixtures, now, null);
     await expect(repo.create("PLT-999", { date: "2026-11-02", type: "REGULAR", activity: "x", notes: "" })).rejects.toThrow();

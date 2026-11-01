@@ -1,23 +1,25 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
+import { cn } from "@/shared/lib/cn";
 
 interface DrawerProps {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title: ReactNode;
   children: ReactNode;
+  footer?: ReactNode; // tombol aksi di bawah (Cancel / Submit)
+  className?: string;
 }
 
 const SPRING = { type: "spring", stiffness: 340, damping: 36 } as const;
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-// Panel dari sisi kanan untuk form/detail. Escape atau klik backdrop menutup;
-// fokus masuk ke panel saat dibuka, berputar di dalamnya, dan kembali ke pemicu saat ditutup.
-export function Drawer({ open, onClose, title, children }: DrawerProps) {
+// Panel kartu mengambang dari sisi kanan (lebar 560 px, sudut 24 px) untuk form dan detail.
+// Escape atau klik backdrop menutup; fokus masuk ke panel saat dibuka dan kembali saat ditutup.
+export function Drawer({ open, onClose, title, children, footer, className }: DrawerProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  // onClose disimpan di ref supaya efek fokus tidak dijalankan ulang (dan mencuri fokus) tiap render.
   const onCloseRef = useRef(onClose);
   useLayoutEffect(() => {
     onCloseRef.current = onClose;
@@ -61,7 +63,7 @@ export function Drawer({ open, onClose, title, children }: DrawerProps) {
           <motion.button
             type="button"
             aria-label="Tutup panel"
-            className="fixed inset-0 z-40 bg-ink/40"
+            className="fixed inset-0 z-40 bg-ink/50"
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -74,21 +76,22 @@ export function Drawer({ open, onClose, title, children }: DrawerProps) {
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-border bg-surface outline-none"
-            initial={reducedMotion ? { opacity: 0 } : { x: "100%" }}
+            className={cn("fixed inset-y-3 right-3 z-50 flex w-[calc(100vw-24px)] max-w-[560px] flex-col overflow-hidden rounded-3xl bg-surface shadow-overlay outline-none", className)}
+            initial={reducedMotion ? { opacity: 0 } : { x: "calc(100% + 12px)" }}
             animate={reducedMotion ? { opacity: 1 } : { x: 0 }}
-            exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}
+            exit={reducedMotion ? { opacity: 0 } : { x: "calc(100% + 12px)" }}
             transition={reducedMotion ? { duration: 0.15 } : SPRING}
           >
-            <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-separator px-5 py-3.5">
               <h2 id={titleId} className="text-base font-semibold">
                 {title}
               </h2>
-              <button type="button" onClick={onClose} aria-label="Tutup" className="inline-flex size-9 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-text">
+              <button type="button" onClick={onClose} aria-label="Tutup" className="inline-flex size-8 items-center justify-center rounded-full bg-surface-3 text-text hover:bg-border">
                 <X className="size-4" aria-hidden />
               </button>
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+            {footer && <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-separator px-5 py-4">{footer}</footer>}
           </motion.div>
         </>
       )}

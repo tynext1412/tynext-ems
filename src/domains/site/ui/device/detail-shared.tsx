@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/shared/lib/cn";
+import { DataTable, TBody, Td, Th, THead, Tr } from "@/shared/ui/DataTable";
 import { Skeleton } from "@/shared/ui/Skeleton";
 
-// Potongan UI yang dipakai ketiga halaman detail perangkat.
+// Potongan UI yang dipakai keempat halaman detail perangkat.
 
 export function InfoGrid({ children }: { children: ReactNode }) {
   return <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm @xl:grid-cols-3 @4xl:grid-cols-4">{children}</dl>;
@@ -13,7 +14,7 @@ export function Field({ label, children, mono }: { label: string; children: Reac
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className={cn("mt-0.5 break-words", mono && "font-mono")}>{children}</dd>
+      <dd className={cn("mt-0.5 break-words font-medium text-text", mono && "font-mono")}>{children}</dd>
     </div>
   );
 }
@@ -31,51 +32,56 @@ export function Stat({ label, value, unit, loading, tone }: { label: string; val
     <div>
       <div className="text-xs text-muted">{label}</div>
       {loading || value === undefined ? (
-        <Skeleton className="mt-1 h-5 w-20" />
+        <Skeleton className="mt-1 h-6 w-20" />
       ) : (
-        <div className={cn("mt-0.5 font-mono text-base font-semibold", tone)}>
+        <div className={cn("mt-0.5 font-mono text-lg font-semibold leading-7", tone)}>
           {value}
-          {unit && <span className="ml-1 text-xs font-medium text-muted">{unit}</span>}
+          {unit && <span className="ml-1 text-sm font-normal text-muted">{unit}</span>}
         </div>
       )}
     </div>
   );
 }
 
+// Tabel pengukuran ringkas (string DC, fasa AC, energi per periode): baris 40 px, angka rata kanan.
 export function MeasureTable({ caption, columns, rows, loading }: { caption: string; columns: string[]; rows: (string | number)[][]; loading?: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full text-sm">
-        <caption className="sr-only">{caption}</caption>
-        <thead className="bg-bg text-xs text-muted">
-          <tr>
-            {columns.map((c, i) => (
-              <th key={c} className={cn("px-3 py-2 font-medium", i === 0 ? "text-left" : "text-right")}>
-                {c}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {loading && (
-            <tr>
-              <td colSpan={columns.length} className="px-3 py-3">
-                <Skeleton className="h-5 w-full" />
-              </td>
-            </tr>
-          )}
-          {!loading &&
-            rows.map((r, i) => (
-              <tr key={i}>
-                {r.map((cell, j) => (
-                  <td key={j} className={cn("px-3 py-2", j === 0 ? "text-left" : "text-right font-mono")}>
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable caption={caption}>
+      <THead>
+        <tr>
+          {columns.map((c, i) => (
+            <Th key={`${c}-${i}`} align={i === 0 ? "left" : "right"} className="h-9">
+              {c}
+            </Th>
+          ))}
+        </tr>
+      </THead>
+      <TBody>
+        {loading && (
+          <Tr>
+            <Td colSpan={columns.length} className="h-10">
+              <Skeleton className="h-4 w-full" />
+            </Td>
+          </Tr>
+        )}
+        {!loading && rows.length === 0 && (
+          <Tr>
+            <Td colSpan={columns.length} className="h-10 text-center text-muted">
+              –
+            </Td>
+          </Tr>
+        )}
+        {!loading &&
+          rows.map((r, i) => (
+            <Tr key={i}>
+              {r.map((cell, j) => (
+                <Td key={j} align={j === 0 ? "left" : "right"} className={cn("h-10", j > 0 && "font-mono")}>
+                  {cell}
+                </Td>
+              ))}
+            </Tr>
+          ))}
+      </TBody>
+    </DataTable>
   );
 }

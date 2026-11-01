@@ -1,47 +1,44 @@
 import { animate, motion, useDragControls, useMotionValue, useMotionValueEvent, useReducedMotion, type PanInfo } from "framer-motion";
-import { X } from "lucide-react";
+import { ChevronsDown, ChevronsUp } from "lucide-react";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/shared/lib/cn";
+import { Chip } from "./Chip";
 
 interface BottomSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title: string;
-  /** Isi bar saat sheet tertutup (ringkasan + ajakan geser). */
-  peek: ReactNode;
+  /** Baris judul yang selalu terlihat (judul, jumlah, legend); boleh bergantung pada keadaan terbuka. */
+  header: ReactNode | ((open: boolean) => ReactNode);
+  /** Jarak dari atas viewport saat terbuka (sheet berhenti di bawah kartu KPI). */
+  topOffset?: number;
   peekHeight?: number;
+  hintOpen?: string;
+  hintClose?: string;
+  "aria-label"?: string;
   className?: string;
   children: ReactNode;
 }
 
 const SPRING = { type: "spring", stiffness: 320, damping: 34, mass: 0.9 } as const;
-const HANDLE_HEIGHT = 14;
 
 /**
- * Sheet dari bawah layar, seperti panel komentar di Reels: saat tertutup hanya
- * bar ringkas yang terlihat; geser/klik ke atas untuk membuka, geser ke bawah,
- * klik backdrop, atau Escape untuk menutup. Konten di dalamnya scroll sendiri.
+ * Sheet dari bawah layar seperti di desain Home: tertutup = bar putih 84 px dengan judul dan
+ * legend; tombol bundar berpanah di tengah atas membuka/menutup, bisa juga digeser.
+ * Terbuka = sheet naik sampai di bawah kartu KPI, peta di belakangnya digelapkan.
  */
-export function BottomSheet({ open, onOpenChange, title, peek, peekHeight = 76, className, children }: BottomSheetProps) {
+export function BottomSheet({ open, onOpenChange, header, topOffset = 176, peekHeight = 84, hintOpen = "Geser atau klik untuk membuka", hintClose = "Geser atau klik untuk menutup", className, children, ...rest }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const dragControls = useDragControls();
   const reducedMotion = useReducedMotion();
 
-  // Mulai di luar layar supaya sheet "masuk" saat halaman pertama dirender,
-  // bukan berkedip di posisi terbuka sebelum tinggi terukur.
   const y = useMotionValue(typeof window === "undefined" ? 1000 : window.innerHeight);
-  // Jarak geser saat tertutup = tinggi sheet - tinggi peek bar. Disimpan di ref
-  // supaya settle() selalu membaca nilai terukur, dan di state untuk dragConstraints.
   const closedYRef = useRef(0);
   const [closedY, setClosedY] = useState(0);
-  // Dibaca oleh measure() di bawah, yang hidup lebih lama dari satu render.
   const openRef = useRef(open);
   useLayoutEffect(() => {
     openRef.current = open;
   }, [open]);
-  // Backdrop mengikuti posisi sheet: 0 saat tertutup, 1 saat terbuka penuh.
   const backdropOpacity = useMotionValue(0);
   useMotionValueEvent(y, "change", (v) => {
     const max = closedYRef.current;
@@ -67,7 +64,6 @@ export function BottomSheet({ open, onOpenChange, title, peek, peekHeight = 76, 
       const firstMeasure = closedYRef.current === 0;
       closedYRef.current = Math.max(0, el.offsetHeight - peekHeight);
       setClosedY(closedYRef.current);
-      // Pengukuran pertama = animasi masuk dari bawah; perubahan viewport = langsung snap.
       settle(openRef.current, !firstMeasure);
     };
     measure();
@@ -92,39 +88,29 @@ export function BottomSheet({ open, onOpenChange, title, peek, peekHeight = 76, 
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onOpenChange]);
 
-  useEffect(() => {
-    if (open) closeButtonRef.current?.focus({ preventScroll: true });
-  }, [open]);
-
   const onDragEnd = (_: unknown, info: PanInfo) => {
     const threshold = closedY * 0.25;
     let next = open;
     if (info.velocity.y < -400 || info.offset.y < -threshold) next = true;
     else if (info.velocity.y > 400 || info.offset.y > threshold) next = false;
-
     if (next !== open) onOpenChange(next);
     else settle(open);
   };
 
+  const toggle = () => onOpenChange(!open);
+
   return (
     <>
-      <motion.div
-        aria-hidden
-        className="fixed inset-0 z-20 bg-ink/40"
-        style={{ opacity: backdropOpacity, pointerEvents: open ? "auto" : "none" }}
-        onClick={() => onOpenChange(false)}
-      />
+      <motion.div aria-hidden className="fixed inset-0 z-20 bg-black/70" style={{ opacity: backdropOpacity, pointerEvents: open ? "auto" : "none" }} onClick={() => onOpenChange(false)} />
 
       <motion.div
         ref={sheetRef}
         role={open ? "dialog" : undefined}
         aria-modal={open || undefined}
         aria-labelledby={open ? titleId : undefined}
-        className={cn(
-          "brand-edge fixed inset-x-0 bottom-0 z-30 flex h-[88dvh] flex-col rounded-t-2xl border border-b-0 border-border bg-surface shadow-[0_-24px_60px_rgba(27,29,31,0.18)]",
-          className,
-        )}
-        style={{ y }}
+        aria-label={rest["aria-label"]}
+        className={cn("fixed inset-x-0 bottom-0 z-30 flex flex-col rounded-t-3xl bg-surface", className)}
+        style={{ y, height: `calc(100dvh - ${topOffset}px)` }}
         drag="y"
         dragListener={false}
         dragControls={dragControls}
@@ -133,43 +119,38 @@ export function BottomSheet({ open, onOpenChange, title, peek, peekHeight = 76, 
         dragMomentum={false}
         onDragEnd={onDragEnd}
       >
-        {/* Area pegangan: gestur geser dimulai dari sini, bukan dari konten yang scroll. */}
-        <div
-          className="shrink-0 cursor-grab touch-none select-none active:cursor-grabbing"
-          onPointerDown={(e) => dragControls.start(e)}
-        >
-          <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-border" style={{ height: 6, marginBottom: HANDLE_HEIGHT - 14 }} />
-
-
-          {open ? (
-            <div className="flex items-center justify-between gap-4 px-5 py-3">
-              <h2 id={titleId} className="text-lg font-semibold">
-                {title}
-              </h2>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={() => onOpenChange(false)}
-                aria-label="Tutup daftar site"
-                className="grid size-11 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-text"
-              >
-                <X className="size-5" aria-hidden />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onOpenChange(true)}
-              aria-expanded={false}
-              className="flex w-full items-center px-5 text-left"
-              style={{ height: peekHeight - HANDLE_HEIGHT }}
-            >
-              {peek}
-            </button>
-          )}
+        {/* Petunjuk dan tombol buka/tutup di tengah tepi atas sheet. */}
+        <div className="pointer-events-none absolute inset-x-0 -top-16 flex flex-col items-center gap-4">
+          <Chip tone="neutral" size="lg" className="pointer-events-auto bg-surface-3 text-xs font-normal text-text">
+            {open ? hintClose : hintOpen}
+          </Chip>
+          <button
+            type="button"
+            onClick={toggle}
+            onPointerDown={(e) => dragControls.start(e)}
+            aria-expanded={open}
+            aria-label={open ? "Tutup daftar site" : "Buka daftar site"}
+            className="pointer-events-auto grid size-10 cursor-grab touch-none place-items-center rounded-full bg-surface text-text shadow-overlay active:cursor-grabbing"
+          >
+            {open ? <ChevronsDown className="size-5" aria-hidden /> : <ChevronsUp className="size-5" aria-hidden />}
+          </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-8" inert={!open}>
+        {/* Baris judul: area pegangan geser; klik membuka saat tertutup. */}
+        <div
+          className={cn("shrink-0 touch-none select-none px-6", !open && "cursor-pointer")}
+          style={{ minHeight: peekHeight }}
+          onPointerDown={(e) => dragControls.start(e)}
+          onClick={() => {
+            if (!open) onOpenChange(true);
+          }}
+        >
+          <div id={titleId} className="flex items-start justify-between gap-4 pt-4">
+            {typeof header === "function" ? header(open) : header}
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6" inert={!open}>
           {children}
         </div>
       </motion.div>

@@ -13,11 +13,12 @@ type StackKey = "grid" | "pv" | "battery" | "genset";
 const STACK: readonly StackKey[] = ["grid", "pv", "battery", "genset"];
 const LEGEND: readonly SeriesKey[] = ["grid", "pv", "battery", "genset", "load"];
 const STACK_KEY: Record<StackKey, "grid" | "pv" | "discharge" | "genset"> = { grid: "grid", pv: "pv", battery: "discharge", genset: "genset" };
+const HEIGHT = 280;
 
 const TITLE: Record<EnergySeriesGranularity, string> = {
-  month: "Energi per hari (kWh)",
-  year: "Energi per bulan (kWh)",
-  lifetime: "Energi per tahun (kWh)",
+  month: "Energy per day",
+  year: "Energy per month",
+  lifetime: "Energy per year",
 };
 
 interface Props {
@@ -32,6 +33,7 @@ export function EnergyChart({ points, loading, granularity }: Props) {
   return (
     <ChartFrame
       title={TITLE[granularity]}
+      unit="(kWh)"
       legend={<ChartLegend series={LEGEND} hidden={hidden} onToggle={toggle} />}
       table={
         points && (
@@ -44,18 +46,20 @@ export function EnergyChart({ points, loading, granularity }: Props) {
       }
     >
       {loading || !points ? (
-        <Skeleton className="h-75 w-full" />
+        <Skeleton className="h-70 w-full" />
       ) : points.length === 0 ? (
-        <p className="grid h-75 place-items-center text-sm text-muted">Belum ada data energi untuk periode ini.</p>
+        <p className="grid place-items-center text-sm text-muted" style={{ height: HEIGHT }}>
+          Belum ada data energi untuk periode ini.
+        </p>
       ) : (
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={HEIGHT}>
           {/* stackOffset="sign": nilai positif menumpuk ke atas, charge (negatif) ke bawah dalam satu batang. */}
           <ComposedChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} barCategoryGap="30%" stackOffset="sign" accessibilityLayer>
             <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
             <XAxis dataKey="label" tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} interval="preserveStartEnd" minTickGap={12} />
             <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} tickFormatter={compactNumber} />
             <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              cursor={{ fill: "rgba(0,0,0,0.04)" }}
               content={({ active, payload, label }: TooltipProps<number, string>) => {
                 if (!active || !payload?.length) return null;
                 const p = payload[0]?.payload as EnergyBarPoint;

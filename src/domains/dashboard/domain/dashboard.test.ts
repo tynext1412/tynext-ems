@@ -77,3 +77,23 @@ describe("applyPlantListQuery", () => {
     expect(clamped.page).toBe(2);
   });
 });
+
+describe("split summaries", () => {
+  it("builds plant and performance summaries independently and derives round-trip efficiency", async () => {
+    const { buildPlantSummary, buildPerformanceSummary, roundTripEfficiency } = await import("./overview");
+    const plants = [
+      { id: "A", status: "ONLINE", capacity: { pvKWp: 100, inverterKW: 90, batteryKWh: 50 } },
+      { id: "B", status: "OFFLINE", capacity: { pvKWp: 50, inverterKW: 40, batteryKWh: 0 } },
+    ] as unknown as Parameters<typeof buildPlantSummary>[0];
+    const plantSummary = buildPlantSummary(plants);
+    expect(plantSummary).toMatchObject({ totalSites: 2, activeSites: 1, pvCapacityKWp: 150, bessCapacityKWh: 50, statusCount: { ONLINE: 1, ALARM: 0, OFFLINE: 1 } });
+
+    const perf = buildPerformanceSummary([
+      { plantId: "A", generationKWh: 1000, chargeKWh: 200, dischargeKWh: 184, tariffIDRPerKWh: 1, purchaseTariffIDRPerKWh: 1, revenueIDR: 1000 },
+      { plantId: "B", generationKWh: 0, chargeKWh: 0, dischargeKWh: 0, tariffIDRPerKWh: 1, purchaseTariffIDRPerKWh: 1, revenueIDR: 0 },
+    ]);
+    expect(perf).toEqual({ generationKWh: 1000, revenueIDR: 1000, bess: { chargeKWh: 200, dischargeKWh: 184 } });
+    expect(roundTripEfficiency(perf.bess)).toBeCloseTo(0.92);
+    expect(roundTripEfficiency({ chargeKWh: 0, dischargeKWh: 0 })).toBe(0);
+  });
+});

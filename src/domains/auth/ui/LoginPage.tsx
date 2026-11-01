@@ -3,12 +3,11 @@ import { Brand } from "@/shared/ui/Brand";
 import { ThemeToggle } from "@/shared/ui/ThemeToggle";
 import { useSession } from "../application/use-auth";
 import { LoginForm } from "./LoginForm";
-import { CrossingCables } from "./scene/CrossingCables";
-import { LoginIllustration } from "./scene/LoginIllustration";
+import { LoginVideoBackdrop } from "./LoginVideoBackdrop";
 
-// Halaman masuk: ilustrasi vektor site (PV, baterai, inverter, meter, teknisi, aliran listrik)
-// memenuhi latar; kartu form di kanan bertepi lengkung dan kabel bergaris menyeberang ke
-// dalamnya supaya keduanya menyatu. Di ponsel ilustrasi di atas, form di bawah.
+// Halaman masuk: video latar (siang/malam menurut jam lokal) memenuhi halaman; kartu form, pil logo,
+// dan tombol tema tembus pandang 65 % dengan blur supaya video tetap terlihat di baliknya.
+// Di ponsel video di atas, form di bawah.
 export function LoginPage() {
   const session = useSession();
   const location = useLocation();
@@ -19,23 +18,26 @@ export function LoginPage() {
   }
 
   return (
-    <main className="login-sky h-dvh overflow-y-auto">
-      <div className="relative min-h-full lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(400px,520px)]">
-        {/* Kolom ilustrasi: gambar utuh rata bawah; langit adalah latar halaman sehingga menyambung ke kartu */}
+    <main className="login-sky relative h-dvh overflow-y-auto">
+      <LoginVideoBackdrop className="pointer-events-none fixed inset-0 z-0 h-full w-full object-cover" />
+      {/* Scrim gelap di atas video supaya logo dan teks pembuka tetap terbaca. */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0.15)_40%,rgba(0,0,0,0.35)_100%)]" aria-hidden />
+
+      <div className="relative z-10 min-h-full lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(400px,520px)]">
         <div className="relative h-72 lg:h-auto lg:min-h-dvh">
-          <LoginIllustration className="absolute inset-0 h-full w-full" />
           <div className="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-5">
-            <Brand size="md" />
-            <ThemeToggle />
+            <span className="rounded-xl bg-white/65 px-3 py-1.5 backdrop-blur-md">
+              <Brand size="md" />
+            </span>
+            <ThemeToggle className="border-white/40 bg-surface/65 backdrop-blur-md" />
           </div>
-          <div className="pointer-events-none absolute left-6 top-24 hidden max-w-md lg:block">
+          <div className="pointer-events-none absolute left-6 top-24 hidden max-w-md text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] lg:block">
             <h2 className="text-2xl font-semibold leading-tight">Energy control untuk semua site Anda</h2>
-            <p className="mt-2 text-sm text-muted">PV, baterai, inverter, dan meter dalam satu dashboard: pantau aliran daya, alarm, dan jadwal O&amp;M dari mana saja.</p>
+            <p className="mt-2 text-sm text-white/85">PV, baterai, inverter, dan meter dalam satu dashboard: pantau aliran daya, alarm, dan jadwal O&amp;M dari mana saja.</p>
           </div>
         </div>
 
-        <section aria-labelledby="login-title" className="relative z-10 -mt-6 rounded-t-3xl bg-surface px-6 pb-10 pt-8 lg:mt-0 lg:flex lg:flex-col lg:justify-center lg:rounded-none lg:rounded-l-[56px] lg:px-16 lg:py-12 lg:shadow-[-24px_0_48px_rgba(27,29,31,0.08)]">
-          <CrossingCables />
+        <section aria-labelledby="login-title" className="relative -mt-6 rounded-t-3xl bg-surface/65 px-6 pb-10 pt-8 backdrop-blur-md lg:mt-0 lg:flex lg:flex-col lg:justify-center lg:rounded-none lg:rounded-l-[56px] lg:px-16 lg:py-12 lg:shadow-[-24px_0_48px_rgba(0,0,0,0.18)]">
           <div className="mx-auto w-full max-w-sm">
             <h1 id="login-title" className="text-3xl font-semibold tracking-tight">
               Masuk

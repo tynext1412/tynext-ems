@@ -2,6 +2,7 @@ import { ExternalLink, Maximize2, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PlantId } from "@/domains/plant/domain/plant";
 import { cn } from "@/shared/lib/cn";
+import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { isEmbeddableUrl, resolveScadaUrl, type ScadaEmbed } from "../domain/scada-embed";
@@ -40,9 +41,9 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
 
   if (!isEmbeddableUrl(url)) {
     return (
-      <p role="alert" className="text-sm text-danger">
-        URL viewer SCADA tidak valid untuk disematkan: <span className="font-mono">{url}</span>. Hanya http(s) yang diizinkan.
-      </p>
+      <Alert tone="danger" title="URL viewer SCADA tidak valid untuk disematkan">
+        <span className="font-mono">{url}</span>. Hanya http(s) yang diizinkan.
+      </Alert>
     );
   }
 
@@ -50,24 +51,19 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
     <div className={cn("flex min-h-0 flex-col", className)}>
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
         <span>
-          Viewer: <span className="text-text">{embed.provider}</span>
+          Viewer: <span className="font-medium text-text">{embed.provider}</span>
         </span>
-        <span className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" className="h-9" onClick={reload}>
+        <span className="ml-auto flex flex-wrap items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={reload}>
             <RotateCw className="size-4" aria-hidden />
             Muat ulang
           </Button>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-2 rounded-md px-3.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-text"
-          >
+          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-text">
             <ExternalLink className="size-4" aria-hidden />
             Buka di tab baru
           </a>
           {embed.allowFullscreen && (
-            <Button variant="ghost" className="h-9" onClick={fullscreen}>
+            <Button variant="ghost" size="sm" onClick={fullscreen}>
               <Maximize2 className="size-4" aria-hidden />
               Layar penuh
             </Button>
@@ -75,20 +71,20 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
         </span>
       </div>
 
-      <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-bg">
+      <div ref={containerRef} className="relative min-h-80 flex-1 overflow-hidden rounded-xl border border-separator bg-bg">
         {status === "loading" && (
-          <div className="absolute inset-0 z-10 p-4" aria-busy>
-            <Skeleton className="h-full w-full" />
+          <div className="absolute inset-0 z-10 p-3" aria-busy>
+            <Skeleton className="h-full w-full rounded-lg" />
             <span className="sr-only">Memuat viewer SCADA…</span>
           </div>
         )}
         {status === "timeout" && (
           <div role="alert" className="absolute inset-0 z-10 grid place-items-center bg-bg/90 p-6 text-center text-sm">
-            <div>
-              <p>Viewer SCADA tidak merespons dalam {LOAD_TIMEOUT_MS / 1000} detik.</p>
+            <div className="max-w-md">
+              <p className="font-medium text-text">Viewer SCADA tidak merespons dalam {LOAD_TIMEOUT_MS / 1000} detik.</p>
               <p className="mt-1 text-muted">Pastikan server SCADA mengizinkan embed (header X-Frame-Options / CSP) dan dapat dijangkau dari jaringan ini.</p>
-              <Button onClick={reload} className="mt-4">
-                Coba muat ulang
+              <Button variant="primary" onClick={reload} className="mt-4">
+                Try again
               </Button>
             </div>
           </div>

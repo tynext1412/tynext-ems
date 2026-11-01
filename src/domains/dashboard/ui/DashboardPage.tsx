@@ -1,28 +1,27 @@
-import { ChevronUp } from "lucide-react";
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { EnvironmentalBenefitsPanel } from "@/domains/impact/ui/EnvironmentalBenefitsPanel";
+import type { StatusCount } from "@/domains/plant/domain/status-policy";
 import { PlantMap } from "@/domains/plant/ui/PlantMap";
-import { env } from "@/shared/config/env";
+import { cn } from "@/shared/lib/cn";
+import { AppHeader } from "@/shared/ui/AppHeader";
 import { BottomSheet } from "@/shared/ui/BottomSheet";
-import { Brand } from "@/shared/ui/Brand";
-import { Button } from "@/shared/ui/Button";
+import { CountBadge } from "@/shared/ui/Chip";
 import { Skeleton } from "@/shared/ui/Skeleton";
-import { UserMenu } from "@/domains/auth/ui/UserMenu";
-import { ThemeToggle } from "@/shared/ui/ThemeToggle";
 import { useDashboardOverview } from "../application/use-dashboard-overview";
-import type { DashboardOverview } from "../domain/overview";
 import { BessPerformanceCard } from "./BessPerformanceCard";
+import { KpiRow } from "./KpiCards";
 import { PlantListPanel } from "./PlantListPanel";
-import { SummaryStrip } from "./SummaryStrip";
 
 // Sheet terbuka disimpan di hash URL supaya bisa dibagikan dan tombol Back menutupnya.
 const SHEET_HASH = "#site-list";
+// Sheet berhenti di bawah kartu KPI (header 56 + jarak 12 + kartu 80 + 28).
+const SHEET_TOP_OFFSET = 171;
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { plants, overview, impact, retry, isPending, error } = useDashboardOverview();
+  const { plants, plantSummary, performanceSummary, impact, plantsState, performancesState } = useDashboardOverview();
 
   const sheetOpen = location.hash === SHEET_HASH;
   const setSheetOpen = useCallback(
@@ -33,98 +32,64 @@ export function DashboardPage() {
   );
 
   return (
-    <div className="relative isolate h-dvh overflow-hidden">
+    <div className="relative isolate h-dvh overflow-hidden bg-bg">
       <div className="absolute inset-0 z-0">
-        <PlantMap plants={plants} onSelect={(id) => navigate(`/plants/${id}`)} />
+        <PlantMap plants={plants} loading={plantsState.isPending} onSelect={(id) => navigate(`/plants/${id}`)} />
       </div>
       <div className="map-vignette pointer-events-none absolute inset-0 z-[1]" aria-hidden />
 
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-3 p-4 md:flex-row md:items-start">
-        <div className="pointer-events-auto flex items-center justify-between gap-3 md:w-44 md:pt-2">
-          <Brand />
-          <div className="flex gap-2 md:hidden">{dataSourceBadge()}</div>
-        </div>
+      {/* Header di atas kartu KPI (menu profil) tapi di bawah backdrop sheet (z-20) supaya ikut redup saat Site List terbuka. */}
+      <AppHeader className="z-[15]" />
 
-        <SummaryStrip summary={overview?.summary} loading={isPending} className="pointer-events-auto md:mx-auto md:w-full md:max-w-4xl" />
+      <KpiRow plantSummary={plantSummary} performanceSummary={performanceSummary} plantsState={plantsState} performancesState={performancesState} className="absolute inset-x-0 top-[68px] z-10" />
 
-        <div className="pointer-events-auto hidden items-center gap-2 md:flex">
-          {dataSourceBadge()}
-          <ThemeToggle />
-          <UserMenu />
-        </div>
-      </header>
+      <EnvironmentalBenefitsPanel impact={impact} loading={performancesState.isPending} error={performancesState.error} onRetry={performancesState.retry} inset={4} className="absolute bottom-24 left-6 z-10 hidden w-[232px] shadow-overlay md:block" />
+      <BessPerformanceCard bess={performanceSummary?.bess} loading={performancesState.isPending} error={performancesState.error} onRetry={performancesState.retry} inset={4} className="absolute bottom-24 right-6 z-10 hidden w-[320px] shadow-overlay md:block" />
 
-      <EnvironmentalBenefitsPanel impact={impact} loading={isPending} className="absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 md:block" />
-      <BessPerformanceCard bess={overview?.bess} loading={isPending} className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 md:block" />
-
-      {error && (
-        <div
-          role="alert"
-          className="absolute inset-x-4 top-36 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center gap-3 rounded-md border border-danger/50 bg-surface px-4 py-3 text-sm"
-        >
-          <span>Ringkasan tidak bisa dimuat: {error.message}.</span>
-          <Button onClick={retry} className="h-9">
-            Coba muat ulang
-          </Button>
-        </div>
-      )}
-
-      <BottomSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        title="Site list"
-        peek={<PeekBar overview={overview} loading={isPending} />}
-      >
+      <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} topOffset={SHEET_TOP_OFFSET} header={(open) => <SiteListHeader statusCount={plantSummary?.statusCount} loading={plantsState.isPending} open={open} />} aria-label="Site list">
         <div className="mb-5 grid gap-3 md:hidden">
-          <EnvironmentalBenefitsPanel impact={impact} loading={isPending} className="w-full" />
-          <BessPerformanceCard bess={overview?.bess} loading={isPending} className="w-full" />
+          <EnvironmentalBenefitsPanel impact={impact} loading={performancesState.isPending} error={performancesState.error} onRetry={performancesState.retry} />
+          <BessPerformanceCard bess={performanceSummary?.bess} loading={performancesState.isPending} error={performancesState.error} onRetry={performancesState.retry} />
         </div>
-        <PlantListPanel statusCount={overview?.statusCount} />
+        <PlantListPanel statusCount={plantSummary?.statusCount} onCheckAgain={plantsState.retry} />
       </BottomSheet>
     </div>
   );
 }
 
-function dataSourceBadge() {
-  if (env.dataSource !== "mock") return null;
+// Legend status hanya tampil saat sheet tertutup (di Figma, saat terbuka tab yang memuat jumlahnya).
+function SiteListHeader({ statusCount, loading, open }: { statusCount?: StatusCount; loading: boolean; open: boolean }) {
+  const total = statusCount ? statusCount.ONLINE + statusCount.ALARM + statusCount.OFFLINE : undefined;
   return (
-    <span className="flex h-9 items-center rounded-md border border-warn/50 px-3 text-xs text-warn" title="Angka berasal dari fixture mock, bukan API">
-      Data dummy
-    </span>
-  );
-}
-
-function PeekBar({ overview, loading }: { overview?: DashboardOverview; loading: boolean }) {
-  const count = overview?.statusCount;
-
-  return (
-    <span className="flex w-full items-center gap-4">
-      <span className="flex flex-col">
-        <span className="text-base font-semibold">Site list</span>
-        <span className="text-xs text-muted">Geser atau klik untuk membuka</span>
-      </span>
-
-      {loading || !count ? (
-        <Skeleton className="h-5 w-40" />
+    <>
+      <div className="min-w-0">
+        <h2 className="flex items-center gap-2 text-lg font-semibold leading-7">
+          Site List
+          {total !== undefined ? <CountBadge value={total} className="h-7 min-w-7 border border-bg text-xs" /> : loading ? <Skeleton className="h-7 w-7 rounded-full" /> : null}
+        </h2>
+        <p className="truncate text-sm text-muted">Monitor performance and status of each site</p>
+      </div>
+      {open ? null : loading || !statusCount ? (
+        <Skeleton className="mt-3.5 hidden h-6 w-64 sm:block" />
       ) : (
-        <span className="hidden items-center gap-3 font-mono text-sm sm:flex">
-          <Count color="bg-ok" label="Online" value={count.ONLINE} />
-          <Count color="bg-warn" label="Alarm" value={count.ALARM} />
-          <Count color="bg-danger" label="Offline" value={count.OFFLINE} />
-        </span>
+        <div className="mt-3.5 hidden items-center gap-4 text-sm leading-6 sm:flex" aria-label="Ringkasan status">
+          <LegendItem color="bg-[#2b7a30]" textClass="text-[#2b7a30]" label="Online" value={statusCount.ONLINE} />
+          <span className="h-6 w-px bg-border" aria-hidden />
+          <LegendItem color="bg-[#f5a524]" textClass="text-[#f5a524]" label="Alarm" value={statusCount.ALARM} />
+          <span className="h-6 w-px bg-border" aria-hidden />
+          <LegendItem color="bg-[#c62828]" textClass="text-[#c62828]" label="Offline" value={statusCount.OFFLINE} />
+        </div>
       )}
-
-      <ChevronUp className="ml-auto size-5 text-accent" aria-hidden />
-    </span>
+    </>
   );
 }
 
-function Count({ color, label, value }: { color: string; label: string; value: number }) {
+function LegendItem({ color, textClass, label, value }: { color: string; textClass: string; label: string; value: number }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className={`size-2 rounded-full ${color}`} aria-hidden />
-      <span className="text-muted">{label}</span>
-      <span>{value}</span>
+      <span className={cn("size-2 rounded-full", color)} aria-hidden />
+      <span className={textClass}>{label}</span>
+      <span className="font-mono font-medium text-text">({value})</span>
     </span>
   );
 }

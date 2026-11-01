@@ -12,11 +12,12 @@ import { Skeleton } from "@/shared/ui/Skeleton";
 
 interface Props {
   current: Plant;
+  trailing?: React.ReactNode; // chip status di antara nama dan panah
 }
 
 // Nama site di header sekaligus pemilih site: buka daftar, cari nama, pilih,
 // dan menu yang sedang dibuka (mis. Alarm) tetap dipertahankan di site tujuan.
-export function SiteSwitcher({ current }: Props) {
+export function SiteSwitcher({ current, trailing }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const reducedMotion = useReducedMotion();
@@ -77,7 +78,7 @@ export function SiteSwitcher({ current }: Props) {
     // Di layar sempit popover diposisikan terhadap header (lebar penuh dengan gutter);
     // di desktop terhadap tombol nama site.
     <div ref={rootRef} className="min-w-0 md:relative">
-      <h1 className="min-w-0 text-xl font-semibold">
+      <h1 className="min-w-0 text-xl font-semibold leading-7">
         <button
           ref={triggerRef}
           type="button"
@@ -85,9 +86,10 @@ export function SiteSwitcher({ current }: Props) {
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-controls={listId}
-          className="flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 text-left hover:bg-surface-2"
+          className="flex h-7 max-w-full items-center gap-2 rounded-xl text-left hover:bg-surface-2"
         >
           <span className="truncate">{current.name}</span>
+          {trailing}
           <ChevronDown className={cn("size-5 shrink-0 text-muted transition-transform", open && "rotate-180")} aria-hidden />
           <span className="sr-only">, pilih site lain</span>
         </button>
@@ -101,7 +103,7 @@ export function SiteSwitcher({ current }: Props) {
             exit={reducedMotion ? undefined : { opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
             onKeyDown={onKeyDown}
-            className="absolute inset-x-4 top-full z-20 mt-1 rounded-md border border-border bg-surface p-2 shadow-[0_16px_40px_rgba(27,29,31,0.18)] md:inset-x-auto md:left-0 md:mt-2 md:w-[380px]"
+            className="absolute inset-x-4 top-full z-20 mt-1 rounded-2xl border border-border bg-surface p-2 shadow-overlay md:inset-x-auto md:left-0 md:mt-2 md:w-[380px]"
           >
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
@@ -150,7 +152,7 @@ export function SiteSwitcher({ current }: Props) {
                     onClick={() => select(plant)}
                     onMouseEnter={() => setHighlight(i)}
                     className={cn(
-                      "flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm",
+                      "flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-sm",
                       i === highlight && "bg-surface-2",
                     )}
                   >
@@ -161,7 +163,7 @@ export function SiteSwitcher({ current }: Props) {
                         {plant.location.address} · {PLANT_STATUS_LABEL[plant.status]}
                       </span>
                     </span>
-                    {active && <Check className="size-4 shrink-0 text-accent" aria-label="site saat ini" />}
+                    {active && <Check className="size-4 shrink-0 text-brand" aria-label="site saat ini" />}
                   </li>
                 );
               })}

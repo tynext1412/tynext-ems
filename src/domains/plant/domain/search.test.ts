@@ -1,25 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { matchesPlantSearch, searchPlants } from "./search";
 
-const plants = [
-  { id: "PLT-008", name: "Site Tambang Samarinda", location: { point: { lat: 0, lng: 0 }, address: "Samarinda, Kalimantan Timur", timezone: "Asia/Makassar" } },
-  { id: "PLT-001", name: "Sudamala Seraya Resort", location: { point: { lat: 0, lng: 0 }, address: "Labuan Bajo, NTT", timezone: "Asia/Makassar" } },
-  { id: "PLT-013", name: "Pabrik Semen Tuban", location: { point: { lat: 0, lng: 0 }, address: "Tuban, Jawa Timur", timezone: "Asia/Jakarta" } },
-];
+const plant = (name: string, owner: string, address = "Siak, Riau", id = "PLT-001") => ({ id, name, owner: { name: owner }, location: { address, point: { lat: 0, lng: 0 }, timezone: "Asia/Jakarta" } });
 
-describe("plant search", () => {
-  it("matches name, address, or id regardless of case", () => {
-    expect(matchesPlantSearch(plants[0], "samarinda")).toBe(true);
-    expect(matchesPlantSearch(plants[1], "labuan")).toBe(true);
-    expect(matchesPlantSearch(plants[2], "plt-013")).toBe(true);
-    expect(matchesPlantSearch(plants[2], "bali")).toBe(false);
+describe("matchesPlantSearch", () => {
+  it("matches plant name, owner name, address, and id regardless of case", () => {
+    const p = plant("Pabrik Sawit Siak", "PT Siak Agro Lestari");
+    expect(matchesPlantSearch(p, "sawit")).toBe(true);
+    expect(matchesPlantSearch(p, "AGRO lestari")).toBe(true);
+    expect(matchesPlantSearch(p, "riau")).toBe(true);
+    expect(matchesPlantSearch(p, "plt-001")).toBe(true);
+    expect(matchesPlantSearch(p, "bali")).toBe(false);
   });
 
-  it("returns everything for an empty query, sorted by name", () => {
-    expect(searchPlants(plants, "  ").map((p) => p.id)).toEqual(["PLT-013", "PLT-008", "PLT-001"]);
-  });
-
-  it("filters to matching plants", () => {
-    expect(searchPlants(plants, "timur").map((p) => p.id)).toEqual(["PLT-013", "PLT-008"]);
+  it("treats blank search as match-all and sorts results by name", () => {
+    const list = [plant("Zeta", "A"), plant("Alpha", "B")];
+    expect(matchesPlantSearch(list[0], "   ")).toBe(true);
+    expect(searchPlants(list, "").map((p) => p.name)).toEqual(["Alpha", "Zeta"]);
   });
 });

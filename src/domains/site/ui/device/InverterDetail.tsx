@@ -23,9 +23,9 @@ export function InverterDetail({ device, reading, loading, plant, photo }: Props
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
         {photo}
-        <Panel title="Informasi perangkat">
+        <Panel title="Device Information">
           <InfoGrid>
             <Field label="Model">{device.model}</Field>
             <Field label="Series" mono>{device.series}</Field>
@@ -33,19 +33,19 @@ export function InverterDetail({ device, reading, loading, plant, photo }: Props
             <Field label="Plant"><PlantLink plantId={plant.id} name={plant.name} /></Field>
             <Field label="Associated Datalogger" mono>{device.dataloggerId}</Field>
             <Field label="Commissioning Date" mono>{formatDateKey(device.commissionedAt)}</Field>
-            <Field label="Warranty Status">{warranty === "IN_WARRANTY" ? "In Warranty" : <span className="text-warn">Expired</span>}</Field>
+            <Field label="Warranty Status">{warranty === "IN_WARRANTY" ? <span className="text-ok-text">In Warranty</span> : <span className="text-warn-text">Expired</span>}</Field>
             <Field label="Warranty Expiry Date" mono>{formatDateKey(device.warrantyExpiresAt)}</Field>
             <Field label="National Standard">{device.nationalStandard}</Field>
             <Field label="Role">{device.isMaster ? "Master" : "Slave"}</Field>
             <Field label="Address" mono>{device.address}</Field>
             <Field label="Firmware Version" mono>{device.firmwareVersion}</Field>
             <Field label="Vendor">{device.vendor}</Field>
-            <Field label="Jumlah string" mono>{device.stringCount}</Field>
+            <Field label="Number of Strings" mono>{device.stringCount}</Field>
           </InfoGrid>
         </Panel>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2">
         <Panel title="Real-time Information">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <Stat label="Power" value={reading && formatNumber(reading.powerKW, 1)} unit="kW" loading={loading} />
@@ -54,11 +54,11 @@ export function InverterDetail({ device, reading, loading, plant, photo }: Props
             <Stat label="Internal Operating Temperature" value={reading && formatNumber(reading.internalTempC, 1)} unit="°C (maks. 105 °C)" loading={loading} />
             <div>
               <div className="text-xs text-muted">Alarm Information</div>
-              <div className="mt-0.5 text-base font-semibold">
+              <div className="mt-0.5 text-lg font-semibold leading-7">
                 {device.activeAlarms === 0 ? (
-                  <span className="text-ok">No Alarm</span>
+                  <span className="text-ok-text">No Alarm</span>
                 ) : (
-                  <Link to="../alarm" className="text-warn underline-offset-2 hover:underline">
+                  <Link to="../alarm" className="text-warn-text underline-offset-2 hover:underline">
                     {device.activeAlarms} alarm aktif
                   </Link>
                 )}
@@ -67,21 +67,19 @@ export function InverterDetail({ device, reading, loading, plant, photo }: Props
           </div>
         </Panel>
 
-        <Panel title="Pengukuran DC / AC">
-          <div className="grid gap-3">
-            <MeasureTable
-              caption="String DC"
-              columns={["DC", "Voltage (V)", "Current (A)", "Power (W)"]}
-              loading={loading}
-              rows={(reading?.strings ?? []).map((s) => [s.name, formatNumber(s.voltageV, 1), formatNumber(s.currentA, 1), formatNumber(s.powerW, 0)])}
-            />
-            <MeasureTable
-              caption="Fasa AC"
-              columns={["AC", "Voltage (V)", "Current (A)", "Frequency (Hz)"]}
-              loading={loading}
-              rows={(reading?.phases ?? []).map((p) => [p.name, formatNumber(p.voltageV, 1), formatNumber(p.currentA, 1), formatNumber(p.frequencyHz, 2)])}
-            />
-          </div>
+        <Panel title="DC / AC Measurements" cards>
+          <MeasureTable
+            caption="String DC"
+            columns={["DC", "Voltage (V)", "Current (A)", "Power (W)"]}
+            loading={loading}
+            rows={(reading?.strings ?? []).map((s) => [s.name, formatNumber(s.voltageV, 1), formatNumber(s.currentA, 1), formatNumber(s.powerW, 0)])}
+          />
+          <MeasureTable
+            caption="Fasa AC"
+            columns={["AC", "Voltage (V)", "Current (A)", "Frequency (Hz)"]}
+            loading={loading}
+            rows={(reading?.phases ?? []).map((p) => [p.name, formatNumber(p.voltageV, 1), formatNumber(p.currentA, 1), formatNumber(p.frequencyHz, 2)])}
+          />
         </Panel>
       </div>
     </>

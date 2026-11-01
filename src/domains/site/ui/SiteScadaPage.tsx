@@ -1,18 +1,21 @@
+import { Monitor } from "lucide-react";
 import { useScadaEmbed } from "@/domains/scada/application/use-scada-embed";
 import { ScadaEmbedFrame } from "@/domains/scada/ui/ScadaEmbedFrame";
+import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
+import scadaIllustration from "@/assets/figma/illustrations/illustration-scada-disconnected.png";
 import { Panel } from "@/shared/ui/Panel";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { useSiteContext } from "../application/use-site";
 
-// Halaman SCADA = viewer pihak ketiga yang disematkan; tidak ada diagram buatan sendiri.
+// Halaman SCADA = viewer pihak ketiga yang disematkan; tanpa konfigurasi tampil empty state.
 export function SiteScadaPage() {
   const { plant } = useSiteContext();
   const { data: embed, isPending, error, refetch } = useScadaEmbed(plant?.id ?? "");
   if (!plant) return null;
 
   return (
-    <Panel title="SCADA" className="flex min-h-[calc(100dvh-200px)] flex-col">
+    <Panel icon={<Monitor />} title="SCADA" className="flex h-[600px] flex-col" bodyClassName="flex min-h-0 flex-1 flex-col">
       {isPending && (
         <div className="flex-1" aria-busy>
           <Skeleton className="h-full min-h-80 w-full" />
@@ -21,22 +24,25 @@ export function SiteScadaPage() {
       )}
 
       {error && (
-        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm">
-          <span>Konfigurasi SCADA tidak bisa dimuat: {error.message}.</span>
-          <Button onClick={() => void refetch()} className="h-9">
-            Coba muat ulang
-          </Button>
-        </div>
+        <Alert
+          tone="danger"
+          title="Konfigurasi SCADA tidak bisa dimuat"
+          action={
+            <Button size="sm" variant="tertiary" onClick={() => void refetch()}>
+              Try again
+            </Button>
+          }
+        >
+          {error.message}
+        </Alert>
       )}
 
       {!isPending && !error && embed === null && (
-        <div className="grid flex-1 place-items-center py-16 text-center text-sm">
-          <div className="max-w-md">
-            <p className="font-medium">Viewer SCADA belum dikonfigurasi untuk {plant.name}.</p>
-            <p className="mt-2 text-muted">
-              Halaman ini hanya menyematkan viewer SCADA pihak ketiga. Isi URL viewer untuk plant ini di backend, atau set{" "}
-              <span className="font-mono">VITE_SCADA_URL_TEMPLATE</span> (mendukung placeholder <span className="font-mono">{"{plantId}"}</span>).
-            </p>
+        <div className="flex flex-1 flex-col items-center pt-[84px] text-center">
+          <img src={scadaIllustration} alt="" className="h-[200px] w-[280px]" />
+          <div className="mt-10 max-w-full px-4">
+            <h3 className="text-sm font-medium leading-6 text-text">SCADA isn’t connected yet</h3>
+            <p className="mt-2 text-xs leading-5 text-muted md:whitespace-nowrap">This plant doesn’t have a SCADA viewer linked yet. Once it’s set up, live data from the site will show up here.</p>
           </div>
         </div>
       )}
