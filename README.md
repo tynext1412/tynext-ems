@@ -28,7 +28,7 @@ Konfigurasi lewat `.env` (lihat `.env.example`):
 
 | Variabel | Nilai | Keterangan |
 |---|---|---|
-| `VITE_API_BASE_URL` | default `/api/v1` | biarkan relatif agar lewat proxy Vite / reverse proxy (cookie satu origin) |
+| `VITE_API_BASE_URL` | default `/api/v1` | biarkan relatif agar lewat proxy Vite / rewrite Vercel (cookie satu origin) |
 | `VITE_API_PROXY_TARGET` | default `https://mqtt-poc.tynext.co.id` | tujuan proxy `/api` saat `npm run dev`; backend lokal: `http://localhost:8090` |
 | `VITE_SCADA_URL_TEMPLATE` | URL viewer SCADA, boleh `{plantId}` | opsional; dipakai bila plant belum punya viewer dari backend (mode http) |
 
@@ -36,6 +36,10 @@ Konfigurasi lewat `.env` (lihat `.env.example`):
 
 Bawaan: `npm run dev` meneruskan `/api` ke backend di VPS, **`https://mqtt-poc.tynext.co.id/api/v1`**. Akun login
 diberikan oleh admin backend (`emsctl user` atau `/admin/users` di repo tynext-mqtt).
+
+Produksi (`https://ems.tynext.co.id`, Vercel): `vercel.json` meneruskan `/api/*` ke `https://mqtt-poc.tynext.co.id/api/*`
+dan semua path lain ke `index.html` (SPA). Cookie sesi jadi milik `ems.tynext.co.id`, sehingga tidak perlu CORS
+maupun `VITE_API_BASE_URL` absolut.
 
 Backend lokal dengan data demo 14 plant:
 

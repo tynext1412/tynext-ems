@@ -114,7 +114,10 @@ export class ApiClient {
     const parsed = (await res.json().catch(() => null)) as ({ data?: T } & ErrorBody) | null;
     if (!res.ok) {
       if (res.status === 401 && !opts?.allowUnauthorized) this.unauthorized?.();
-      throw new ApiError(res.status, parsed?.error ?? (res.statusText || `Request failed (${res.status})`), parsed?.code, parsed?.details ?? {});
+      // Hanya body error backend yang dipakai; body lain (mis. 404 dari hosting: { error: { code, message } }) diabaikan.
+      const message = typeof parsed?.error === "string" ? parsed.error : res.statusText || `Request failed (${res.status})`;
+      const code = typeof parsed?.code === "string" ? parsed.code : undefined;
+      throw new ApiError(res.status, message, code, typeof parsed?.error === "string" ? (parsed?.details ?? {}) : {});
     }
     if (!parsed || !("data" in parsed)) throw new ApiError(res.status, "The server sent an empty response.");
     return parsed.data as T;

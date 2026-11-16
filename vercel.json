@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://mqtt-poc.tynext.co.id/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

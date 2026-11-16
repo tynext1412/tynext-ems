@@ -40,6 +40,12 @@ describe("ApiClient", () => {
     expect(fieldErrors(new Error("x"), ["lat"] as const)).toBeNull();
   });
 
+  it("ignores error bodies that are not from the backend", async () => {
+    const api = new ApiClient({ baseUrl: "", fetch: async () => json(404, { error: { code: "404", message: "The page could not be found" } }) });
+    const err = await api.post("/auth/login", {}).catch((e: unknown) => e);
+    expect(err).toMatchObject({ status: 404, code: "INTERNAL", message: "Request failed (404)", details: {} });
+  });
+
   it("returns undefined for 204 and reports network failures as ApiError", async () => {
     expect(await new ApiClient({ baseUrl: "", fetch: async () => new Response(null, { status: 204 }) }).post("/auth/logout")).toBeUndefined();
     const down = new ApiClient({ baseUrl: "", fetch: async () => Promise.reject(new TypeError("Failed to fetch")) });
