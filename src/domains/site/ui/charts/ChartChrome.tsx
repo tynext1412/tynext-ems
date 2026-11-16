@@ -3,7 +3,17 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Panel";
-import { SERIES_COLOR, SERIES_LABEL, type SeriesKey } from "./chart-theme";
+import { OUTAGE_BAND, SERIES_COLOR, SERIES_LABEL, type SeriesKey } from "./chart-theme";
+
+// Keterangan pita outage, tampil di samping legenda bila ada outage di tanggal itu.
+export function OutageLegendItem() {
+  return (
+    <span className="flex h-7 items-center gap-1.5 px-1.5 text-xs text-muted">
+      <span className="h-3 w-4 rounded-sm" style={{ background: OUTAGE_BAND.fill, opacity: OUTAGE_BAND.fillOpacity * 2.5 }} aria-hidden />
+      Controller offline
+    </span>
+  );
+}
 
 // Legenda yang bisa dimatikan per seri. Warna tetap mengikuti entitas saat seri lain disembunyikan.
 export function ChartLegend({ series, hidden, onToggle }: { series: readonly SeriesKey[]; hidden: ReadonlySet<SeriesKey>; onToggle: (key: SeriesKey) => void }) {

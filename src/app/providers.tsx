@@ -4,6 +4,7 @@ import { AlarmRepositoryProvider } from "@/domains/alarm/application/alarm-repos
 import { AuthRepositoryProvider } from "@/domains/auth/application/auth-repository-context";
 import { DeviceRepositoryProvider } from "@/domains/device/application/device-repository-context";
 import { MaintenanceRepositoryProvider } from "@/domains/maintenance/application/maintenance-repository-context";
+import { OutageRepositoryProvider } from "@/domains/outage/application/outage-repository-context";
 import { PerformanceRepositoryProvider } from "@/domains/performance/application/performance-repository-context";
 import { PlantRepositoryProvider } from "@/domains/plant/application/plant-repository-context";
 import { ScadaRepositoryProvider } from "@/domains/scada/application/scada-repository-context";
@@ -21,7 +22,9 @@ export function AppProviders({ repositories, children }: { repositories: Reposit
             <AlarmRepositoryProvider repository={repositories.alarm}>
               <ScadaRepositoryProvider repository={repositories.scada}>
                 <DeviceRepositoryProvider repositories={{ devices: repositories.device, telemetry: repositories.deviceTelemetry }}>
-                  <MaintenanceRepositoryProvider repository={repositories.maintenance}>{children}</MaintenanceRepositoryProvider>
+                  <MaintenanceRepositoryProvider repository={repositories.maintenance}>
+                    <OutageRepositoryProvider repository={repositories.outage}>{children}</OutageRepositoryProvider>
+                  </MaintenanceRepositoryProvider>
                 </DeviceRepositoryProvider>
               </ScadaRepositoryProvider>
             </AlarmRepositoryProvider>

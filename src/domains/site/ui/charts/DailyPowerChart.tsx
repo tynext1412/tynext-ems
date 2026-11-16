@@ -3,7 +3,9 @@ import { formatNumber } from "@/shared/domain/units";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { formatMinutes, type DailyPowerPoint } from "../../domain/chart-data";
 import { isFullDay, zoomTicks, type TimeWindow } from "../../domain/period";
-import { ChartFrame, ChartLegend, ChartTable, ChartTooltipBox } from "./ChartChrome";
+import type { OutageBand } from "@/domains/outage/domain/outage";
+import { outageAreas } from "./outageAreas";
+import { ChartFrame, ChartLegend, ChartTable, ChartTooltipBox, OutageLegendItem } from "./ChartChrome";
 import { Crosshair, type CustomizedProps } from "./Crosshair";
 import { useCrosshair, withCrosshair } from "./useCrosshair";
 import { AXIS_TICK, CHART_CHROME, SERIES_COLOR, SERIES_LABEL } from "./chart-theme";
@@ -22,13 +24,14 @@ interface Props {
   window: TimeWindow;
   onZoom: (from: number, to: number) => void;
   onReset: () => void;
+  outages?: readonly OutageBand[]; // rentang controller offline (diarsir)
 }
 
 // Daya per 5 menit sepanjang hari. Satu sumbu (kW); baterai + = charge, − = discharge.
 // Area bergradien (warna seri memudar ke bawah); saat di-hover muncul garis bantu vertikal dan
 // horizontal dengan label nilai di sumbu Y dan waktu di sumbu X, plus tooltip nilai semua seri.
 // Seret untuk memperbesar rentang waktu; rentang dibagi dengan grafik SOC & tarif.
-export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, window, onZoom, onReset }: Props) {
+export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, window, onZoom, onReset, outages = [] }: Props) {
   const { hidden, toggle } = useSeriesToggle();
   const { selection, handlers, frameProps } = useChartZoom(window, onZoom, onReset);
   const visible = points?.filter((p) => p.t >= window[0] && p.t <= window[1]);
@@ -39,7 +42,12 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
     <ChartFrame
       title="Daily Power"
       unit="(kW)"
-      legend={<ChartLegend series={SERIES} hidden={hidden} onToggle={toggle} />}
+      legend={
+        <div className="flex flex-wrap items-center">
+          <ChartLegend series={SERIES} hidden={hidden} onToggle={toggle} />
+          {outages.length > 0 && <OutageLegendItem />}
+        </div>
+      }
       zoom={{ zoomed: !isFullDay(window), onReset, rangeLabel: `${formatMinutes(window[0])}–${formatMinutes(window[1])}` }}
       table={
         visible && (
@@ -70,6 +78,7 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
                 ))}
               </defs>
               <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
+              {outageAreas(outages)}
               <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} tickFormatter={(v: number) => formatNumber(v, 0)} />
               <Tooltip

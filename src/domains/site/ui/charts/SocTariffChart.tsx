@@ -3,7 +3,9 @@ import { formatNumber } from "@/shared/domain/units";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { formatMinutes, type SocTariffPoint } from "../../domain/chart-data";
 import { isFullDay, zoomTicks, type TimeWindow } from "../../domain/period";
-import { ChartFrame, ChartLegend, ChartTable, ChartTooltipBox, type TooltipRow } from "./ChartChrome";
+import type { OutageBand } from "@/domains/outage/domain/outage";
+import { outageAreas } from "./outageAreas";
+import { ChartFrame, ChartLegend, ChartTable, ChartTooltipBox, OutageLegendItem, type TooltipRow } from "./ChartChrome";
 import { Crosshair, type CustomizedProps } from "./Crosshair";
 import { AXIS_TICK, CHART_CHROME, compactNumber, SERIES_COLOR, SERIES_LABEL, type SeriesKey } from "./chart-theme";
 import { useChartZoom } from "./useChartZoom";
@@ -23,12 +25,13 @@ interface Props {
   window: TimeWindow;
   onZoom: (from: number, to: number) => void;
   onReset: () => void;
+  outages?: readonly OutageBand[]; // rentang controller offline (diarsir)
 }
 
 // SOC baterai (area, sumbu kiri 0–100 %) dan tarif beli/jual (garis tangga, sumbu kanan Rp/kWh)
 // dalam satu grafik. Dua sumbu, jadi crosshair menampilkan nilai keduanya: % di kiri, Rp di kanan.
 // Plant tanpa BESS hanya menampilkan tarif, dengan sumbunya di kiri.
-export function SocTariffChart({ points, loading, nowMinutes, timezoneAbbrev, hasBattery, window, onZoom, onReset }: Props) {
+export function SocTariffChart({ points, loading, nowMinutes, timezoneAbbrev, hasBattery, window, onZoom, onReset, outages = [] }: Props) {
   const { hidden, toggle } = useSeriesToggle();
   const { selection, handlers, frameProps } = useChartZoom(window, onZoom, onReset);
   const crosshair = useCrosshair();
@@ -42,7 +45,12 @@ export function SocTariffChart({ points, loading, nowMinutes, timezoneAbbrev, ha
     <ChartFrame
       title={hasBattery ? "Battery SOC & Tariff" : "Tariff"}
       unit={hasBattery ? "(% · Rp/kWh)" : "(Rp/kWh)"}
-      legend={<ChartLegend series={series} hidden={hidden} onToggle={toggle} />}
+      legend={
+        <div className="flex flex-wrap items-center">
+          <ChartLegend series={series} hidden={hidden} onToggle={toggle} />
+          {outages.length > 0 && <OutageLegendItem />}
+        </div>
+      }
       zoom={{ zoomed: !isFullDay(window), onReset, rangeLabel: `${formatMinutes(window[0])}–${formatMinutes(window[1])}` }}
       table={
         visible && (
@@ -74,6 +82,7 @@ export function SocTariffChart({ points, loading, nowMinutes, timezoneAbbrev, ha
               <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
               {hasBattery && <YAxis yAxisId="soc" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v: number) => `${v}%`} tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} />}
               <YAxis yAxisId="tariff" orientation={hasBattery ? "right" : "left"} domain={[0, "auto"]} tickFormatter={compactNumber} tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} />
+              {outageAreas(outages, "tariff")}
               <Tooltip
                 cursor={false}
                 offset={16}

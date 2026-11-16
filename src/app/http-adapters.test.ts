@@ -51,6 +51,7 @@ describe("HTTP adapters", () => {
     await r.deviceTelemetry.dailySeries("PLT-003-INV-01", "2026-11-02");
     await r.deviceTelemetry.energySeries("PLT-003-INV-01", "lifetime", "2026-11-02");
     await r.maintenance.findByPlant("PLT-003");
+    await r.outage.findByPlant("PLT-003");
     expect(calls.map((c) => c.url.pathname + c.url.search)).toEqual([
       "/api/v1/plants",
       "/api/v1/plants/PLT-003/weather",
@@ -67,6 +68,7 @@ describe("HTTP adapters", () => {
       "/api/v1/devices/PLT-003-INV-01/series/daily?date=2026-11-02",
       "/api/v1/devices/PLT-003-INV-01/series/energy?granularity=lifetime&date=2026-11-02",
       "/api/v1/plants/PLT-003/maintenance",
+      "/api/v1/outages?plantId=PLT-003",
     ]);
     expect(calls.every((c) => c.init.credentials === "include")).toBe(true);
   });
@@ -93,6 +95,20 @@ describe("HTTP adapters", () => {
     expect(alarms[0]).not.toHaveProperty("deviceType");
     expect(alarms[0].clearedAt).toBe("2026-11-02T01:42:00Z");
     expect(alarms[1]).not.toHaveProperty("clearedAt");
+  });
+
+  it("keeps only contract fields on outages and drops absent optional times", async () => {
+    const { api } = fakeApi(
+      on("GET", "/outages", () =>
+        ok([
+          { id: "7", plantId: "PLT-015", deviceId: "PLT-015-LOG-01", offlineAt: "2026-11-16T04:00:05Z", cause: "unknown", extra: 1 },
+          { id: "6", plantId: "PLT-015", deviceId: "PLT-015-LOG-01", offlineAt: "2026-11-16T03:00:08Z", lastTsBefore: "2026-11-16T03:00:00Z", onlineAt: "2026-11-16T03:05:00Z", firstTsAfter: "2026-11-16T03:05:01Z", cause: "internet" },
+        ]),
+      ),
+    );
+    const [open, closed] = await createHttpRepositories(api).outage.findByPlant("PLT-015");
+    expect(open).toEqual({ id: "7", plantId: "PLT-015", deviceId: "PLT-015-LOG-01", offlineAt: "2026-11-16T04:00:05Z", cause: "unknown" });
+    expect(closed).toMatchObject({ onlineAt: "2026-11-16T03:05:00Z", lastTsBefore: "2026-11-16T03:00:00Z", cause: "internet" });
   });
 
   it("falls back to an empty purchase tariff when none is set, and sends bands only for time of use", async () => {

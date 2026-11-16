@@ -5,6 +5,7 @@ import { deviceTypeLabel, type DeviceRecord } from "@/domains/device/domain/devi
 import { catalogIdFor, DEFAULT_PARAMETERS, groupByUnit, PARAMETER_CATALOGS, type ParameterDef } from "@/domains/device/domain/parameters";
 import { GRANULARITIES, type EnergySeriesGranularity, type Period } from "@/domains/performance/domain/performance";
 import type { Plant } from "@/domains/plant/domain/plant";
+import { useOutageBands } from "@/domains/outage/application/use-outages";
 import { timezoneAbbrev, toDateKey } from "@/shared/domain/time";
 import { formatNumber } from "@/shared/domain/units";
 import { cn } from "@/shared/lib/cn";
@@ -19,7 +20,8 @@ import { downloadXlsx } from "@/shared/lib/xlsx";
 import { buildDeviceReport, reportFilename } from "../../domain/reports";
 import { DownloadReportButton } from "../DownloadReportButton";
 import { PeriodControl } from "../PeriodControl";
-import { ChartFrame, ChartTable, ChartTooltipBox } from "./ChartChrome";
+import { outageAreas } from "./outageAreas";
+import { ChartFrame, ChartTable, ChartTooltipBox, OutageLegendItem } from "./ChartChrome";
 import { AXIS_TICK, axisNumber, CHART_CHROME } from "./chart-theme";
 
 // Palet kategorikal tervalidasi (dataviz), urutan tetap. Warna parameter = posisinya di dalam
@@ -56,6 +58,8 @@ export default function DeviceChartPanel({ device, plant }: Props) {
   const energyGranularity: EnergySeriesGranularity = period.granularity === "day" ? "month" : period.granularity;
 
   const daily = useDeviceDailySeries(isDay ? device.id : "", period.date, period.date === today);
+  // Semua device plant dibaca satu controller, jadi outage controller berlaku untuk device ini juga.
+  const outages = useOutageBands(isDay ? plant.id : "", period.date, tz);
   const energy = useDeviceEnergySeries(isDay ? "" : device.id, energyGranularity, period.date);
 
   const chosen = useMemo(() => catalog.filter((p) => selected.has(p.key) && p.kind === activeKind), [catalog, selected, activeKind]);
@@ -162,6 +166,7 @@ export default function DeviceChartPanel({ device, plant }: Props) {
                     {p.label}
                   </span>
                 ))}
+                {isDay && outages.length > 0 && <OutageLegendItem />}
               </div>
             }
             table={
@@ -181,6 +186,7 @@ export default function DeviceChartPanel({ device, plant }: Props) {
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={dailyPoints} margin={{ top: 16, right: 12, left: 0, bottom: 0 }} syncId={`device-${device.id}`} accessibilityLayer>
                   <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
+                  {outageAreas(outages)}
                   <XAxis type="number" dataKey="t" domain={[0, 1440]} ticks={zoomTicks(FULL_DAY)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
                   <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} tickFormatter={axisNumber} domain={unit === "%" ? [0, 100] : ["auto", "auto"]} />
                   <Tooltip

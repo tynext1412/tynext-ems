@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useEnergySeries, useTariffSeries } from "@/domains/performance/application/use-performances";
 import type { Period } from "@/domains/performance/domain/performance";
 import type { Plant } from "@/domains/plant/domain/plant";
+import { useOutageBands } from "@/domains/outage/application/use-outages";
 import { useDailyPowerSeries } from "@/domains/telemetry/application/use-power-snapshot";
 import { timezoneAbbrev, toDateKey } from "@/shared/domain/time";
 import { Alert } from "@/shared/ui/Alert";
@@ -44,6 +45,7 @@ export default function OverviewCharts({ plant, period }: Props) {
     () => (dailyPoints && tariff.data ? socTariffPoints(hasBattery ? dailyPoints : [], tariffPoints(tariff.data, tz)) : undefined),
     [dailyPoints, tariff.data, tz, hasBattery],
   );
+  const outages = useOutageBands(isDay ? plant.id : "", period.date, tz);
   const energyPoints = useMemo(() => (energy.data ? energyBarPoints(energy.data) : undefined), [energy.data]);
   const nowMinutes = isToday ? minutesOfDay(new Date().toISOString(), tz) : undefined;
 
@@ -74,8 +76,8 @@ export default function OverviewCharts({ plant, period }: Props) {
 
       {isDay ? (
         <>
-          <DailyPowerChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} />
-          <SocTariffChart points={socTariff} loading={daily.isPending || tariff.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} hasBattery={hasBattery} window={window} onZoom={onZoom} onReset={onReset} />
+          <DailyPowerChart points={dailyPoints} loading={daily.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} window={window} onZoom={onZoom} onReset={onReset} outages={outages} />
+          <SocTariffChart points={socTariff} loading={daily.isPending || tariff.isPending} nowMinutes={nowMinutes} timezoneAbbrev={abbrev} hasBattery={hasBattery} window={window} onZoom={onZoom} onReset={onReset} outages={outages} />
         </>
       ) : (
         <EnergyChart points={energyPoints} loading={energy.isPending} granularity={energyGranularity} hasBattery={hasBattery} />

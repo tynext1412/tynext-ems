@@ -13,6 +13,8 @@ import type { PlantRepository } from "@/domains/plant/application/plant-reposito
 import { HttpPlantRepository } from "@/domains/plant/infrastructure/http-plant-repository";
 import type { ScadaRepository } from "@/domains/scada/application/scada-repository";
 import { HttpScadaRepository } from "@/domains/scada/infrastructure/http-scada-repository";
+import type { OutageRepository } from "@/domains/outage/application/outage-repository";
+import { HttpOutageRepository } from "@/domains/outage/infrastructure/http-outage-repository";
 import type { TelemetryRepository } from "@/domains/telemetry/application/telemetry-repository";
 import { HttpTelemetryRepository } from "@/domains/telemetry/infrastructure/http-telemetry-repository";
 import { env } from "@/shared/config/env";
@@ -40,6 +42,7 @@ export interface Repositories {
   device: DeviceRepository;
   deviceTelemetry: DeviceTelemetryRepository;
   maintenance: MaintenanceRepository;
+  outage: OutageRepository;
 }
 
 // Composition root: satu-satunya tempat yang tahu adapter mana yang dipakai.
@@ -82,5 +85,6 @@ export function createHttpRepositories(api: ApiClient): Repositories {
     device: new HttpDeviceRepository(api),
     deviceTelemetry: new HttpDeviceTelemetryRepository(api),
     maintenance: new HttpMaintenanceRepository(api),
+    outage: new HttpOutageRepository(api),
   };
 }

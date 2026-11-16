@@ -4,6 +4,7 @@ import { Outlet, useParams } from "react-router-dom";
 import { AppHeader } from "@/shared/ui/AppHeader";
 import { Button } from "@/shared/ui/Button";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { OutageBanner } from "@/domains/outage/ui/OutageBanner";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { useSite, useSiteContext, type SiteContext } from "../application/use-site";
 import { SiteHeader } from "./SiteHeader";
@@ -56,6 +57,7 @@ export function SiteLayout() {
               <EmptyState illustration="not-found" title="Plant not found" description={`Plant ${plantId} isn't in your list. Go back to Home to choose another plant.`} />
             )}
 
+            {site.plant && <OutageBanner plant={site.plant} />}
             {site.plant && <Outlet context={context} />}
           </div>
         </main>
