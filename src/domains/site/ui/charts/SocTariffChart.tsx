@@ -55,7 +55,7 @@ export function SocTariffChart({ points, loading, nowMinutes, timezoneAbbrev, ha
       table={
         visible && (
           <ChartTable
-            caption="SOC every 5 minutes and the tariff in force"
+            caption={nowMinutes !== undefined ? "SOC every minute and the tariff in force" : "SOC every 5 minutes and the tariff in force"}
             columns={[`Time (${timezoneAbbrev})`, ...(hasBattery ? ["SOC (%)"] : []), "Purchase (Rp/kWh)", "Feed-in (Rp/kWh)"]}
             rows={visible.map((p) => [formatMinutes(p.t), ...(hasBattery ? [p.soc ?? "–"] : []), p.purchase === undefined ? "–" : formatNumber(p.purchase, 2), p.feedIn === undefined ? "–" : formatNumber(p.feedIn, 2)])}
           />

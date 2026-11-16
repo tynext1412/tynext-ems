@@ -52,7 +52,7 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
       table={
         visible && (
           <ChartTable
-            caption="Power per 5 minutes"
+            caption={nowMinutes !== undefined ? "Power per minute" : "Power per 5 minutes"}
             columns={[`Time (${timezoneAbbrev})`, ...SERIES.map((k) => `${SERIES_LABEL[k]} (kW)`)]}
             rows={visible.map((p) => [formatMinutes(p.t), ...SERIES.map((k) => formatNumber(p[k], 1))])}
           />

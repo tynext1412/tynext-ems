@@ -120,7 +120,7 @@ export default function DeviceChartPanel({ device, plant }: Props) {
             Reset
           </button>
         </div>
-        <p className="mb-3 text-xs text-muted">{isDay ? "Day: instantaneous values (every 5 minutes)." : "Month/Year/Lifetime: energy values (per day/month/year)."}</p>
+        <p className="mb-3 text-xs text-muted">{isDay ? `Day: instantaneous values (${period.date === today ? "every minute" : "every 5 minutes"}).` : "Month/Year/Lifetime: energy values (per day/month/year)."}</p>
         {groupsByName.map(([group, params]) => (
           <fieldset key={group} className="mb-3 min-w-0">
             <legend className="mb-1 text-xs font-medium text-muted">{group}</legend>

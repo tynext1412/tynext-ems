@@ -52,7 +52,7 @@ export interface SocTariffPoint {
   feedIn?: number;
 }
 
-// Satu deret untuk grafik gabungan SOC + tarif: gabungan menit SOC (5 menit) dan menit tarif
+// Satu deret untuk grafik gabungan SOC + tarif: gabungan menit SOC (1 menit hari ini, 5 menit hari lain) dan menit tarif
 // (per jam). Tarif berlaku sampai titik tarif berikutnya, jadi tiap baris memakai tarif terakhir
 // yang sudah berlaku; menit sebelum titik tarif pertama dibiarkan kosong.
 export function socTariffPoints(daily: readonly DailyPowerPoint[], tariff: readonly TariffChartPoint[]): SocTariffPoint[] {
