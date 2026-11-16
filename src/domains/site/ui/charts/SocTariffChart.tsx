@@ -82,7 +82,7 @@ export function SocTariffChart({ points, loading, nowMinutes, timezoneAbbrev, ha
               <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
               {hasBattery && <YAxis yAxisId="soc" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v: number) => `${v}%`} tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} />}
               <YAxis yAxisId="tariff" orientation={hasBattery ? "right" : "left"} domain={[0, "auto"]} tickFormatter={compactNumber} tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} />
-              {outageAreas(outages, "tariff")}
+              {outageAreas(outages, window, "tariff")}
               <Tooltip
                 cursor={false}
                 offset={16}

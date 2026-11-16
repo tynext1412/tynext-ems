@@ -78,7 +78,7 @@ export function DailyPowerChart({ points, loading, nowMinutes, timezoneAbbrev, w
                 ))}
               </defs>
               <CartesianGrid stroke={CHART_CHROME.grid} vertical={false} />
-              {outageAreas(outages)}
+              {outageAreas(outages, window)}
               <XAxis type="number" dataKey="t" domain={[window[0], window[1]]} allowDataOverflow ticks={zoomTicks(window)} tickFormatter={formatMinutes} tick={AXIS_TICK} axisLine={{ stroke: CHART_CHROME.axis }} tickLine={false} minTickGap={28} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={48} tickFormatter={(v: number) => formatNumber(v, 0)} />
               <Tooltip

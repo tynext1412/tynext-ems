@@ -54,7 +54,8 @@ export const AXIS_TICK = { fill: CHART_CHROME.ink, fontSize: 11 } as const;
 
 // Pita "controller offline" di grafik harian. Lebar minimal 4 menit (±2 px pada sumbu 24 jam)
 // supaya putus singkat tetap terlihat.
-export const OUTAGE_BAND = { fill: "var(--color-warn)", fillOpacity: 0.24, minMinutes: 4 } as const;
+// minFraction: lebar minimum pita = bagian dari rentang sumbu x yang terlihat (0,3% ≈ 4 menit untuk satu hari).
+export const OUTAGE_BAND = { fill: "var(--color-warn)", fillOpacity: 0.24, minFraction: 0.003 } as const;
 
 export function compactNumber(value: number): string {
   const abs = Math.abs(value);
