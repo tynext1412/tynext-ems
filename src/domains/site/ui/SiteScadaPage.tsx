@@ -1,5 +1,7 @@
 import { Monitor } from "lucide-react";
 import { useScadaEmbed } from "@/domains/scada/application/use-scada-embed";
+import { frameAspectRatio } from "@/domains/scada/domain/scada-embed";
+import { cn } from "@/shared/lib/cn";
 import { ScadaEmbedFrame } from "@/domains/scada/ui/ScadaEmbedFrame";
 import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
@@ -9,13 +11,14 @@ import { Skeleton } from "@/shared/ui/Skeleton";
 import { useSiteContext } from "../application/use-site";
 
 // Halaman SCADA = viewer pihak ketiga yang disematkan; tanpa konfigurasi tampil empty state.
+// Viewer dengan rasio tetap menentukan tingginya sendiri; tanpa rasio, panel setinggi 600 px diisi penuh.
 export function SiteScadaPage() {
   const { plant } = useSiteContext();
   const { data: embed, isPending, error, refetch } = useScadaEmbed(plant?.id ?? "");
   if (!plant) return null;
 
   return (
-    <Panel icon={<Monitor />} title="SCADA" className="flex h-[600px] flex-col" bodyClassName="flex min-h-0 flex-1 flex-col">
+    <Panel icon={<Monitor />} title="SCADA" className={cn("flex flex-col", !(embed && frameAspectRatio(embed)) && "h-[600px]")} bodyClassName="flex min-h-0 flex-1 flex-col">
       {isPending && (
         <div className="flex-1" aria-busy>
           <Skeleton className="h-full min-h-80 w-full" />

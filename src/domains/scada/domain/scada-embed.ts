@@ -7,6 +7,15 @@ export interface ScadaEmbed {
   provider: string; // nama produk/plugin, hanya untuk label
   url: string; // URL viewer; boleh memakai placeholder {plantId}
   allowFullscreen: boolean;
+  // Lebar/tinggi kanvas viewer (view FUXA 1280×860 → 1,488). Diisi = bingkai dijaga sebanding supaya viewer
+  // yang meregangkan isinya ke ukuran bingkai (FUXA autoresize) tidak terdistorsi. Kosong = bingkai mengisi panel.
+  aspectRatio?: number;
+}
+
+// Rasio yang dipakai bingkai; nilai di luar 0,5–4 diabaikan (bingkai mengisi panel).
+export function frameAspectRatio(embed: ScadaEmbed): number | undefined {
+  const r = embed.aspectRatio;
+  return r !== undefined && Number.isFinite(r) && r >= 0.5 && r <= 4 ? r : undefined;
 }
 
 export const PLANT_ID_PLACEHOLDER = "{plantId}";

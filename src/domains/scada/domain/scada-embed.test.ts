@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isEmbeddableUrl, resolveScadaUrl } from "./scada-embed";
+import { frameAspectRatio, isEmbeddableUrl, resolveScadaUrl } from "./scada-embed";
 
 describe("scada embed", () => {
   it("substitutes the plant id placeholder, URL-encoded", () => {
@@ -19,5 +19,13 @@ describe("scada embed", () => {
     expect(isEmbeddableUrl("javascript:alert(1)")).toBe(false);
     expect(isEmbeddableUrl("//evil.example")).toBe(false);
     expect(isEmbeddableUrl("not a url")).toBe(false);
+  });
+
+  it("keeps the frame proportional only for a sane aspect ratio", () => {
+    const base = { provider: "FUXA", url: "https://x.example/scada/", allowFullscreen: true };
+    expect(frameAspectRatio({ ...base, aspectRatio: 1280 / 860 })).toBeCloseTo(1.488, 3);
+    expect(frameAspectRatio(base)).toBeUndefined();
+    expect(frameAspectRatio({ ...base, aspectRatio: 9 })).toBeUndefined();
+    expect(frameAspectRatio({ ...base, aspectRatio: Number.NaN })).toBeUndefined();
   });
 });

@@ -5,7 +5,7 @@ import { cn } from "@/shared/lib/cn";
 import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
 import { Skeleton } from "@/shared/ui/Skeleton";
-import { isEmbeddableUrl, resolveScadaUrl, type ScadaEmbed } from "../domain/scada-embed";
+import { frameAspectRatio, isEmbeddableUrl, resolveScadaUrl, type ScadaEmbed } from "../domain/scada-embed";
 
 const LOAD_TIMEOUT_MS = 20_000;
 
@@ -23,6 +23,22 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
   const containerRef = useRef<HTMLDivElement>(null);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "timeout">("loading");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const ratio = frameAspectRatio(embed);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(document.fullscreenElement === containerRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  // Dengan rasio: bingkai sebanding dengan kanvas viewer, selebar panel tetapi tidak lebih tinggi dari layar
+  // (di layar penuh: sebesar mungkin di tengah). Tanpa rasio: bingkai mengisi panel.
+  const frameStyle = ratio
+    ? isFullscreen
+      ? { aspectRatio: ratio, width: `min(100vw, calc(100vh * ${ratio}))` }
+      : { aspectRatio: ratio, width: "100%", maxWidth: `calc((100dvh - 220px) * ${ratio})` }
+    : undefined;
 
   useEffect(() => {
     if (status !== "loading") return;
@@ -71,34 +87,36 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
         </span>
       </div>
 
-      <div ref={containerRef} className="relative min-h-80 flex-1 overflow-hidden rounded-xl border border-separator bg-bg">
-        {status === "loading" && (
-          <div className="absolute inset-0 z-10 p-3" aria-busy>
-            <Skeleton className="h-full w-full rounded-lg" />
-            <span className="sr-only">Loading SCADA viewer…</span>
-          </div>
-        )}
-        {status === "timeout" && (
-          <div role="alert" className="absolute inset-0 z-10 grid place-items-center bg-bg/90 p-6 text-center text-sm">
-            <div className="max-w-md">
-              <p className="font-medium text-text">The SCADA viewer didn't respond within {LOAD_TIMEOUT_MS / 1000} seconds.</p>
-              <p className="mt-1 text-muted">Make sure the SCADA server allows embedding (X-Frame-Options / CSP headers) and is reachable from this network.</p>
-              <Button variant="primary" onClick={reload} className="mt-4">
-                Try again
-              </Button>
+      <div ref={containerRef} className={cn(ratio ? "flex items-center justify-center" : "flex min-h-80 flex-1", ratio && isFullscreen && "bg-black")}>
+        <div className={cn("relative overflow-hidden rounded-xl border border-separator bg-bg", !ratio && "flex-1")} style={frameStyle}>
+          {status === "loading" && (
+            <div className="absolute inset-0 z-10 p-3" aria-busy>
+              <Skeleton className="h-full w-full rounded-lg" />
+              <span className="sr-only">Loading SCADA viewer…</span>
             </div>
-          </div>
-        )}
-        <iframe
-          key={attempt}
-          src={url}
-          title={`SCADA ${plantName}`}
-          className="h-full w-full"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          referrerPolicy="no-referrer"
-          allow={embed.allowFullscreen ? "fullscreen" : undefined}
-          onLoad={() => setStatus("ready")}
-        />
+          )}
+          {status === "timeout" && (
+            <div role="alert" className="absolute inset-0 z-10 grid place-items-center bg-bg/90 p-6 text-center text-sm">
+              <div className="max-w-md">
+                <p className="font-medium text-text">The SCADA viewer didn't respond within {LOAD_TIMEOUT_MS / 1000} seconds.</p>
+                <p className="mt-1 text-muted">Make sure the SCADA server allows embedding (X-Frame-Options / CSP headers) and is reachable from this network.</p>
+                <Button variant="primary" onClick={reload} className="mt-4">
+                  Try again
+                </Button>
+              </div>
+            </div>
+          )}
+          <iframe
+            key={attempt}
+            src={url}
+            title={`SCADA ${plantName}`}
+            className="h-full w-full"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            referrerPolicy="no-referrer"
+            allow={embed.allowFullscreen ? "fullscreen" : undefined}
+            onLoad={() => setStatus("ready")}
+          />
+        </div>
       </div>
     </div>
   );
