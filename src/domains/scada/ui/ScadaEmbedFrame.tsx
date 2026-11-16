@@ -32,12 +32,13 @@ export function ScadaEmbedFrame({ embed, plantId, plantName, className }: Props)
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
-  // Dengan rasio: bingkai sebanding dengan kanvas viewer, selebar panel tetapi tidak lebih tinggi dari layar
-  // (di layar penuh: sebesar mungkin di tengah). Tanpa rasio: bingkai mengisi panel.
+  // Dengan rasio: bingkai sebanding dengan kanvas viewer, selebar panel tetapi muat di layar di bawah header
+  // (±330 px; minimal 600 px tinggi di layar pendek). Di layar penuh: sebesar mungkin di tengah. Tanpa rasio:
+  // bingkai mengisi panel.
   const frameStyle = ratio
     ? isFullscreen
       ? { aspectRatio: ratio, width: `min(100vw, calc(100vh * ${ratio}))` }
-      : { aspectRatio: ratio, width: "100%", maxWidth: `calc((100dvh - 220px) * ${ratio})` }
+      : { aspectRatio: ratio, width: "100%", maxWidth: `max(${Math.round(600 * ratio)}px, calc((100dvh - 330px) * ${ratio}))` }
     : undefined;
 
   useEffect(() => {
