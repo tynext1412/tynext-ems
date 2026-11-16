@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayNameFromEmail, EMAIL_INVALID, EMAIL_REQUIRED, PASSWORD_REQUIRED, PASSWORDS_DIFFER, validateCredentials, validateEmail, validateNewPassword } from "./auth";
+import { displayNameFromEmail, EMAIL_INVALID, EMAIL_REQUIRED, PASSWORD_HINT, PASSWORD_REQUIRED, PASSWORDS_DIFFER, validateCredentials, validateEmail, validateNewPassword } from "./auth";
 
 describe("validateCredentials", () => {
   it("checks required fields and the email format, leaving password rules to the server", () => {
@@ -15,11 +15,12 @@ describe("validateCredentials", () => {
 });
 
 describe("validateNewPassword", () => {
-  it("needs at least 6 characters and a matching confirmation", () => {
-    expect(validateNewPassword("Plant2026", "Plant2026")).toEqual({});
-    expect(validateNewPassword("abc", "abc")).toEqual({ password: true });
-    expect(validateNewPassword("Plant2026", "Plant2025")).toEqual({ confirm: PASSWORDS_DIFFER });
-    expect(validateNewPassword("Plant2026", "")).toEqual({ confirm: PASSWORDS_DIFFER });
+  it("needs at least 10 characters (the backend rule) and a matching confirmation", () => {
+    expect(PASSWORD_HINT).toBe("Use at least 10 characters.");
+    expect(validateNewPassword("SolarPlant", "SolarPlant")).toEqual({});
+    expect(validateNewPassword("Plant2026", "Plant2026")).toEqual({ password: true }); // 9 karakter
+    expect(validateNewPassword("SolarPlant2026", "SolarPlant2025")).toEqual({ confirm: PASSWORDS_DIFFER });
+    expect(validateNewPassword("SolarPlant2026", "")).toEqual({ confirm: PASSWORDS_DIFFER });
   });
 });
 

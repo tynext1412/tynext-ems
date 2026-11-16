@@ -54,7 +54,7 @@ export function createRepositories(): Repositories {
   //   const performance = new MockPerformanceRepository(plantFixtures);
   //   const telemetry = new MockTelemetryRepository(plantFixtures);
   //   return {
-  //     // Mock Identity & Access: email valid apa pun + kata sandi ≥ 6 karakter; sesi di localStorage.
+  //     // Mock Identity & Access: email valid apa pun + kata sandi ≥ 10 karakter; sesi di localStorage.
   //     auth: new MockAuthRepository(),
   //     plant: new MockPlantRepository(plantFixtures),
   //     performance,

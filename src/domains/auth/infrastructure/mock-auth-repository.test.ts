@@ -28,7 +28,7 @@ describe("mock auth repository", () => {
   it("signs in any valid email, persists the session, and signs out", async () => {
     const { storage, repo } = setup();
     expect(await repo.current()).toBeNull();
-    const session = await repo.signIn({ email: " Siti.Rahma@tynext.id ", password: "rahasia" });
+    const session = await repo.signIn({ email: " Siti.Rahma@tynext.id ", password: "rahasia-123" });
     expect(session.user).toMatchObject({ name: "Siti Rahma", email: "siti.rahma@tynext.id", role: "OPERATOR" });
     expect((await new MockAuthRepository(storage).current())?.user.email).toBe("siti.rahma@tynext.id");
     await repo.signOut();
@@ -36,13 +36,14 @@ describe("mock auth repository", () => {
     expect(await new MockAuthRepository(storage).current()).toBeNull();
   });
 
-  it("rejects short passwords as incorrect credentials, reports offline, and grants admin to admin@", async () => {
+  it("rejects passwords under 10 characters as incorrect credentials, reports offline, and grants admin to admin@", async () => {
     const { repo, online } = setup();
     expect(await codeOf(repo.signIn({ email: "a@b.co", password: "123" }))).toBe("INVALID_CREDENTIALS");
-    expect((await repo.signIn({ email: "admin@tynext.id", password: "rahasia" })).user.role).toBe("ADMIN");
+    expect(await codeOf(repo.signIn({ email: "a@b.co", password: "Plant2026" }))).toBe("INVALID_CREDENTIALS"); // 9 karakter
+    expect((await repo.signIn({ email: "admin@tynext.id", password: "rahasia-123" })).user.role).toBe("ADMIN");
     expect((await repo.signInWithProvider("google")).user.role).toBe("VIEWER");
     online.value = false;
-    expect(await codeOf(repo.signIn({ email: "ops@tynext.id", password: "rahasia" }))).toBe("NETWORK");
+    expect(await codeOf(repo.signIn({ email: "ops@tynext.id", password: "rahasia-123" }))).toBe("NETWORK");
   });
 
   it("runs the forgot-password flow: send, verify once, save, then only the new password works", async () => {
@@ -57,12 +58,12 @@ describe("mock auth repository", () => {
     const grant = await make().verifyResetCode("dadang@tynext.co.id", sent[0]); // state "server" bertahan setelah refresh
     expect(await codeOf(repo.verifyResetCode("dadang@tynext.co.id", sent[0]))).toBe("CODE_EXPIRED"); // kode sekali pakai
 
-    expect(await codeOf(repo.completePasswordReset("not-the-token", "Plant2026"))).toBe("RESET_EXPIRED");
-    expect(await codeOf(repo.completePasswordReset(grant.token, "abc"))).toBe("PASSWORD_REJECTED");
-    await repo.completePasswordReset(grant.token, "Plant2026");
-    expect(await codeOf(repo.completePasswordReset(grant.token, "Plant2026"))).toBe("RESET_EXPIRED");
+    expect(await codeOf(repo.completePasswordReset("not-the-token", "SolarPlant2026"))).toBe("RESET_EXPIRED");
+    expect(await codeOf(repo.completePasswordReset(grant.token, "Plant2026"))).toBe("PASSWORD_REJECTED"); // 9 karakter
+    await repo.completePasswordReset(grant.token, "SolarPlant2026");
+    expect(await codeOf(repo.completePasswordReset(grant.token, "SolarPlant2026"))).toBe("RESET_EXPIRED");
     expect(await codeOf(repo.signIn({ email: "dadang@tynext.co.id", password: "old-password" }))).toBe("INVALID_CREDENTIALS");
-    expect((await repo.signIn({ email: "dadang@tynext.co.id", password: "Plant2026" })).user.email).toBe("dadang@tynext.co.id");
+    expect((await repo.signIn({ email: "dadang@tynext.co.id", password: "SolarPlant2026" })).user.email).toBe("dadang@tynext.co.id");
   });
 
   it("keeps the code during the resend cooldown, expires it after 10 minutes, and locks after 5 wrong tries", async () => {
@@ -93,11 +94,11 @@ describe("mock auth repository", () => {
     await repo.requestPasswordReset("ops@tynext.id");
     const grant = await repo.verifyResetCode("ops@tynext.id", sent[0]);
     await repo.cancelPasswordReset(grant.token);
-    expect(await codeOf(repo.completePasswordReset(grant.token, "Plant2026"))).toBe("RESET_EXPIRED");
+    expect(await codeOf(repo.completePasswordReset(grant.token, "SolarPlant2026"))).toBe("RESET_EXPIRED");
 
     await repo.requestPasswordReset("ops@tynext.id");
     const second = await repo.verifyResetCode("ops@tynext.id", sent[1]);
     await repo.signIn({ email: "ops@tynext.id", password: "old-password" });
-    expect(await codeOf(repo.completePasswordReset(second.token, "Plant2026"))).toBe("RESET_EXPIRED");
+    expect(await codeOf(repo.completePasswordReset(second.token, "SolarPlant2026"))).toBe("RESET_EXPIRED");
   });
 });

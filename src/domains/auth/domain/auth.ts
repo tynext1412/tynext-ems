@@ -19,7 +19,8 @@ export interface Credentials {
 
 export type CredentialErrors = Partial<Record<keyof Credentials, string>>;
 
-export const PASSWORD_MIN_LENGTH = 6;
+// Sama dengan backend (tynext-mqtt identity.MinPassword); Figma PRD semula menulis 6, diputuskan ikut backend (16 Nov 2026).
+export const PASSWORD_MIN_LENGTH = 10;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Teks galat mengikuti copywriting Figma (Authentication · Login & Forgot Password).

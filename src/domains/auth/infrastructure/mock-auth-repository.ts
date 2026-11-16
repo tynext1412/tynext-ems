@@ -15,7 +15,7 @@ interface MockServerState {
   grant?: { email: string; token: string; expiresAt: number };
 }
 
-// Mock Identity & Access. Email valid apa pun dengan password ≥ 6 karakter diterima, kecuali
+// Mock Identity & Access. Email valid apa pun dengan password ≥ PASSWORD_MIN_LENGTH (10) karakter diterima, kecuali
 // email yang password-nya sudah diganti lewat Forgot Password (wajib password baru). Kode reset
 // dicetak ke console browser karena tidak ada email sungguhan. Offline (navigator.onLine false)
 // memberi galat NETWORK. Sesi disimpan di localStorage sampai keluar. Diganti HttpAuthRepository

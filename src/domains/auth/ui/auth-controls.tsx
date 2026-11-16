@@ -56,7 +56,7 @@ interface PasswordFieldProps extends InputProps {
   label: string;
   value: string;
   error?: string;
-  hint?: string; // teks bantuan yang selalu tampil (mis. "Use at least 6 characters.")
+  hint?: string; // teks bantuan yang selalu tampil (mis. "Use at least 10 characters.")
   hintInvalid?: boolean; // hint dan field berubah merah
 }
 

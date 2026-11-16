@@ -125,12 +125,12 @@ dan panel putih 480 px berisi logo (kembali ke Sign In), form, dan copyright.
   setelah 60 detik, terkunci setelah 5 kali salah, reset token 15 menit. Posisi flow disimpan di `sessionStorage`
   (`tynext-ems.password-reset.v1`), jadi refresh di langkah 2/3 tidak mengeluarkan user; back browser dari langkah 3
   membuka langkah 1.
-- **Mock Identity & Access**: email valid apa pun + password ≥ 6 karakter diterima; setelah password di-reset, email itu
+- **Mock Identity & Access**: email valid apa pun + password ≥ 10 karakter diterima (sama dengan backend); setelah password di-reset, email itu
   hanya menerima password baru. Kode reset dicetak di console browser (`[mock] Password reset code for …`); domain
   email publik (gmail.com, yahoo.com, …) dianggap tidak terdaftar; offline memunculkan galat koneksi. Sesi di
   `localStorage` (`tynext-ems.session.v1`), data reset mock di `tynext-ems.mock-auth.v1`.
-- **Mode http**: `POST /auth/password-reset/{request,verify,complete,cancel}` (kontrak tynext-mqtt, tag Auth). Backend
-  mewajibkan password baru minimal 10 karakter (desain: 6); pesan server tampil di bawah New Password. Selama SMTP
+- **Mode http**: `POST /auth/password-reset/{request,verify,complete,cancel}` (kontrak tynext-mqtt, tag Auth). Password baru
+  minimal 10 karakter, sama dengan backend (Figma masih menulis 6); bila server menolak, pesannya tampil di bawah New Password. Selama SMTP
   belum dikonfigurasi, Send Code menjawab 503 dan pesan server tampil di Alert "Couldn't send the code".
 
 Bila video latar diganti, simpan sebagai **fragmented MP4 tanpa audio** supaya pengulangan tanpa jeda tetap bekerja
