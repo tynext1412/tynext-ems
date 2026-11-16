@@ -1,8 +1,12 @@
 export type DataSource = "mock" | "http";
 
+// Data selalu dari endpoint backend. Pilihan lama lewat VITE_DATA_SOURCE (default mock) dikomentari, tidak dihapus:
+// function readDataSource(): DataSource {
+//   const raw = import.meta.env.VITE_DATA_SOURCE;
+//   return raw === "http" ? "http" : "mock";
+// }
 function readDataSource(): DataSource {
-  const raw = import.meta.env.VITE_DATA_SOURCE;
-  return raw === "http" ? "http" : "mock";
+  return "http";
 }
 
 export const env = {

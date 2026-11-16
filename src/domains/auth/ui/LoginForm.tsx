@@ -1,150 +1,156 @@
-import { Eye, EyeOff } from "lucide-react";
-import { useId, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { cn } from "@/shared/lib/cn";
-import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
-import type { SsoProvider } from "../application/auth-repository";
+import { useId, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSignIn } from "../application/use-auth";
-import { PASSWORD_MIN_LENGTH, validateCredentials, type CredentialErrors } from "../domain/auth";
+import { authErrorCode, normalizeEmail, validateCredentials, validateEmail, type CredentialErrors } from "../domain/auth";
+import { AuthAlert, EmailField, FORM_STACK, GlossyButton, GoogleButton, PasswordField } from "./auth-controls";
 
-function fromPath(state: unknown): string {
-  const from = (state as { from?: unknown } | null)?.from;
-  return typeof from === "string" && from.startsWith("/") && !from.startsWith("/login") ? from : "/";
+interface AlertCopy {
+  title: string;
+  description: string;
 }
 
-export function LoginForm() {
+const CONNECTION: AlertCopy = { title: "Couldn't sign you in", description: "Check your connection, then try again" };
+const NO_ACCESS: AlertCopy = { title: "This Google account has no access", description: "Sign in with your work account, or ask your administrator to add you." };
+
+// Kode error yang dikirim backend saat SSO gagal (redirect ke /login?error=...).
+const SSO_ERROR: Record<string, AlertCopy> = {
+  sso_unavailable: { title: "Google sign-in isn't set up yet", description: "Sign in with your work email and password." },
+  sso_no_account: NO_ACCESS,
+  sso_denied: { title: "Sign-in was cancelled", description: "Try again, or sign in with your work email and password." },
+  sso_expired: { title: "Sign-in took too long", description: "Please try again." },
+  sso_state: { title: "Sign-in took too long", description: "Please try again." },
+  sso_failed: { title: "Couldn't sign you in with Google", description: "Please try again, or sign in with your work email and password." },
+};
+
+function ssoError(search: string): AlertCopy | null {
+  const code = new URLSearchParams(search).get("error");
+  return code ? (SSO_ERROR[code] ?? SSO_ERROR.sso_failed) : null;
+}
+
+function signInAlert(error: Error): AlertCopy {
+  switch (authErrorCode(error)) {
+    case "INVALID_CREDENTIALS":
+      return { title: "Incorrect email or password", description: "Check both and try again, or reset your password." };
+    case "NO_ACCESS":
+      return NO_ACCESS;
+    case "NETWORK":
+      return CONNECTION;
+    default:
+      return { title: CONNECTION.title, description: error.message };
+  }
+}
+
+interface LoginState {
+  from?: unknown;
+  email?: unknown;
+}
+
+function fromPath(state: unknown): string {
+  const from = (state as LoginState | null)?.from;
+  return typeof from === "string" && from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/login") ? from : "/";
+}
+
+// Form Sign In (Figma Login · 01–09). Validasi berjalan saat Sign In diklik; pesan tampil di bawah
+// field yang bermasalah dan hilang begitu field itu diubah. Galat server tampil sebagai Alert di
+// bawah judul, isian tidak dikosongkan.
+export function LoginForm({ titleId }: { titleId: string }) {
   const id = useId();
   const navigate = useNavigate();
   const location = useLocation();
   const signIn = useSignIn();
-  const [email, setEmail] = useState("");
+  const initialEmail = (location.state as LoginState | null)?.email;
+  const [email, setEmail] = useState(typeof initialEmail === "string" ? initialEmail : "");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
   const [errors, setErrors] = useState<CredentialErrors>({});
-  const [touched, setTouched] = useState(false);
-  const [forgot, setForgot] = useState(false);
-
-  const validate = (e: string, p: string) => {
-    const found = validateCredentials({ email: e, password: p });
-    if (touched) setErrors(found);
-    return found;
-  };
+  const [ssoDismissed, setSsoDismissed] = useState(false);
+  const [method, setMethod] = useState<"password" | "google">("password");
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const done = () => navigate(fromPath(location.state), { replace: true });
+  const pending = signIn.isPending;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched(true);
-    const found = validateCredentials({ email, password });
+    const normalized = normalizeEmail(email);
+    setEmail(normalized);
+    setSsoDismissed(true);
+    const found = validateCredentials({ email: normalized, password });
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
-    signIn.mutate({ credentials: { email, password } }, { onSuccess: done });
+    if (found.email) return emailRef.current?.focus();
+    if (found.password) return passwordRef.current?.focus();
+    setMethod("password");
+    signIn.mutate({ credentials: { email: normalized, password } }, { onSuccess: done });
   };
-  const sso = (provider: SsoProvider) => signIn.mutate({ provider }, { onSuccess: done });
+
+  const google = () => {
+    setSsoDismissed(true);
+    setErrors({});
+    setMethod("google");
+    signIn.mutate({ provider: "google" }, { onSuccess: done });
+  };
+
+  const alert = signIn.error ? signInAlert(signIn.error) : ssoDismissed ? null : ssoError(location.search);
+  const forgotEmail = validateEmail(email) ? undefined : normalizeEmail(email);
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-4">
-      <div className="grid gap-1">
-        <label htmlFor={`${id}-email`} className="text-sm font-medium">
-          Email
-        </label>
-        <Input
+    <form onSubmit={submit} noValidate className={FORM_STACK}>
+      <header className="flex flex-col gap-1.5">
+        <h1 id={titleId} className="text-2xl font-semibold leading-8 text-text">
+          Sign In to Tynext
+        </h1>
+        <p className="text-sm leading-[22px] text-[#5b6168]">Use your work email or Google account to continue</p>
+      </header>
+
+      {alert && <AuthAlert title={alert.title}>{alert.description}</AuthAlert>}
+
+      <div className="flex flex-col gap-4">
+        <EmailField
           id={`${id}-email`}
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          placeholder="name@company.com"
+          ref={emailRef}
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
-            validate(e.target.value, password);
+            if (errors.email) setErrors((er) => ({ ...er, email: undefined }));
           }}
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? `${id}-email-error` : undefined}
-          className="h-11 w-full"
+          onBlur={() => setEmail((v) => normalizeEmail(v))}
+          error={errors.email}
+          disabled={pending}
         />
-        <p id={`${id}-email-error`} className={cn("min-h-4 text-xs text-danger", !errors.email && "sr-only")} aria-live="polite">
-          {errors.email}
-        </p>
-      </div>
-
-      <div className="grid gap-1">
-        <label htmlFor={`${id}-password`} className="text-sm font-medium">
-          Password
-        </label>
-        <div className="relative">
-          <Input
+        <div className="flex flex-col gap-2">
+          <PasswordField
             id={`${id}-password`}
-            type={show ? "text" : "password"}
+            ref={passwordRef}
+            label="Password"
             autoComplete="current-password"
-            placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
+            placeholder="Enter your password"
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
-              validate(email, e.target.value);
+              if (errors.password) setErrors((er) => ({ ...er, password: undefined }));
             }}
-            aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? `${id}-password-error` : undefined}
-            className="h-11 w-full pr-11"
+            error={errors.password}
+            disabled={pending}
           />
-          <button
-            type="button"
-            onClick={() => setShow((s) => !s)}
-            aria-label={show ? "Hide password" : "Show password"}
-            aria-pressed={show}
-            className="absolute right-1 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-text"
-          >
-            {show ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
-          </button>
+          <div className="flex justify-end">
+            <Link to="/forgot-password" state={{ email: forgotEmail }} className="rounded-sm text-sm font-medium leading-[22px] text-brand hover:underline">
+              Forgot password?
+            </Link>
+          </div>
         </div>
-        <p id={`${id}-password-error`} className={cn("min-h-4 text-xs text-danger", !errors.password && "sr-only")} aria-live="polite">
-          {errors.password}
-        </p>
       </div>
 
-      <div className="-mt-1 text-sm">
-        <button type="button" onClick={() => setForgot((f) => !f)} aria-expanded={forgot} className="text-accent underline-offset-2 hover:underline">
-          Forgot password?
-        </button>
-        {forgot && <p className="mt-1 text-xs text-muted">Password reset isn't available in this demo yet. Contact your Tynext admin for access.</p>}
+      <div className="flex flex-col gap-4">
+        <GlossyButton type="submit" loading={pending && method === "password"} loadingLabel="Signing In" disabled={pending}>
+          Sign In
+        </GlossyButton>
+        <div className="flex items-center gap-3" aria-hidden>
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-xs leading-[18px] text-muted">or</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <GoogleButton onClick={google} loading={pending && method === "google"} disabled={pending} />
       </div>
-
-      {signIn.error && (
-        <p role="alert" className="rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
-          {signIn.error.message}
-        </p>
-      )}
-
-      <Button type="submit" variant="primary" disabled={signIn.isPending} className="h-11 w-full text-base">
-        {signIn.isPending ? "Signing in…" : "Sign in"}
-      </Button>
-
-      <div className="flex items-center gap-3 text-xs text-muted" aria-hidden>
-        <span className="h-px flex-1 bg-border" />
-        or
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
-      <Button type="button" onClick={() => sso("google")} disabled={signIn.isPending} className="h-11 w-full justify-start gap-3">
-        <span className="grid size-6 place-items-center rounded-full border border-border bg-surface font-semibold text-text" aria-hidden>
-          G
-        </span>
-        Continue with Google
-      </Button>
-      <Button type="button" onClick={() => sso("microsoft")} disabled={signIn.isPending} className="h-11 w-full justify-start gap-3">
-        <span className="grid size-6 grid-cols-2 gap-0.5 p-1" aria-hidden>
-          <span className="bg-[#f25022]" />
-          <span className="bg-[#7fba00]" />
-          <span className="bg-[#00a4ef]" />
-          <span className="bg-[#ffb900]" />
-        </span>
-        Continue with Microsoft
-      </Button>
-
-      <p className="rounded-md border border-warn/40 bg-warn/5 px-3 py-2 text-xs text-muted">
-        <span className="font-medium text-warn">Demo data.</span> Any valid email with a password of at least {PASSWORD_MIN_LENGTH} characters is accepted; the Google/Microsoft buttons sign in as a demo account.
-      </p>
     </form>
   );
 }

@@ -11,6 +11,7 @@ import {
   type MaintenanceDraftErrors,
 } from "@/domains/maintenance/domain/maintenance";
 import type { Plant } from "@/domains/plant/domain/plant";
+import { fieldErrors } from "@/shared/lib/apiClient";
 import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
 import { Drawer } from "@/shared/ui/Drawer";
@@ -74,10 +75,15 @@ function MaintenanceForm({ plant, today, activity, initialDate, onSaved }: Omit<
     setErrors(found);
     setTouched(true);
     if (Object.keys(found).length > 0) return;
-    const saved = activity
-      ? await update.mutateAsync({ id: activity.id, patch: { date: draft.date, type: draft.type, activity: draft.activity, notes: draft.notes } })
-      : await create.mutateAsync(draft);
-    onSaved(saved);
+    try {
+      const saved = activity
+        ? await update.mutateAsync({ id: activity.id, patch: { date: draft.date, type: draft.type, activity: draft.activity, notes: draft.notes } })
+        : await create.mutateAsync(draft);
+      onSaved(saved);
+    } catch (err) {
+      const fromServer = fieldErrors(err, ["date", "type", "activity", "notes"] as const);
+      if (fromServer) setErrors(fromServer);
+    }
   };
 
   return (

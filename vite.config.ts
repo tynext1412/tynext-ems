@@ -12,6 +12,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // /api diteruskan ke backend tynext-mqtt supaya cookie sesi satu origin. Bawaan: backend di VPS
+    // (https://mqtt-poc.tynext.co.id); backend lokal: VITE_API_PROXY_TARGET=http://localhost:8090.
+    proxy: {
+      "/api": { target: process.env.VITE_API_PROXY_TARGET ?? "https://mqtt-poc.tynext.co.id", changeOrigin: true, secure: true, ws: true },
+    },
   },
   build: {
     // three.js hanya dimuat oleh adegan aliran energi (lazy); dipisah agar cache-nya awet.

@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useLayoutEffect, useSyncExternalStore } from "react";
 
 export type Theme = "light" | "dark";
 
@@ -51,4 +51,17 @@ export function useTheme(): Theme {
     getTheme,
     () => "light",
   );
+}
+
+// Halaman yang desainnya hanya terang (login, forgot password) memaksa tema terang selama
+// terpasang, tanpa mengubah preferensi yang tersimpan; saat dilepas tema tersimpan dipakai lagi.
+export function useForcedTheme(theme: Theme) {
+  useLayoutEffect(() => {
+    apply(theme);
+    for (const l of listeners) l();
+    return () => {
+      apply(read());
+      for (const l of listeners) l();
+    };
+  }, [theme]);
 }

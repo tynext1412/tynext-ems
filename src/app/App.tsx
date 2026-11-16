@@ -1,4 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthLayout } from "@/domains/auth/ui/AuthLayout";
+import { ForgotPasswordPage } from "@/domains/auth/ui/ForgotPasswordPage";
 import { LoginPage } from "@/domains/auth/ui/LoginPage";
 import { RequireAuth } from "@/domains/auth/ui/RequireAuth";
 import { DashboardPage } from "@/domains/dashboard/ui/DashboardPage";
@@ -23,7 +25,11 @@ export function App() {
       <BrowserRouter>
         <AppErrorBoundary>
           <Routes>
-            <Route path="login" element={<LoginPage />} />
+            <Route element={<AuthLayout />}>
+              <Route path="login" element={<LoginPage />} />
+              <Route path="forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="forgot-password/:step" element={<ForgotPasswordPage />} />
+            </Route>
             <Route element={<RequireAuth />}>
               <Route index element={<DashboardPage />} />
               <Route path="plants/:plantId" element={<SiteLayout />}>

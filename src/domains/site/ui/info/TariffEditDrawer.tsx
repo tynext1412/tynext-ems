@@ -15,6 +15,7 @@ import {
 } from "@/domains/performance/domain/tariff";
 import type { PlantId } from "@/domains/plant/domain/plant";
 import { formatNumber } from "@/shared/domain/units";
+import { isApiError } from "@/shared/lib/apiClient";
 import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
 import { Drawer } from "@/shared/ui/Drawer";
@@ -114,8 +115,13 @@ function TariffForm({ plantId, tariff, onSaved }: { plantId: PlantId; tariff: Pu
     setErrors(found);
     setTouched(true);
     if (hasTariffErrors(found)) return;
-    await update.mutateAsync(next);
-    onSaved();
+    try {
+      await update.mutateAsync(next);
+      onSaved();
+    } catch (err) {
+      const fromServer = serverTariffErrors(err, next.bands.length);
+      if (fromServer) setErrors(fromServer);
+    }
   };
 
   const tou = draft.mode === "TIME_OF_USE";
@@ -208,4 +214,16 @@ function TariffForm({ plantId, tariff, onSaved }: { plantId: PlantId; tariff: Pu
       )}
     </form>
   );
+}
+
+// 422 dari server (details: baseRateIDRPerKWh, mode, bands, bands[i]) → bentuk TariffErrors form.
+function serverTariffErrors(err: unknown, bandCount: number): TariffErrors | null {
+  if (!isApiError(err) || Object.keys(err.details).length === 0) return null;
+  const d = err.details;
+  const out: TariffErrors = {};
+  if (d.baseRateIDRPerKWh) out.base = d.baseRateIDRPerKWh;
+  if (d.bands || d.mode) out.form = d.bands ?? d.mode;
+  const bands = Array.from({ length: bandCount }, (_, i) => d[`bands[${i}]`]);
+  if (bands.some(Boolean)) out.bands = bands;
+  return hasTariffErrors(out) ? out : null;
 }

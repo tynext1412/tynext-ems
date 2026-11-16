@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { displayNameFromEmail, validateCredentials } from "./auth";
+import { displayNameFromEmail, EMAIL_INVALID, EMAIL_REQUIRED, PASSWORD_REQUIRED, PASSWORDS_DIFFER, validateCredentials, validateEmail, validateNewPassword } from "./auth";
 
 describe("validateCredentials", () => {
-  it("requires a valid email and a password of at least 6 characters", () => {
-    expect(validateCredentials({ email: "", password: "" })).toEqual({ email: "Enter a valid email address.", password: "Password must be at least 6 characters." });
-    expect(validateCredentials({ email: "ops@tynext", password: "rahasia" })).toHaveProperty("email");
-    expect(validateCredentials({ email: "ops@tynext.id", password: "12345" })).toHaveProperty("password");
-    expect(validateCredentials({ email: " ops@tynext.id ", password: "rahasia" })).toEqual({});
+  it("checks required fields and the email format, leaving password rules to the server", () => {
+    expect(validateCredentials({ email: "", password: "" })).toEqual({ email: EMAIL_REQUIRED, password: PASSWORD_REQUIRED });
+    expect(validateCredentials({ email: "dadang@tynext", password: "x" })).toEqual({ email: EMAIL_INVALID });
+    expect(validateCredentials({ email: " ops@tynext.id ", password: "123" })).toEqual({});
+  });
+
+  it("treats a whitespace-only email as empty", () => {
+    expect(validateEmail("   ")).toBe(EMAIL_REQUIRED);
+    expect(validateEmail(" ops@tynext.co.id ")).toBeUndefined();
+  });
+});
+
+describe("validateNewPassword", () => {
+  it("needs at least 6 characters and a matching confirmation", () => {
+    expect(validateNewPassword("Plant2026", "Plant2026")).toEqual({});
+    expect(validateNewPassword("abc", "abc")).toEqual({ password: true });
+    expect(validateNewPassword("Plant2026", "Plant2025")).toEqual({ confirm: PASSWORDS_DIFFER });
+    expect(validateNewPassword("Plant2026", "")).toEqual({ confirm: PASSWORDS_DIFFER });
   });
 });
 

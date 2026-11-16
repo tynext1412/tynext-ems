@@ -2,6 +2,9 @@ import { useDeferredValue, useId, useState, type ReactNode } from "react";
 import { useUpdatePlantInfo } from "@/domains/plant/application/use-plants";
 import { PLANT_TYPE_LABEL, PLANT_TYPES, type Plant, type PlantType } from "@/domains/plant/domain/plant";
 import { ADDRESS_MAX, applyInfo, infoOf, NAME_MAX, parseCoordinate, PLANT_TIME_ZONES, validateInfo, type PlantInfoErrors, type PlantInfoUpdate } from "@/domains/plant/domain/plant-info";
+import { fieldErrors } from "@/shared/lib/apiClient";
+
+const INFO_FIELDS = ["name", "plantType", "timezone", "address", "lat", "lng", "ownerName", "ownerContactEmail", "organization", "installer"] as const satisfies readonly (keyof PlantInfoUpdate)[];
 import { PlantLocationMap } from "@/domains/plant/ui/PlantLocationMap";
 import { Alert } from "@/shared/ui/Alert";
 import { Button } from "@/shared/ui/Button";
@@ -73,8 +76,14 @@ function PlantInfoForm({ plant, onSaved }: { plant: Plant; onSaved: () => void }
     setErrors(found);
     setTouched(true);
     if (Object.keys(found).length > 0) return;
-    await update.mutateAsync(next);
-    onSaved();
+    try {
+      await update.mutateAsync(next);
+      onSaved();
+    } catch (err) {
+      // 422 dari server: tampilkan per field; pesan umum tetap muncul di Alert.
+      const fromServer = fieldErrors(err, INFO_FIELDS);
+      if (fromServer) setErrors(fromServer);
+    }
   };
 
   const text = (key: "name" | "address" | "ownerName" | "ownerContactEmail" | "organization" | "installer") => ({

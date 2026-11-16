@@ -197,12 +197,6 @@ body {
     background: linear-gradient(180deg, rgba(6, 6, 7, 0.6) 0, rgba(6, 6, 7, 0) 320px, rgba(6, 6, 7, 0) calc(100% - 320px), rgba(6, 6, 7, 0.6) 100%);
   }
 
-  .login-sky {
-    background: linear-gradient(180deg, #e9f1f7 0%, var(--color-bg) 55%);
-  }
-  :root[data-theme="dark"] .login-sky {
-    background: linear-gradient(180deg, #10202c 0%, var(--color-bg) 55%);
-  }
 }
 
 /* ── Leaflet ─────────────────────────────────────────────────────────────── */

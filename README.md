@@ -7,9 +7,9 @@ Environmental Benefits, BESS performance, dan Site list.
 Arsitektur mengikuti Domain-Driven Design; penjelasannya ada di
 [docs/architecture/dashboard-ddd.md](docs/architecture/dashboard-ddd.md).
 
-> **Status: data dummy.** Data diambil dari repository mock in-memory
-> (`src/domains/plant/infrastructure/fixtures.ts`, 14 plant). Belum ada backend,
-> autentikasi, maupun realtime.
+> **Sumber data.** Semua data dari API backend repo `tynext-mqtt` (sesi cookie, RBAC, data asli). Repository mock
+> dan fixture 14 plant (`src/domains/*/infrastructure/mock-*.ts`, `fixtures.ts`) masih ada di repo, tetapi tidak dirakit
+> lagi: kodenya dikomentari di `src/app/container.ts`. Realtime (WebSocket) belum dipakai frontend.
 
 ## Menjalankan
 
@@ -28,9 +28,32 @@ Konfigurasi lewat `.env` (lihat `.env.example`):
 
 | Variabel | Nilai | Keterangan |
 |---|---|---|
-| `VITE_DATA_SOURCE` | `mock` (default) \| `http` | `http` belum diimplementasikan |
-| `VITE_API_BASE_URL` | URL API | dipakai adapter HTTP nanti |
-| `VITE_SCADA_URL_TEMPLATE` | URL viewer SCADA, boleh `{plantId}` | opsional; berlaku untuk semua plant |
+| `VITE_API_BASE_URL` | default `/api/v1` | biarkan relatif agar lewat proxy Vite / reverse proxy (cookie satu origin) |
+| `VITE_API_PROXY_TARGET` | default `https://mqtt-poc.tynext.co.id` | tujuan proxy `/api` saat `npm run dev`; backend lokal: `http://localhost:8090` |
+| `VITE_SCADA_URL_TEMPLATE` | URL viewer SCADA, boleh `{plantId}` | opsional; dipakai bila plant belum punya viewer dari backend (mode http) |
+
+### Menjalankan dengan backend asli
+
+Bawaan: `npm run dev` meneruskan `/api` ke backend di VPS, **`https://mqtt-poc.tynext.co.id/api/v1`**. Akun login
+diberikan oleh admin backend (`emsctl user` atau `/admin/users` di repo tynext-mqtt).
+
+Backend lokal dengan data demo 14 plant:
+
+```bash
+# di repo tynext-mqtt: Postgres + API + data demo (http://localhost:8090/api/v1)
+docker compose -f deploy/docker-compose.dev.yml up -d --build
+
+# di repo ini
+VITE_API_PROXY_TARGET=http://localhost:8090 npm run dev   # login: admin@tynext.local / tynext-demo-2026 (juga operator@, viewer@)
+```
+
+- Request memakai cookie sesi (`credentials: "include"`) dan header `X-CSRF-Token` (dari cookie `tynext_csrf`) untuk
+  POST/PUT/PATCH/DELETE. 401 di endpoint mana pun menampilkan dialog "Your session has ended".
+- Error backend `{ error, code, details }` menjadi `ApiError`; `details` (422) dipetakan ke field form Information,
+  Purchase Tariff, dan O&M.
+- Uji integrasi adapter terhadap backend yang sedang jalan:
+  `TYNEXT_API_URL=http://localhost:8090/api/v1 npx vitest run src/app/http-adapters.integration.test.ts`
+  (dilewati bila `TYNEXT_API_URL` kosong).
 
 ## Stack
 
@@ -86,11 +109,29 @@ Sesi yang habis → dialog "Sign in again" (kembali ke halaman semula setelah lo
 
 ### Login
 
-`/login` memakai video latar: `public/day.mp4` pukul 06.00–18.00 waktu lokal perangkat, `public/night.mp4`
-pukul 18.00–06.00 (aturannya di `src/domains/auth/domain/daypart.ts`, dicek ulang tiap menit). Video tanpa suara,
-terus berulang tanpa jeda lewat Media Source Extensions (berkas fragmented MP4 ditempelkan terus ke satu buffer; frame terakhir yang sama dengan frame pertama ditimpa), browser tanpa MSE memakai `loop` biasa, tanpa kontrol; `prefers-reduced-motion` menampilkan frame diam, dan bila video gagal dimuat latar
-gradien yang tampil. Kartu form, pil logo, dan tombol tema tembus pandang 65 % dengan blur. **Mock Identity &
-Access**: email valid apa pun + kata sandi ≥ 6 karakter diterima, sesi di `localStorage` (`tynext-ems.session.v1`).
+`/login` dan `/forgot-password` mengikuti Figma "Authentication · Login & Forgot Password" (5 Nov 2026) dan
+selalu tampil terang (desain tidak punya mode gelap; preferensi tema user tidak diubah). Video latar existing
+memenuhi layar: `public/day.mp4` pukul 06.00–18.00 waktu lokal perangkat, `public/night.mp4` pukul 18.00–06.00
+(aturannya di `src/domains/auth/domain/daypart.ts`, dicek ulang tiap menit). Video tanpa suara, terus berulang tanpa
+jeda lewat Media Source Extensions (berkas fragmented MP4 ditempelkan terus ke satu buffer; frame terakhir yang sama
+dengan frame pertama ditimpa), browser tanpa MSE memakai `loop` biasa; `prefers-reduced-motion` menampilkan frame
+diam, dan bila video gagal dimuat latar gradien yang tampil. Di atasnya scrim gelap, headline + chip fitur (≥ 1024 px),
+dan panel putih 480 px berisi logo (kembali ke Sign In), form, dan copyright.
+
+- **Sign In**: email + password (ikon mata), Forgot password?, Continue with Google (SSO Microsoft dihapus).
+  Validasi saat Sign In diklik; galat server tampil sebagai Alert (Incorrect email or password, This Google account
+  has no access, Couldn't sign you in) tanpa mengosongkan isian. Galat SSO dari backend datang sebagai `/login?error=sso_*`.
+- **Forgot Password** (`/forgot-password` → `/code` → `/new-password` → `/done`): kode 6 digit berlaku 10 menit, Resend
+  setelah 60 detik, terkunci setelah 5 kali salah, reset token 15 menit. Posisi flow disimpan di `sessionStorage`
+  (`tynext-ems.password-reset.v1`), jadi refresh di langkah 2/3 tidak mengeluarkan user; back browser dari langkah 3
+  membuka langkah 1.
+- **Mock Identity & Access**: email valid apa pun + password ≥ 6 karakter diterima; setelah password di-reset, email itu
+  hanya menerima password baru. Kode reset dicetak di console browser (`[mock] Password reset code for …`); domain
+  email publik (gmail.com, yahoo.com, …) dianggap tidak terdaftar; offline memunculkan galat koneksi. Sesi di
+  `localStorage` (`tynext-ems.session.v1`), data reset mock di `tynext-ems.mock-auth.v1`.
+- **Mode http**: `POST /auth/password-reset/{request,verify,complete,cancel}` (kontrak tynext-mqtt, tag Auth). Backend
+  mewajibkan password baru minimal 10 karakter (desain: 6); pesan server tampil di bawah New Password. Selama SMTP
+  belum dikonfigurasi, Send Code menjawab 503 dan pesan server tampil di Alert "Couldn't send the code".
 
 Bila video latar diganti, simpan sebagai **fragmented MP4 tanpa audio** supaya pengulangan tanpa jeda tetap bekerja
 (berkas MP4 biasa jatuh ke `loop` bawaan yang menyisakan jeda 1–2 frame). Frame terakhir klip sebaiknya sama dengan
@@ -166,7 +207,7 @@ dipertahankan) dengan chip status, lokasi, ID, dan owner. Setiap halaman tersusu
 
 ```
 src/
-  app/            composition root: routes, providers, pemilihan adapter (mock|http)
+  app/            composition root: routes, providers, perakitan adapter HTTP
   shared/         shared kernel (satuan, waktu & formatter id-ID), config, lib, primitif UI
   domains/
     plant/        Plant, StatusPolicy, cuaca & prakiraan; peta & badge status
@@ -186,17 +227,14 @@ Setiap domain berlapis `domain/ → application/ → infrastructure/ → ui/`. L
 (aturan status, rumus impact, agregasi, filter/sort tabel) ada di `domain/` sebagai
 fungsi murni dan diuji tanpa React.
 
-## Mengganti data dummy dengan API
+## Adapter data
 
-1. Tulis `HttpPlantRepository` dan `HttpPerformanceRepository` di folder
-   `infrastructure/` masing-masing domain (pakai `shared/lib/apiClient`).
-2. Pilih adapter di `src/app/container.ts` berdasarkan `VITE_DATA_SOURCE`.
-
-UI dan domain tidak perlu diubah.
+Setiap port repository punya adapter `Http…Repository` di `infrastructure/` (kontrak:
+`tynext-mqtt/docs/prompts/backend-dashboard-api.openapi.yaml`), dan itulah yang dirakit `src/app/container.ts`.
+Adapter lama `Mock…Repository` tetap disimpan beserta test-nya, tetapi baris yang merakitnya dikomentari; UI dan domain
+tidak tahu bedanya.
 
 ## Langkah berikutnya
 
-1. Adapter HTTP + kontrak API (lihat dokumen arsitektur §7).
+1. Live update lewat WebSocket (protokol sedang disiapkan di backend), termasuk status marker realtime.
 2. Halaman Operation / detail plant.
-3. Identity & Access (login, scope plant per user).
-4. Realtime status marker (polling atau WebSocket di adapter).
